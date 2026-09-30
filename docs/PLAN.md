@@ -3,7 +3,7 @@
 Marca `[x]` cuando un paso este terminado, verificado y con su commit.
 
 - [x] Paso 1. Estructura del proyecto y Git local
-- [ ] Paso 2. Crear repositorio en GitHub, conectarlo y subir (guiame para crearlo en la web)
+- [x] Paso 2. Crear repositorio en GitHub, conectarlo y subir (guiame para crearlo en la web)
 - [ ] Paso 3. Crear el proyecto Spring Boot 4.0.x con Java 21 y Maven Wrapper dentro de backend/
 - [ ] Paso 4. Docker Compose con PostgreSQL 16, application.yml con variables de entorno, copiar docs/V1 y docs/V2 a src/main/resources/db/migration y verificar que Flyway cree las tablas
 - [ ] Paso 5. Entidades JPA y repositorios (empieza por empresa, ubicacion, usuario)
