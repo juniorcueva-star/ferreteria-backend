@@ -9,13 +9,13 @@ la caja por vendedor y las ventas al fiado con pagos por partes.
 | Capa            | Tecnologia                                              |
 |-----------------|---------------------------------------------------------|
 | Lenguaje        | Java 21 LTS                                             |
-| Framework       | Spring Boot 4.0.x (Maven Wrapper)                       |
+| Framework       | Spring Boot 4.1.x (Maven Wrapper)                       |
 | Modulos         | Spring Web, Spring Data JPA, Spring Security + JWT, Bean Validation, Lombok |
 | Base de datos   | PostgreSQL 16 (Docker Compose en local, Railway en la nube) |
 | Migraciones     | Flyway                                                  |
 | Documentacion   | springdoc OpenAPI (Swagger UI)                          |
 | Imagenes        | Cloudinary (solo se guarda la URL)                      |
-| Pruebas         | JUnit 5 + Mockito                                       |
+| Pruebas         | JUnit (Jupiter) + Mockito                               |
 
 ## Estructura
 
