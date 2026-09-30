@@ -1,0 +1,28 @@
+# Base de datos local para desarrollo.
+# Los valores (${...}) se leen del archivo .env de esta misma carpeta.
+# Uso:  docker compose up -d   (levantar)   |   docker compose down   (detener)
+
+# Nombre fijo del proyecto: evita chocar con otros proyectos de Docker
+# que tambien esten en una carpeta llamada "backend".
+name: ferreteria
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: ferreteria-postgres
+    environment:
+      POSTGRES_DB: ${DB_NAME:?Falta DB_NAME en .env}
+      POSTGRES_USER: ${DB_USER:?Falta DB_USER en .env}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Falta DB_PASSWORD en .env}
+    ports:
+      - "${DB_PORT:-5434}:5432"   # puerto_en_tu_PC:puerto_dentro_del_contenedor
+    volumes:
+      - postgres_data:/var/lib/postgresql/data   # los datos sobreviven si se borra el contenedor
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres_data:

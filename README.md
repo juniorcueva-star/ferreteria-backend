@@ -24,6 +24,32 @@ backend/   Proyecto Spring Boot
 docs/      Esquema SQL (Flyway), datos iniciales y diagrama ER
 ```
 
+## Como ejecutarlo en local
+
+Requisitos: Java 21 (con `JAVA_HOME` apuntando a el) y Docker Desktop.
+
+1. Crear el archivo de variables de entorno a partir de la plantilla y poner una clave propia:
+
+   ```powershell
+   cd backend
+   Copy-Item .env.example .env
+   ```
+
+2. Levantar PostgreSQL 16 (puerto 5434):
+
+   ```powershell
+   docker compose up -d
+   ```
+
+3. Arrancar el backend (Flyway crea las tablas automaticamente la primera vez):
+
+   ```powershell
+   .\mvnw.cmd spring-boot:run
+   ```
+
+La API queda en `http://localhost:8080`. Para detener la base de datos: `docker compose down`
+(los datos se conservan; `docker compose down -v` los borra).
+
 ## Estado
 
 En desarrollo - Fase 1 (ventas como NOTA_VENTA). Fase 2: comprobantes electronicos SUNAT y envios a provincia.
