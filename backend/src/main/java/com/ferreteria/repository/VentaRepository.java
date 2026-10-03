@@ -1,6 +1,7 @@
 package com.ferreteria.repository;
 
 import com.ferreteria.dto.fiado.DeudorResponse;
+import com.ferreteria.dto.reportes.VentasPorTiendaResponse;
 import com.ferreteria.entity.Venta;
 import com.ferreteria.entity.enums.EstadoVenta;
 import jakarta.persistence.LockModeType;
@@ -15,6 +16,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
+import java.time.OffsetDateTime;
 import java.util.Optional;
 
 public interface VentaRepository extends JpaRepository<Venta, Long>, JpaSpecificationExecutor<Venta> {
@@ -47,6 +49,33 @@ public interface VentaRepository extends JpaRepository<Venta, Long>, JpaSpecific
               and (:ubicacionId is null or v.ubicacion.id = :ubicacionId)
             """)
     Page<DeudorResponse> deudores(@Param("ubicacionId") Long ubicacionId, Pageable pageable);
+
+    @Query(value = """
+            select new com.ferreteria.dto.reportes.VentasPorTiendaResponse(u.id, u.nombre, e.ruc,
+                   sum(case when v.estado = com.ferreteria.entity.enums.EstadoVenta.EMITIDA then 1 else 0 end),
+                   coalesce(sum(case when v.estado = com.ferreteria.entity.enums.EstadoVenta.EMITIDA
+                                     then v.total else 0 end), 0),
+                   coalesce(sum(case when v.estado = com.ferreteria.entity.enums.EstadoVenta.EMITIDA
+                                      and v.condicion = com.ferreteria.entity.enums.CondicionVenta.CONTADO
+                                     then v.total else 0 end), 0),
+                   coalesce(sum(case when v.estado = com.ferreteria.entity.enums.EstadoVenta.EMITIDA
+                                      and v.condicion = com.ferreteria.entity.enums.CondicionVenta.CREDITO
+                                     then v.total else 0 end), 0),
+                   coalesce(sum(v.saldoPendiente), 0),
+                   sum(case when v.estado = com.ferreteria.entity.enums.EstadoVenta.ANULADA then 1 else 0 end))
+            from Venta v join v.ubicacion u join v.empresa e
+            where v.fecha >= :desde and v.fecha < :hasta
+              and (:ubicacionId is null or u.id = :ubicacionId)
+            group by u.id, u.nombre, e.ruc
+            order by u.nombre
+            """, countQuery = """
+            select count(distinct v.ubicacion.id) from Venta v
+            where v.fecha >= :desde and v.fecha < :hasta
+              and (:ubicacionId is null or v.ubicacion.id = :ubicacionId)
+            """)
+    Page<VentasPorTiendaResponse> ventasPorTienda(@Param("desde") OffsetDateTime desde,
+                                                  @Param("hasta") OffsetDateTime hasta,
+                                                  @Param("ubicacionId") Long ubicacionId, Pageable pageable);
 
     @Override
     @EntityGraph(attributePaths = {"ubicacion", "empresa", "usuario", "cajaSesion", "cliente"})

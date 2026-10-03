@@ -192,3 +192,17 @@ Registro de las decisiones de diseno tomadas durante el desarrollo (que se decid
   El orden lo fija la consulta; el parametro `sort` se ignora en este reporte.
 - **D59. Abonos en el cuadre:** los abonos en efectivo suman al efectivo esperado de la caja donde se cobraron; el
   resumen de caja los muestra aparte (`totalAbonos`).
+
+## Reportes (paso 14)
+
+- **D60. Reportes calculados en la BD** con consultas JPQL agregadas (`group by`, `sum`, `case`) que devuelven
+  directamente el DTO (`select new ...Response(...)`): no se cargan miles de ventas en memoria para sumarlas.
+- **D61. Todos los reportes son paginados** (aunque "ventas por tienda" tenga pocas filas) para cumplir la regla de
+  no devolver listas sin limite. El orden lo fija cada consulta (por tienda, o de mayor a menor monto).
+- **D62. Rango de fechas obligatorio** (`desde` y `hasta`, dias de Lima, ambos inclusive) en los reportes de ventas,
+  traslados, compras y productos. En compras se usa la fecha de emision del comprobante.
+- **D63. Que cuenta cada reporte:** las ventas y productos vendidos solo consideran ventas EMITIDAS (las anuladas se
+  informan aparte como `cantidadAnuladas`); compras solo REGISTRADAS; traslados por estado (recibidos, en camino,
+  anulados) agrupados por tienda destino. "Productos mas vendidos" ordena por monto o por cantidad en unidad base.
+- **D64. Alcance por rol:** ventas por tienda y productos mas vendidos: ADMIN y VENDEDOR (su tienda). Traslados por
+  tienda y compras por proveedor: ADMIN y ALMACENERO (su almacen). Stock bajo: todos (su ubicacion).
