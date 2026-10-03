@@ -7,7 +7,9 @@ import com.ferreteria.dto.compras.CompraRequest;
 import com.ferreteria.dto.compras.CompraResponse;
 import com.ferreteria.entity.Compra;
 import com.ferreteria.entity.CompraDetalle;
+import com.ferreteria.entity.Empresa;
 import com.ferreteria.entity.Proveedor;
+import com.ferreteria.entity.Ubicacion;
 import com.ferreteria.entity.Usuario;
 import com.ferreteria.entity.enums.EstadoCompra;
 import com.ferreteria.entity.enums.TipoComprobanteCompra;
@@ -62,7 +64,7 @@ public class CompraService {
                 Especificaciones.igual("estado", estado),
                 Especificaciones.desde("fechaEmision", desde),
                 Especificaciones.antesDe("fechaEmision", hasta == null ? null : hasta.plusDays(1)));
-        return PaginaResponse.de(compraRepository.findAll(filtro, pageable), CompraResponse::resumen);
+        return PaginaResponse.de(compraRepository.findAll(filtro, Ordenamiento.validar(pageable, "id", "fechaEmision", "total", "createdAt")), CompraResponse::resumen);
     }
 
     @Transactional(readOnly = true)
@@ -86,10 +88,18 @@ public class CompraService {
         }
         Usuario usuario = buscador.usuarioActual();
 
+        Empresa empresa = buscador.empresaActiva(request.empresaId());
+        Ubicacion ubicacion = buscador.ubicacionActiva(ubicacionId);
+        // Una tienda solo recibe compras con su propio RUC; el almacen (compartido) recibe de ambas empresas
+        if (ubicacion.getEmpresa() != null && !ubicacion.getEmpresa().getId().equals(empresa.getId())) {
+            throw new ReglaNegocioException("La " + ubicacion.getNombre() + " pertenece a otra empresa: registre "
+                    + "la compra con su RUC (" + ubicacion.getEmpresa().getRuc() + ")");
+        }
+
         Compra compra = new Compra();
-        compra.setEmpresa(buscador.empresaActiva(request.empresaId()));
+        compra.setEmpresa(empresa);
         compra.setProveedor(proveedorActivo(request.proveedorId()));
-        compra.setUbicacion(buscador.ubicacionActiva(ubicacionId));
+        compra.setUbicacion(ubicacion);
         compra.setUsuario(usuario);
         compra.setTipoComprobante(request.tipoComprobante());
         compra.setSerieNumero(serieNumero);

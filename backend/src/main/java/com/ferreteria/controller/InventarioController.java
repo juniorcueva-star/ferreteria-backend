@@ -47,7 +47,7 @@ public class InventarioController {
             @RequestParam(required = false) Long productoId,
             @RequestParam(required = false) String texto,
             @RequestParam(defaultValue = "false") boolean soloBajo,
-            @ParameterObject @PageableDefault(sort = "producto.nombre") Pageable pageable) {
+            @ParameterObject @PageableDefault(size = 20, sort = "producto.nombre") Pageable pageable) {
         return inventarioService.listarStock(ubicacionId, productoId, texto, soloBajo, pageable);
     }
 
@@ -82,7 +82,7 @@ public class InventarioController {
             @RequestParam(required = false) TipoMovimiento tipo,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta,
-            @ParameterObject @PageableDefault(sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
+            @ParameterObject @PageableDefault(size = 20, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
         return inventarioService.listarKardex(productoId, ubicacionId, tipo, desde, hasta, pageable);
     }
 }

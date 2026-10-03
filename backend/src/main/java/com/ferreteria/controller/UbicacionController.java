@@ -36,7 +36,7 @@ public class UbicacionController {
     public PaginaResponse<UbicacionResponse> listar(@RequestParam(required = false) TipoUbicacion tipo,
                                                     @RequestParam(required = false) Long empresaId,
                                                     @RequestParam(required = false) Boolean activo,
-                                                    @ParameterObject @PageableDefault(sort = "id") Pageable pageable) {
+                                                    @ParameterObject @PageableDefault(size = 20, sort = "id") Pageable pageable) {
         return ubicacionService.listar(tipo, empresaId, activo, pageable);
     }
 

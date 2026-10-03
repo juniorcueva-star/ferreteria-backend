@@ -34,7 +34,7 @@ public class CategoriaController {
     @GetMapping
     public PaginaResponse<CategoriaResponse> listar(@RequestParam(required = false) String texto,
                                                     @RequestParam(required = false) Boolean activo,
-                                                    @ParameterObject @PageableDefault(sort = "nombre") Pageable pageable) {
+                                                    @ParameterObject @PageableDefault(size = 20, sort = "nombre") Pageable pageable) {
         return categoriaService.listar(texto, activo, pageable);
     }
 

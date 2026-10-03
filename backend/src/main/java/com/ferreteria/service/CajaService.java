@@ -91,7 +91,7 @@ public class CajaService {
                 Especificaciones.igual("estado", estado),
                 Especificaciones.desde("fechaApertura", calendario.inicio(desde)),
                 Especificaciones.antesDe("fechaApertura", calendario.finExclusivo(hasta)));
-        return PaginaResponse.de(cajaRepository.findAll(filtro, pageable), c -> CajaResponse.desde(c, null));
+        return PaginaResponse.de(cajaRepository.findAll(filtro, Ordenamiento.validar(pageable, "id", "fechaApertura", "fechaCierre", "estado")), c -> CajaResponse.desde(c, null));
     }
 
     /**

@@ -64,7 +64,7 @@ public class VentaController {
             @RequestParam(required = false) Boolean conSaldo,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta,
-            @ParameterObject @PageableDefault(sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
+            @ParameterObject @PageableDefault(size = 20, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
         return ventaService.listar(ubicacionId, usuarioId, clienteId, cajaId, condicion, estado, conSaldo, desde,
                 hasta, pageable);
     }

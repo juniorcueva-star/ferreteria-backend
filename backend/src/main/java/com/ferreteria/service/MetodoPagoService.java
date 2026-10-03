@@ -16,6 +16,6 @@ public class MetodoPagoService {
 
     @Transactional(readOnly = true)
     public PaginaResponse<MetodoPagoResponse> listar(Pageable pageable) {
-        return PaginaResponse.de(metodoPagoRepository.findAll(pageable), MetodoPagoResponse::desde);
+        return PaginaResponse.de(metodoPagoRepository.findAll(Ordenamiento.validar(pageable, "id", "codigo", "nombre")), MetodoPagoResponse::desde);
     }
 }

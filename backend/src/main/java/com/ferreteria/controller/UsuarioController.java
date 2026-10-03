@@ -39,7 +39,7 @@ public class UsuarioController {
                                                   @RequestParam(required = false) Rol rol,
                                                   @RequestParam(required = false) Long ubicacionId,
                                                   @RequestParam(required = false) Boolean activo,
-                                                  @ParameterObject @PageableDefault(sort = "id") Pageable pageable) {
+                                                  @ParameterObject @PageableDefault(size = 20, sort = "id") Pageable pageable) {
         return usuarioService.listar(texto, rol, ubicacionId, activo, pageable);
     }
 

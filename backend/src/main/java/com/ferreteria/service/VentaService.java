@@ -129,7 +129,8 @@ public class VentaService {
                 conSaldo == null ? Specification.unrestricted() : conSaldo(conSaldo),
                 Especificaciones.desde("fecha", calendario.inicio(desde)),
                 Especificaciones.antesDe("fecha", calendario.finExclusivo(hasta)));
-        return PaginaResponse.de(ventaRepository.findAll(filtro, pageable), VentaResponse::resumen);
+        return PaginaResponse.de(ventaRepository.findAll(filtro,
+                Ordenamiento.validar(pageable, "id", "fecha", "total", "saldoPendiente")), VentaResponse::resumen);
     }
 
     /**

@@ -27,6 +27,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -56,7 +58,7 @@ public class ProductoService {
                 Especificaciones.igual("categoria.id", categoriaId),
                 Especificaciones.igual("unidadBase", unidadBase),
                 Especificaciones.igual("activo", activo));
-        return PaginaResponse.de(productoRepository.findAll(filtro, pageable), ProductoResponse::desde);
+        return PaginaResponse.de(productoRepository.findAll(filtro, Ordenamiento.validar(pageable, "id", "codigo", "nombre", "marca", "createdAt")), ProductoResponse::desde);
     }
 
     @Transactional(readOnly = true)
@@ -168,6 +170,10 @@ public class ProductoService {
         return ProductoResponse.desde(producto);
     }
 
+    /**
+     * Sube la foto nueva y, solo cuando la transaccion se confirma, borra la anterior. Si algo falla y se deshace
+     * la transaccion, se borra la nueva: nunca queda un producto apuntando a una imagen borrada.
+     */
     @Transactional
     public ProductoResponse actualizarImagen(Long productoId, MultipartFile archivo) {
         Producto producto = buscar(productoId);
@@ -179,17 +185,27 @@ public class ProductoService {
         ImagenGuardada imagen = almacenImagenes.guardar(contenido, tipo);
         producto.setImagenUrl(imagen.url());
         producto.setImagenPublicId(imagen.publicId());
-        almacenImagenes.eliminar(anterior);
+        alTerminar(anterior, imagen.publicId());
         return ProductoResponse.desde(producto);
     }
 
     @Transactional
     public ProductoResponse eliminarImagen(Long productoId) {
         Producto producto = buscar(productoId);
-        almacenImagenes.eliminar(producto.getImagenPublicId());
+        alTerminar(producto.getImagenPublicId(), null);
         producto.setImagenUrl(null);
         producto.setImagenPublicId(null);
         return ProductoResponse.desde(producto);
+    }
+
+    /** Si la transaccion se confirma borra la imagen reemplazada; si se deshace, borra la recien subida. */
+    private void alTerminar(String borrarSiConfirma, String borrarSiFalla) {
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCompletion(int estado) {
+                almacenImagenes.eliminar(estado == STATUS_COMMITTED ? borrarSiConfirma : borrarSiFalla);
+            }
+        });
     }
 
     // ---------- reglas ----------

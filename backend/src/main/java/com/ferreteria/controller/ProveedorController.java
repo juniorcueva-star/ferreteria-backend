@@ -34,7 +34,7 @@ public class ProveedorController {
     @GetMapping
     public PaginaResponse<ProveedorResponse> listar(@RequestParam(required = false) String texto,
                                                     @RequestParam(required = false) Boolean activo,
-                                                    @ParameterObject @PageableDefault(sort = "razonSocial") Pageable pageable) {
+                                                    @ParameterObject @PageableDefault(size = 20, sort = "razonSocial") Pageable pageable) {
         return proveedorService.listar(texto, activo, pageable);
     }
 

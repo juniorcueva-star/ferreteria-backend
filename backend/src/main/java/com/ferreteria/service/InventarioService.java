@@ -59,7 +59,8 @@ public class InventarioService {
                 Especificaciones.contiene(texto, "producto.codigo", "producto.nombre"),
                 Especificaciones.igual("producto.activo", true),
                 soloBajo ? stockBajo() : Specification.unrestricted());
-        return PaginaResponse.de(stockRepository.findAll(filtro, pageable), StockResponse::desde);
+        return PaginaResponse.de(stockRepository.findAll(filtro, Ordenamiento.validar(pageable,
+                "producto.nombre", "producto.codigo", "cantidad", "stockMinimo", "ubicacion.nombre")), StockResponse::desde);
     }
 
     @Transactional
@@ -111,7 +112,7 @@ public class InventarioService {
                 Especificaciones.igual("tipo", tipo),
                 Especificaciones.desde("fecha", calendario.inicio(desde)),
                 Especificaciones.antesDe("fecha", calendario.finExclusivo(hasta)));
-        return PaginaResponse.de(movimientoRepository.findAll(filtro, pageable), KardexResponse::desde);
+        return PaginaResponse.de(movimientoRepository.findAll(filtro, Ordenamiento.validar(pageable, "id", "fecha")), KardexResponse::desde);
     }
 
     private List<LineaMovimiento> lineas(List<LineaProductoRequest> detalles) {

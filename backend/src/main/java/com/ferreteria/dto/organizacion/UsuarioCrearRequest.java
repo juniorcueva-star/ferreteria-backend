@@ -1,6 +1,7 @@
 package com.ferreteria.dto.organizacion;
 
 import com.ferreteria.entity.enums.Rol;
+import com.ferreteria.dto.comun.Contrasena;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
@@ -14,7 +15,7 @@ public record UsuarioCrearRequest(
         @NotBlank @Size(min = 3, max = 50)
         @Pattern(regexp = "[a-zA-Z0-9._-]+", message = "solo letras, numeros, punto, guion y guion bajo")
         String username,
-        @NotBlank @Size(min = 8, max = 72, message = "debe tener entre 8 y 72 caracteres") String password,
+        @NotBlank @Contrasena String password,
         @NotNull Rol rol,
         Long ubicacionId) {
 }

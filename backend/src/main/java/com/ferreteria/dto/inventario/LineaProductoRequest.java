@@ -1,5 +1,6 @@
 package com.ferreteria.dto.inventario;
 
+import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotNull;
@@ -14,5 +15,6 @@ import java.math.BigDecimal;
 public record LineaProductoRequest(
         @NotNull Long productoId,
         Long presentacionId,
-        @NotNull @DecimalMin(value = "0", inclusive = false) @Digits(integer = 11, fraction = 3) BigDecimal cantidad) {
+        @NotNull @DecimalMin(value = "0", inclusive = false) @DecimalMax("1000000") @Digits(integer = 11, fraction = 3)
+        BigDecimal cantidad) {
 }

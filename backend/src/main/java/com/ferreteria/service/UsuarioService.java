@@ -45,7 +45,7 @@ public class UsuarioService {
                 Especificaciones.igual("rol", rol),
                 Especificaciones.igual("ubicacion.id", ubicacionId),
                 Especificaciones.igual("activo", activo));
-        return PaginaResponse.de(usuarioRepository.findAll(filtro, pageable), UsuarioResponse::desde);
+        return PaginaResponse.de(usuarioRepository.findAll(filtro, Ordenamiento.validar(pageable, "id", "username", "nombres", "rol")), UsuarioResponse::desde);
     }
 
     @Transactional(readOnly = true)

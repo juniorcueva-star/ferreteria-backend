@@ -23,7 +23,7 @@ public class MetodoPagoController {
 
     @Operation(summary = "Listar metodos de pago", description = "En las ventas y abonos se usa el campo 'codigo'")
     @GetMapping
-    public PaginaResponse<MetodoPagoResponse> listar(@ParameterObject @PageableDefault(sort = "id") Pageable pageable) {
+    public PaginaResponse<MetodoPagoResponse> listar(@ParameterObject @PageableDefault(size = 20, sort = "id") Pageable pageable) {
         return metodoPagoService.listar(pageable);
     }
 }

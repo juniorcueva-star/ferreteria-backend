@@ -104,6 +104,10 @@ class CompraIntegrationTest extends IntegracionTestBase {
         postCon(datos.token(datos.admin), "/api/compras", compra).andExpect(status().isUnprocessableContent());
 
         compra.put("ubicacionId", datos.tienda1.getId());
+        compra.put("empresaId", datos.empresa2.getId()); // la tienda 1 es de la empresa 1
+        postCon(datos.token(datos.admin), "/api/compras", compra).andExpect(status().isUnprocessableContent());
+
+        compra.put("empresaId", datos.empresa1.getId());
         postCon(datos.token(datos.admin), "/api/compras", compra).andExpect(status().isCreated());
         assertThat(datos.stock(cemento, datos.tienda1)).isEqualByComparingTo("10");
     }

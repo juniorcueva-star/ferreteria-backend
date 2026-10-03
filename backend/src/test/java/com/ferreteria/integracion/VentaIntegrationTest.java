@@ -253,5 +253,7 @@ class VentaIntegrationTest extends IntegracionTestBase {
         getCon(vendedor, "/api/ventas").andExpect(jsonPath("$.totalElementos").value(1));
         getCon(datos.token(datos.admin), "/api/ventas?ubicacionId={id}", datos.tienda1.getId())
                 .andExpect(jsonPath("$.totalElementos").value(1));
+        // Ordenar por una coleccion duplicaria filas: no se permite
+        getCon(vendedor, "/api/ventas?sort=detalles.subtotal").andExpect(status().isBadRequest());
     }
 }

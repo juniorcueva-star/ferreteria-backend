@@ -234,3 +234,18 @@ Registro de las decisiones de diseno tomadas durante el desarrollo (que se decid
   UTC) y mostro que `@PastOrPresent` en la fecha de compra usaba la zona del servidor. Ahora esa regla se valida con el
   componente `Calendario` (dia de Lima), igual que los reportes y el vencimiento del fiado, y las pruebas usan la
   fecha de Lima.
+
+## Revision final (hallazgos corregidos)
+
+- **D71. Contrasenas de hasta 72 bytes.** BCrypt solo admite 72 bytes: una contrasena de 40 "ñ" (80 bytes) daba
+  error 500 al crear el usuario. La anotacion `@Contrasena` valida 8 a 72 caracteres y como maximo 72 bytes (400).
+- **D72. Lista blanca de ordenamiento** (`Ordenamiento.validar`): cada listado acepta `sort` solo por ciertos campos.
+  Antes se podia ordenar por `passwordHash` o por una coleccion (`detalles.subtotal`), lo que repetia filas.
+- **D73. Cantidades hasta 1 000 000 por linea** y los valores que no caben en la columna (SQLState 22xxx) responden
+  400 "Algun valor excede el rango permitido" en vez de un 409 con un mensaje que no correspondia.
+- **D74. Tamano de pagina por defecto 20 en todos los listados** (`@PageableDefault` usaba 10 sin indicarlo).
+- **D75. Fotos: borrado despues de confirmar.** Al reemplazar la foto, la anterior se borra solo si la transaccion se
+  confirma; si se deshace, se borra la recien subida. Nunca queda un producto apuntando a un archivo borrado.
+- **D76. Una tienda solo recibe compras con su propio RUC.** El almacen, compartido, recibe compras de ambas empresas.
+- **D77. Rutas no listadas cerradas:** una ruta que no esta en la tabla de permisos responde 403 a un usuario
+  autenticado (y 401 sin token), en vez de 404. Es mas seguro: no revela que rutas existen.

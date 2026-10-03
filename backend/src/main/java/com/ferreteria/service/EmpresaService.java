@@ -28,7 +28,7 @@ public class EmpresaService {
         Specification<Empresa> filtro = Specification.allOf(
                 Especificaciones.contiene(texto, "ruc", "razonSocial", "nombreComercial"),
                 Especificaciones.igual("activo", activo));
-        return PaginaResponse.de(empresaRepository.findAll(filtro, pageable), EmpresaResponse::desde);
+        return PaginaResponse.de(empresaRepository.findAll(filtro, Ordenamiento.validar(pageable, "id", "ruc", "razonSocial")), EmpresaResponse::desde);
     }
 
     @Transactional(readOnly = true)

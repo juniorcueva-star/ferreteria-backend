@@ -145,6 +145,9 @@ class InventarioIntegrationTest extends IntegracionTestBase {
         postCon(almacenero, "/api/inventario/ajustes", Map.of("tipo", "ENTRADA", "motivo", "Conteo fisico",
                 "detalles", List.of(Map.of("productoId", perno.getId(), "cantidad", 0.5))))
                 .andExpect(status().isUnprocessableContent());
+        postCon(almacenero, "/api/inventario/ajustes", Map.of("tipo", "ENTRADA", "motivo", "Numero enorme",
+                "detalles", List.of(Map.of("productoId", perno.getId(), "cantidad", 99999999999L))))
+                .andExpect(status().isBadRequest());
     }
 
     @Test

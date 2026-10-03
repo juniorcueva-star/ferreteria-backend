@@ -36,7 +36,7 @@ public class UbicacionService {
                 Especificaciones.igual("tipo", tipo),
                 Especificaciones.igual("empresa.id", empresaId),
                 Especificaciones.igual("activo", activo));
-        return PaginaResponse.de(ubicacionRepository.findAll(filtro, pageable), UbicacionResponse::desde);
+        return PaginaResponse.de(ubicacionRepository.findAll(filtro, Ordenamiento.validar(pageable, "id", "nombre", "tipo")), UbicacionResponse::desde);
     }
 
     @Transactional(readOnly = true)

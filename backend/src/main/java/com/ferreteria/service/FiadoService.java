@@ -88,7 +88,8 @@ public class FiadoService {
                 (root, query, cb) -> cb.greaterThan(root.get("saldoPendiente"), BigDecimal.ZERO),
                 soloVencidas ? Especificaciones.antesDe("fechaVencimiento", calendario.hoy())
                         : Specification.unrestricted());
-        return PaginaResponse.de(ventaRepository.findAll(filtro, pageable), VentaResponse::resumen);
+        return PaginaResponse.de(ventaRepository.findAll(filtro,
+                Ordenamiento.validar(pageable, "id", "fecha", "fechaVencimiento", "saldoPendiente", "total")), VentaResponse::resumen);
     }
 
     /** Clientes que deben, ordenados de mayor a menor deuda. */

@@ -34,7 +34,7 @@ public class EmpresaController {
     @GetMapping
     public PaginaResponse<EmpresaResponse> listar(@RequestParam(required = false) String texto,
                                                   @RequestParam(required = false) Boolean activo,
-                                                  @ParameterObject @PageableDefault(sort = "id") Pageable pageable) {
+                                                  @ParameterObject @PageableDefault(size = 20, sort = "id") Pageable pageable) {
         return empresaService.listar(texto, activo, pageable);
     }
 

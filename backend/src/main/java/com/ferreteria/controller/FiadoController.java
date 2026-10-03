@@ -46,7 +46,7 @@ public class FiadoController {
             @RequestParam(required = false) Long ubicacionId,
             @RequestParam(required = false) Long clienteId,
             @RequestParam(defaultValue = "false") boolean soloVencidas,
-            @ParameterObject @PageableDefault(sort = "fecha") Pageable pageable) {
+            @ParameterObject @PageableDefault(size = 20, sort = "fecha") Pageable pageable) {
         return fiadoService.listarDeudas(ubicacionId, clienteId, soloVencidas, pageable);
     }
 

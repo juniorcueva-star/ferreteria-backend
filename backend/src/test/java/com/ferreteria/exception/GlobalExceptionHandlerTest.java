@@ -54,4 +54,17 @@ class GlobalExceptionHandlerTest {
         assertThat(respuesta.getBody()).isNotNull();
         assertThat(respuesta.getBody().mensaje()).doesNotContain("detalle interno");
     }
+
+    @Test
+    @DisplayName("Un numero fuera de rango para la columna (SQLState 22003) responde 400")
+    void numeroFueraDeRango() {
+        DataIntegrityViolationException ex = new DataIntegrityViolationException("fallo",
+                new SQLException("ERROR: numeric field overflow", "22003"));
+
+        ResponseEntity<ErrorResponse> respuesta = handler.manejarIntegridad(ex);
+
+        assertThat(respuesta.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(respuesta.getBody()).isNotNull();
+        assertThat(respuesta.getBody().mensaje()).isEqualTo("Algun valor excede el rango permitido");
+    }
 }

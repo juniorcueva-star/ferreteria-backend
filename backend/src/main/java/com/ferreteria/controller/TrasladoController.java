@@ -46,7 +46,7 @@ public class TrasladoController {
             @RequestParam(required = false) EstadoTraslado estado,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta,
-            @ParameterObject @PageableDefault(sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
+            @ParameterObject @PageableDefault(size = 20, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
         return trasladoService.listar(ubicacionId, origenId, destinoId, estado, desde, hasta, pageable);
     }
 

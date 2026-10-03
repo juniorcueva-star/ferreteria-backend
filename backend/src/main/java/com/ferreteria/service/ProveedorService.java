@@ -25,7 +25,7 @@ public class ProveedorService {
         Specification<Proveedor> filtro = Specification.allOf(
                 Especificaciones.contiene(texto, "ruc", "razonSocial", "contacto"),
                 Especificaciones.igual("activo", activo));
-        return PaginaResponse.de(proveedorRepository.findAll(filtro, pageable), ProveedorResponse::desde);
+        return PaginaResponse.de(proveedorRepository.findAll(filtro, Ordenamiento.validar(pageable, "id", "ruc", "razonSocial")), ProveedorResponse::desde);
     }
 
     @Transactional(readOnly = true)

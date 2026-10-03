@@ -21,6 +21,7 @@ import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
+import java.sql.SQLException;
 import java.util.List;
 
 /**
@@ -124,6 +125,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ErrorResponse> manejarIntegridad(DataIntegrityViolationException ex) {
         log.warn("Violacion de integridad: {}", ex.getMostSpecificCause().getMessage());
+        // SQLState 22xxx = dato invalido para la columna (Ej: un numero demasiado grande)
+        if (ex.getMostSpecificCause() instanceof SQLException sql && sql.getSQLState() != null
+                && sql.getSQLState().startsWith("22")) {
+            return responder(CodigoError.SOLICITUD_INVALIDA, "Algun valor excede el rango permitido", List.of());
+        }
         return responder(CodigoError.CONFLICTO_DATOS,
                 "La operacion no se pudo completar porque los datos entran en conflicto con registros existentes",
                 List.of());

@@ -25,7 +25,7 @@ public class CategoriaService {
         Specification<Categoria> filtro = Specification.allOf(
                 Especificaciones.contiene(texto, "nombre"),
                 Especificaciones.igual("activo", activo));
-        return PaginaResponse.de(categoriaRepository.findAll(filtro, pageable), CategoriaResponse::desde);
+        return PaginaResponse.de(categoriaRepository.findAll(filtro, Ordenamiento.validar(pageable, "id", "nombre")), CategoriaResponse::desde);
     }
 
     @Transactional

@@ -65,7 +65,7 @@ public class TrasladoService {
                 Especificaciones.igual("estado", estado),
                 Especificaciones.desde("fechaEnvio", calendario.inicio(desde)),
                 Especificaciones.antesDe("fechaEnvio", calendario.finExclusivo(hasta)));
-        return PaginaResponse.de(trasladoRepository.findAll(filtro, pageable), TrasladoResponse::resumen);
+        return PaginaResponse.de(trasladoRepository.findAll(filtro, Ordenamiento.validar(pageable, "id", "codigo", "fechaEnvio", "estado")), TrasladoResponse::resumen);
     }
 
     @Transactional(readOnly = true)

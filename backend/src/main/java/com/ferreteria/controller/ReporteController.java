@@ -37,7 +37,7 @@ public class ReporteController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta,
             @RequestParam(required = false) Long ubicacionId,
-            @ParameterObject @PageableDefault Pageable pageable) {
+            @ParameterObject @PageableDefault(size = 20) Pageable pageable) {
         return reporteService.ventasPorTienda(desde, hasta, ubicacionId, pageable);
     }
 
@@ -48,7 +48,7 @@ public class ReporteController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta,
             @RequestParam(required = false) Long origenId,
-            @ParameterObject @PageableDefault Pageable pageable) {
+            @ParameterObject @PageableDefault(size = 20) Pageable pageable) {
         return reporteService.trasladosPorTienda(desde, hasta, origenId, pageable);
     }
 
@@ -60,7 +60,7 @@ public class ReporteController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta,
             @RequestParam(required = false) Long ubicacionId,
             @RequestParam(required = false) Long empresaId,
-            @ParameterObject @PageableDefault Pageable pageable) {
+            @ParameterObject @PageableDefault(size = 20) Pageable pageable) {
         return reporteService.comprasPorProveedor(desde, hasta, ubicacionId, empresaId, pageable);
     }
 
@@ -71,14 +71,14 @@ public class ReporteController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta,
             @RequestParam(required = false) Long ubicacionId,
             @RequestParam(defaultValue = "MONTO") ReporteService.OrdenProductos orden,
-            @ParameterObject @PageableDefault Pageable pageable) {
+            @ParameterObject @PageableDefault(size = 20) Pageable pageable) {
         return reporteService.productosMasVendidos(desde, hasta, ubicacionId, orden, pageable);
     }
 
     @Operation(summary = "Stock bajo", description = "Productos con stock menor o igual a su minimo")
     @GetMapping("/stock-bajo")
     public PaginaResponse<StockResponse> stockBajo(@RequestParam(required = false) Long ubicacionId,
-                                                   @ParameterObject @PageableDefault(sort = "producto.nombre") Pageable pageable) {
+                                                   @ParameterObject @PageableDefault(size = 20, sort = "producto.nombre") Pageable pageable) {
         return reporteService.stockBajo(ubicacionId, pageable);
     }
 }

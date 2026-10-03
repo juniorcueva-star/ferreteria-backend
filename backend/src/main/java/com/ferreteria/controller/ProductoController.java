@@ -44,7 +44,7 @@ public class ProductoController {
                                                    @RequestParam(required = false) Long categoriaId,
                                                    @RequestParam(required = false) UnidadBase unidadBase,
                                                    @RequestParam(required = false) Boolean activo,
-                                                   @ParameterObject @PageableDefault(sort = "nombre") Pageable pageable) {
+                                                   @ParameterObject @PageableDefault(size = 20, sort = "nombre") Pageable pageable) {
         return productoService.listar(texto, categoriaId, unidadBase, activo, pageable);
     }
 

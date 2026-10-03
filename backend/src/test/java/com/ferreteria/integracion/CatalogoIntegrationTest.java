@@ -113,6 +113,15 @@ class CatalogoIntegrationTest extends IntegracionTestBase {
 
         mockMvc.perform(get(url.substring(url.indexOf("/imagenes/")))).andExpect(status().isOk());
 
+        // Al reemplazar la foto, la anterior se borra (despues de confirmar la transaccion)
+        String nueva = leer(mockMvc.perform(multipart("/api/productos/{id}/imagen", productoId)
+                        .file(new MockMultipartFile("archivo", "foto2.png", "image/png", PNG))
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isOk()).andReturn(), "$.imagenUrl");
+        assertThat(nueva).isNotEqualTo(url);
+        mockMvc.perform(get(url.substring(url.indexOf("/imagenes/")))).andExpect(status().isNotFound());
+        mockMvc.perform(get(nueva.substring(nueva.indexOf("/imagenes/")))).andExpect(status().isOk());
+
         mockMvc.perform(multipart("/api/productos/{id}/imagen", productoId)
                         .file(new MockMultipartFile("archivo", "virus.png", "image/png", "no soy una imagen".getBytes()))
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))

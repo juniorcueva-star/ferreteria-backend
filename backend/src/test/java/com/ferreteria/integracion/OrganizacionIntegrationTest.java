@@ -91,4 +91,24 @@ class OrganizacionIntegrationTest extends IntegracionTestBase {
         getCon(token, "/api/empresas").andExpect(status().isForbidden());
         getCon(token, "/api/ubicaciones").andExpect(status().isOk());
     }
+
+    @Test
+    @DisplayName("Contrasena de mas de 72 bytes (limite de BCrypt) responde 400 y no 500")
+    void contrasenaMultibyte() throws Exception {
+        postCon(datos.token(datos.admin), "/api/usuarios", Map.of("nombres", "Nino", "username", "nino",
+                "password", "ñ".repeat(40), "rol", "ADMIN"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.codigo").value("VALIDACION"));
+    }
+
+    @Test
+    @DisplayName("Solo se puede ordenar por campos permitidos (no por el hash de la contrasena)")
+    void ordenamientoPermitido() throws Exception {
+        getCon(datos.token(datos.admin), "/api/usuarios?sort=passwordHash")
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.codigo").value("SOLICITUD_INVALIDA"));
+        getCon(datos.token(datos.admin), "/api/usuarios?sort=username,desc")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.contenido[0].username").value("vendedor2"));
+    }
 }

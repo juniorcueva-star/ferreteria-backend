@@ -30,7 +30,7 @@ public class ClienteService {
         Specification<Cliente> filtro = Specification.allOf(
                 Especificaciones.contiene(texto, "nombre", "numeroDocumento", "telefono"),
                 Especificaciones.igual("activo", activo));
-        return PaginaResponse.de(clienteRepository.findAll(filtro, pageable), ClienteResponse::desde);
+        return PaginaResponse.de(clienteRepository.findAll(filtro, Ordenamiento.validar(pageable, "id", "nombre", "numeroDocumento")), ClienteResponse::desde);
     }
 
     @Transactional(readOnly = true)
