@@ -13,7 +13,7 @@ Marca `[x]` cuando un paso este terminado, verificado y con su commit.
 - [x] Paso 6. Manejo global de errores, DTOs y validaciones
 - [x] Paso 7. Seguridad: login, BCrypt, JWT, roles ADMIN/VENDEDOR/ALMACENERO y creacion del usuario admin al arrancar
 - [x] Paso 8. Catalogo: categorias, productos, presentaciones y foto con Cloudinary
-- [ ] Paso 9. Proveedores y compras (entrada al stock y kardex, anulacion de compra)
+- [x] Paso 9. Proveedores y compras (entrada al stock y kardex, anulacion de compra)
 - [ ] Paso 10. Inventario: stock por ubicacion, traslados (enviar y recibir), ajustes y kardex
 - [ ] Paso 11. Clientes y caja (apertura y cierre con cuadre)
 - [ ] Paso 12. Ventas: contado y credito, pago mixto, correlativos, descuento de stock con bloqueo pesimista, anulacion

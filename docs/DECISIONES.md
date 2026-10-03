@@ -85,3 +85,27 @@ Registro de las decisiones de diseno tomadas durante el desarrollo (que se decid
   compras y el kardex los referencian.
 - **D25. Listado de productos con presentaciones** usando `@BatchSize` en la relacion: las presentaciones de toda
   la pagina se cargan en una sola consulta extra (evita el problema N+1 sin paginar en memoria).
+
+## Compras y movimiento de stock (paso 9)
+
+- **D26. Un solo punto modifica el stock: `MovimientoStockService`.** Bloquea la fila con `SELECT ... FOR UPDATE`
+  (bloqueo pesimista), valida que no quede negativa, actualiza y escribe el kardex con el saldo resultante. Exige una
+  transaccion abierta (`Propagation.MANDATORY`): si algo falla despues, se deshace todo junto (stock, kardex y documento).
+- **D27. Orden fijo de bloqueo.** Si una operacion mueve varios productos, las filas se bloquean ordenadas por id de
+  producto. Dos ventas con los mismos productos en distinto orden no pueden bloquearse mutuamente (deadlock).
+  Si un producto aparece en varias lineas se suma en un solo movimiento.
+- **D28. Fila de stock creada con `INSERT ... ON CONFLICT DO NOTHING`.** La primera entrada de un producto en una
+  ubicacion crea su fila en 0 y luego la bloquea; si dos transacciones la crean a la vez no hay error de duplicado.
+- **D29. Precio de compra por presentacion.** En la compra se ingresa la cantidad y el precio tal como vienen en el
+  comprobante (Ej: 2 cajas de 25 kg a S/ 100). El sistema calcula la cantidad base (50 kg), el subtotal (S/ 200) y el
+  costo por unidad base (S/ 4.0000), que se guarda en el detalle y en el kardex.
+- **D30. IGV de compras.** Los precios se ingresan con IGV. Con FACTURA se separa base e IGV (credito fiscal); con
+  boleta, nota de venta o sin comprobante el IGV no es deducible y todo queda como subtotal (IGV 0).
+- **D31. Comprobante duplicado.** No se puede registrar dos veces el mismo `serieNumero` del mismo proveedor mientras
+  la compra este REGISTRADA (comparacion sin importar mayusculas).
+- **D32. Anulacion de compra (solo ADMIN, con motivo).** Retira del stock lo que entro (kardex `ANULACION_COMPRA` con
+  el motivo) y agrega "ANULADA: motivo" a la observacion (no hay columna de motivo en V1 y no hacia falta una
+  migracion). Si esa mercaderia ya se vendio o traslado y no alcanza el stock, la anulacion se rechaza con
+  `STOCK_INSUFICIENTE`: primero hay que corregir con un ajuste.
+- **D33. Quien compra:** ADMIN (indicando la ubicacion) y ALMACENERO (solo en su almacen). El ADMIN puede comprar
+  directo a una tienda.
