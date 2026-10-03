@@ -64,6 +64,10 @@ app:
     # Se crea al arrancar si no existe ningun ADMIN activo
     username: ${ADMIN_USERNAME:admin}
     password: ${ADMIN_PASSWORD:}
+  imagenes:
+    # Opcional. Si se configura, las fotos se suben a Cloudinary; si no, se guardan en la carpeta local.
+    cloudinary-url: ${CLOUDINARY_URL:}
+    directorio: ${IMAGENES_DIRECTORIO:./imagenes}
   # Zona horaria para "un dia" en los reportes y cierres
   zona-horaria: America/Lima
   cors:

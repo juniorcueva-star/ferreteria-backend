@@ -65,3 +65,23 @@ Registro de las decisiones de diseno tomadas durante el desarrollo (que se decid
   cualquier usuario autenticado: su nombre no es un dato sensible y se necesita, por ejemplo, para ver el destino
   de un traslado. No se borran registros: se desactivan (`activo=false`) para no romper el historial.
 - **D19. CORS** configurable con `CORS_ORIGENES` (por defecto los puertos tipicos de Vite y React en localhost).
+
+## Catalogo (paso 8)
+
+- **D20. Producto y presentaciones se crean juntos.** Un producto nace con al menos una presentacion; si ninguna
+  se marca como principal, la primera lo es. Siempre hay exactamente una principal y activa: para cambiarla se
+  marca otra como principal (la anterior se desmarca sola). Antes de marcar la nueva se guarda el cambio de la
+  anterior, porque el indice unico parcial `uq_presentacion_principal` no permite dos principales ni por un instante.
+- **D21. La unidad base no se puede cambiar** despues de crear el producto: el stock y el kardex ya estan
+  guardados en esa unidad.
+- **D22. Productos por UNIDAD solo aceptan factores enteros** (no existe "media unidad" de un perno); los productos
+  por KILO o METRO si aceptan fracciones (medio kilo = 0.5).
+- **D23. Fotos con almacenamiento intercambiable** (`AlmacenImagenes`): si existe `CLOUDINARY_URL` se usa
+  Cloudinary; si no, se guardan en la carpeta `./imagenes` (`IMAGENES_DIRECTORIO`) y se publican en `/imagenes/**`.
+  Asi el sistema funciona sin cuenta de Cloudinary. El tipo de archivo se reconoce por sus primeros bytes (no por el
+  Content-Type que manda el cliente), se aceptan JPG, PNG y WEBP de hasta 2 MB y el nombre del archivo lo genera
+  el sistema (UUID), para que nadie pueda escribir en otra ruta.
+- **D24. Nada se borra.** Productos, presentaciones y categorias se desactivan (`activo=false`) porque las ventas,
+  compras y el kardex los referencian.
+- **D25. Listado de productos con presentaciones** usando `@BatchSize` en la relacion: las presentaciones de toda
+  la pagina se cargan en una sola consulta extra (evita el problema N+1 sin paginar en memoria).

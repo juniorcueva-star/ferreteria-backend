@@ -18,6 +18,7 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -78,8 +79,10 @@ public class Producto {
     private OffsetDateTime updatedAt;
 
     // Formas de vender el producto (unidad, ciento, kilo, rollo...)
+    // BatchSize: al listar una pagina de productos, sus presentaciones se cargan en una sola consulta
     @OneToMany(mappedBy = "producto", cascade = CascadeType.ALL)
     @OrderBy("id")
+    @BatchSize(size = 100)
     private List<Presentacion> presentaciones = new ArrayList<>();
 
     public void agregarPresentacion(Presentacion presentacion) {

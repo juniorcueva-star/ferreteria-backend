@@ -15,3 +15,5 @@ app:
   admin:
     username: admin
     password: Admin-Pruebas-123
+  imagenes:
+    directorio: target/imagenes-pruebas
