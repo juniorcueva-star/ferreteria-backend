@@ -13,8 +13,11 @@ import com.ferreteria.repository.ProductoRepository;
 import com.ferreteria.repository.UbicacionRepository;
 import com.ferreteria.repository.UsuarioRepository;
 import com.ferreteria.security.AccesoUbicacionService;
+import com.ferreteria.util.Montos;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+
+import java.math.BigDecimal;
 
 /**
  * Busquedas que repiten varios services (compras, traslados, ventas): obtiene la entidad y valida que exista
@@ -53,6 +56,18 @@ public class Buscador {
                     + producto.getNombre() + " esta inactiva");
         }
         return presentacion;
+    }
+
+    /** Valida producto y presentacion y calcula la cantidad en unidad base (cantidad x factor). */
+    public ProductoCantidad lineaProducto(Long productoId, Long presentacionId, BigDecimal cantidad) {
+        Producto producto = productoActivo(productoId);
+        Presentacion presentacion = presentacionId == null ? null : presentacionActiva(presentacionId, producto);
+        BigDecimal factor = presentacion == null ? BigDecimal.ONE : presentacion.getFactor();
+        BigDecimal cantidadBase = Montos.cantidad(cantidad.multiply(factor));
+        if (cantidadBase.signum() <= 0) {
+            throw new ReglaNegocioException("La cantidad de " + producto.getNombre() + " es demasiado pequena");
+        }
+        return new ProductoCantidad(producto, presentacion, Montos.cantidad(cantidad), cantidadBase);
     }
 
     public Ubicacion ubicacionActiva(Long id) {

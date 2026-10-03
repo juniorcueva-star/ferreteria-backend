@@ -109,3 +109,24 @@ Registro de las decisiones de diseno tomadas durante el desarrollo (que se decid
   `STOCK_INSUFICIENTE`: primero hay que corregir con un ajuste.
 - **D33. Quien compra:** ADMIN (indicando la ubicacion) y ALMACENERO (solo en su almacen). El ADMIN puede comprar
   directo a una tienda.
+
+## Inventario y traslados (paso 10)
+
+- **D34. Migracion V3: secuencia `traslado_codigo_seq`.** El codigo `TR-000001` debe existir al insertar el
+  traslado (columna NOT NULL UNIQUE). Una secuencia de PostgreSQL da numeros unicos aun con envios simultaneos, sin
+  tablas extra ni doble escritura. Es la unica migracion nueva; V1 y V2 no se tocaron.
+- **D35. Traslado en dos pasos.** Enviar resta del origen; recibir suma en el destino. Mientras esta ENVIADO la
+  mercaderia esta "en camino" y no se puede vender en ninguna de las dos ubicaciones. Solo un traslado ENVIADO se
+  puede anular (devuelve al origen); uno RECIBIDO ya no, se corrige con otro traslado o un ajuste.
+- **D36. Quien hace que en traslados:** enviar y anular, ADMIN o ALMACENERO desde su almacen; recibir, quien trabaja
+  en la ubicacion destino (el vendedor de esa tienda) o el ADMIN. No hay recepcion parcial: si llega menos, se recibe
+  y se registra un ajuste de salida con el motivo.
+- **D37. Ajustes de inventario** (ENTRADA/SALIDA) con motivo obligatorio, solo ADMIN o ALMACENERO en su almacen.
+  Los vendedores no ajustan stock: una rotura en tienda la registra el ADMIN.
+- **D38. Inventario inicial** (solo ADMIN): para cargar el stock con el que se empieza. Solo se permite si el producto
+  no tiene ningun movimiento en esa ubicacion; despues se usan compras o ajustes, para que el kardex no se reescriba.
+- **D39. Visibilidad del stock y kardex:** quien no es ADMIN solo ve su ubicacion (el vendedor no ve el stock del
+  almacen ni de la otra tienda). Es la interpretacion mas estricta de "no ver datos de otra tienda"; si se quiere que
+  el vendedor consulte el almacen se cambia en `InventarioService`.
+- **D40. Fechas de los filtros** (`desde`/`hasta`) son dias de Lima: el dia va de 00:00 a 24:00 hora de Lima
+  aunque el servidor este en UTC (componente `Calendario`).

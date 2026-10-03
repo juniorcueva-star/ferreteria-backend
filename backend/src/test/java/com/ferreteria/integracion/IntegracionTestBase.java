@@ -1,5 +1,7 @@
 package com.ferreteria.integracion;
 
+import com.ferreteria.entity.Producto;
+import com.ferreteria.entity.Ubicacion;
 import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,10 +15,14 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 import tools.jackson.databind.ObjectMapper;
 
+import java.util.List;
+import java.util.Map;
+
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
  * Base de las pruebas de integracion: levanta la aplicacion completa contra PostgreSQL real
@@ -53,6 +59,13 @@ public abstract class IntegracionTestBase {
 
     protected ResultActions deleteCon(String token, String url, Object... vars) throws Exception {
         return mockMvc.perform(delete(url, vars).header(HttpHeaders.AUTHORIZATION, "Bearer " + token));
+    }
+
+    /** Carga stock inicial (en unidad base) con el ADMIN, por la API. */
+    protected void cargarStock(Producto producto, Ubicacion ubicacion, Number cantidad) throws Exception {
+        postCon(datos.token(datos.admin), "/api/inventario/inicial", Map.of("ubicacionId", ubicacion.getId(),
+                "detalles", List.of(Map.of("productoId", producto.getId(), "cantidad", cantidad))))
+                .andExpect(status().isCreated());
     }
 
     /** Lee un valor de la respuesta JSON. Ej: leer(resultado, "$.id"). */

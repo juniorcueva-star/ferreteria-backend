@@ -7,8 +7,6 @@ import com.ferreteria.dto.compras.CompraRequest;
 import com.ferreteria.dto.compras.CompraResponse;
 import com.ferreteria.entity.Compra;
 import com.ferreteria.entity.CompraDetalle;
-import com.ferreteria.entity.Presentacion;
-import com.ferreteria.entity.Producto;
 import com.ferreteria.entity.Proveedor;
 import com.ferreteria.entity.Usuario;
 import com.ferreteria.entity.enums.EstadoCompra;
@@ -132,21 +130,17 @@ public class CompraService {
      * cantidad base = cantidad x factor; subtotal = cantidad x precio; costo por unidad base = precio / factor.
      */
     private CompraDetalle crearDetalle(CompraDetalleRequest request) {
-        Producto producto = buscador.productoActivo(request.productoId());
-        Presentacion presentacion = request.presentacionId() == null
-                ? null : buscador.presentacionActiva(request.presentacionId(), producto);
-        BigDecimal factor = presentacion == null ? BigDecimal.ONE : presentacion.getFactor();
+        ProductoCantidad linea = buscador.lineaProducto(request.productoId(), request.presentacionId(),
+                request.cantidad());
+        BigDecimal factor = linea.presentacion() == null ? BigDecimal.ONE : linea.presentacion().getFactor();
 
         CompraDetalle detalle = new CompraDetalle();
-        detalle.setProducto(producto);
-        detalle.setPresentacion(presentacion);
-        detalle.setCantidad(Montos.cantidad(request.cantidad()));
-        detalle.setCantidadBase(Montos.cantidad(request.cantidad().multiply(factor)));
+        detalle.setProducto(linea.producto());
+        detalle.setPresentacion(linea.presentacion());
+        detalle.setCantidad(linea.cantidad());
+        detalle.setCantidadBase(linea.cantidadBase());
         detalle.setSubtotal(Montos.dinero(request.cantidad().multiply(request.precioUnitario())));
         detalle.setCostoUnitario(request.precioUnitario().divide(factor, 4, RoundingMode.HALF_UP));
-        if (detalle.getCantidadBase().signum() <= 0) {
-            throw new ReglaNegocioException("La cantidad de " + producto.getNombre() + " es demasiado pequena");
-        }
         return detalle;
     }
 
