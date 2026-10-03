@@ -20,4 +20,4 @@ Marca `[x]` cuando un paso este terminado, verificado y con su commit.
 - [x] Paso 13. Fiado: abonos y reporte de deudores
 - [x] Paso 14. Reportes: ventas por tienda, traslados por tienda, compras por proveedor, stock bajo, productos mas vendidos
 - [x] Paso 15. Swagger completo y pruebas con JUnit 5 y Mockito
-- [ ] Paso 16. Dockerfile, GitHub Actions y despliegue en Railway
+- [ ] Paso 16. Dockerfile, GitHub Actions y despliegue en Railway (pospuesto: por ahora el sistema se usa solo en local, ver docs/PENDIENTES.md)
