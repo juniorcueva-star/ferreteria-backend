@@ -54,11 +54,13 @@ class OrganizacionRepositoryTest {
     @Test
     @DisplayName("El almacen se puede guardar sin empresa (es compartido)")
     void almacenSinEmpresa() {
-        ubicacionRepository.saveAndFlush(nuevaUbicacion("Almacen Test", TipoUbicacion.ALMACEN, null));
+        Ubicacion almacen = ubicacionRepository.saveAndFlush(nuevaUbicacion("Almacen Test", TipoUbicacion.ALMACEN, null));
+        entityManager.clear();
 
-        assertThat(ubicacionRepository.findByTipoAndActivoTrue(TipoUbicacion.ALMACEN))
-                .extracting(Ubicacion::getNombre)
-                .contains("Almacen Test");
+        Ubicacion encontrado = ubicacionRepository.findById(almacen.getId()).orElseThrow();
+        assertThat(encontrado.getTipo()).isEqualTo(TipoUbicacion.ALMACEN);
+        assertThat(encontrado.getEmpresa()).isNull();
+        assertThat(ubicacionRepository.existsByNombre("Almacen Test")).isTrue();
     }
 
     @Test
