@@ -15,7 +15,7 @@ Marca `[x]` cuando un paso este terminado, verificado y con su commit.
 - [x] Paso 8. Catalogo: categorias, productos, presentaciones y foto con Cloudinary
 - [x] Paso 9. Proveedores y compras (entrada al stock y kardex, anulacion de compra)
 - [x] Paso 10. Inventario: stock por ubicacion, traslados (enviar y recibir), ajustes y kardex
-- [ ] Paso 11. Clientes y caja (apertura y cierre con cuadre)
+- [x] Paso 11. Clientes y caja (apertura y cierre con cuadre)
 - [ ] Paso 12. Ventas: contado y credito, pago mixto, correlativos, descuento de stock con bloqueo pesimista, anulacion
 - [ ] Paso 13. Fiado: abonos y reporte de deudores
 - [ ] Paso 14. Reportes: ventas por tienda, traslados por tienda, compras por proveedor, stock bajo, productos mas vendidos

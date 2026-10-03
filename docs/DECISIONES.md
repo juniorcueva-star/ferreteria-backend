@@ -130,3 +130,21 @@ Registro de las decisiones de diseno tomadas durante el desarrollo (que se decid
   el vendedor consulte el almacen se cambia en `InventarioService`.
 - **D40. Fechas de los filtros** (`desde`/`hasta`) son dias de Lima: el dia va de 00:00 a 24:00 hora de Lima
   aunque el servidor este en UTC (componente `Calendario`).
+
+## Clientes y caja (paso 11)
+
+- **D41. Clientes compartidos.** La tabla cliente no tiene tienda: un cliente puede comprar en ambas tiendas.
+  Lo que si es por tienda son sus deudas (ventas a credito), que se filtran por la tienda de la venta.
+  Pueden registrarlos ADMIN y VENDEDOR. El documento se valida con las mismas reglas del CHECK `ck_cliente_doc`
+  (DNI 8 digitos, RUC 11, CE obligatorio, NINGUNO sin numero) para dar un mensaje claro antes de llegar a la BD.
+- **D42. Una caja abierta por usuario y solo en una tienda.** El vendedor abre en su tienda; el ADMIN puede abrir
+  indicando la tienda (por ejemplo, para cubrir un turno). El indice unico parcial `uq_caja_abierta_usuario` es la
+  ultima barrera si llegan dos aperturas a la vez.
+- **D43. Cuadre de caja:** efectivo esperado = monto de apertura + pagos VALIDOS en efectivo de esa caja (ventas al
+  contado, adelantos de fiado y abonos). Los pagos con Yape, tarjeta, etc. se informan por metodo pero no cuentan
+  para el efectivo. Diferencia = contado - esperado (negativo = falta dinero).
+- **D44. Cierre sin carreras:** las ventas y abonos toman un bloqueo compartido (`FOR SHARE`) de la caja y el cierre
+  un bloqueo exclusivo. Si se cierra mientras se registra una venta, el cierre espera a que termine y la incluye; una
+  venta que llega despues del cierre ve la caja CERRADA y se rechaza.
+- **D45. Solo el duenio de la caja (o el ADMIN) la cierra.** Los vendedores pueden consultar las cajas de su tienda,
+  no las de la otra.
