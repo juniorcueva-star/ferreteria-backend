@@ -249,3 +249,12 @@ Registro de las decisiones de diseno tomadas durante el desarrollo (que se decid
 - **D76. Una tienda solo recibe compras con su propio RUC.** El almacen, compartido, recibe compras de ambas empresas.
 - **D77. Rutas no listadas cerradas:** una ruta que no esta en la tabla de permisos responde 403 a un usuario
   autenticado (y 401 sin token), en vez de 404. Es mas seguro: no revela que rutas existen.
+
+## Frontend web (repositorio ferreteria-frontend)
+
+- **D78. Filtro `productoIds` en `GET /api/inventario/stock`.** La pantalla de Productos del frontend muestra una
+  columna de stock por cada ubicacion para los productos de la pagina. Sin este filtro habia que pedir el stock
+  producto por producto (20 peticiones por pagina). Ahora se pide en una sola consulta
+  (`?productoIds=1,2,3&size=100`). Es un cambio minimo: un parametro opcional, sin cambios de esquema; respeta la
+  regla por tienda (el vendedor sigue viendo solo su ubicacion) y acepta como maximo 100 productos (422 si se pasa).
+  Prueba: `InventarioIntegrationTest.stockDeVariosProductos`.
