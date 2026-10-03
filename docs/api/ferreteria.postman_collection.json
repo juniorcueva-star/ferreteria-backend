@@ -1,0 +1,1455 @@
+{
+  "info": {
+    "_postman_id": "b7613840-e576-515d-a67e-1aedc9423887",
+    "name": "API Ferreteria",
+    "description": "Recorrido completo con los datos de demostracion. Ejecutar en orden (Run collection).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Fecha de hoy (AAAA-MM-DD) en la hora local de la PC",
+          "const d = new Date(); const p = n => String(n).padStart(2, '0');",
+          "pm.collectionVariables.set('hoy', `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`);"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Autenticacion",
+      "item": [
+        {
+          "name": "Login ADMIN",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api/auth/login",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"Admin123!\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) pm.collectionVariables.set('token_admin', pm.response.json().token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login VENDEDOR (Tienda Centro)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api/auth/login",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"vendedor1\",\n  \"password\": \"Demo123!\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) pm.collectionVariables.set('token_vendedor', pm.response.json().token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login ALMACENERO",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api/auth/login",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"almacen1\",\n  \"password\": \"Demo123!\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) pm.collectionVariables.set('token_almacen', pm.response.json().token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Mis datos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_vendedor}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api/auth/me",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "me"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2. Organizacion",
+      "item": [
+        {
+          "name": "Listar ubicaciones (1 almacen, 2 tiendas)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api/ubicaciones",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "ubicaciones"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar usuarios (solo ADMIN)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api/usuarios?page=0&size=20",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "usuarios"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "3. Catalogo",
+      "item": [
+        {
+          "name": "Buscar productos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_vendedor}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api/productos?texto=clavo",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "productos"
+              ],
+              "query": [
+                {
+                  "key": "texto",
+                  "value": "clavo"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear producto con presentaciones",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api/productos",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "productos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"codigo\": \"SIL-280\",\n  \"nombre\": \"Silicona transparente 280 ml\",\n  \"marca\": \"Sika\",\n  \"categoriaId\": 9,\n  \"unidadBase\": \"UNIDAD\",\n  \"presentaciones\": [\n    {\n      \"nombre\": \"Unidad\",\n      \"factor\": 1,\n      \"precioVenta\": 12.0,\n      \"codigoBarras\": \"7751234000011\"\n    },\n    {\n      \"nombre\": \"Caja x 12\",\n      \"factor\": 12,\n      \"precioVenta\": 130.0\n    }\n  ]\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) pm.collectionVariables.set('producto_id', pm.response.json().id);",
+                  "if (pm.response.code === 201) pm.collectionVariables.set('pres_unidad_id', pm.response.json().presentaciones[0].id);",
+                  "if (pm.response.code === 201) pm.collectionVariables.set('pres_caja_id', pm.response.json().presentaciones[1].id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Buscar por codigo de barras",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_vendedor}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api/productos/codigo-barras/7751234000011",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "productos",
+                "codigo-barras",
+                "7751234000011"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "4. Compras",
+      "item": [
+        {
+          "name": "Listar proveedores",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_almacen}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api/proveedores",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "proveedores"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Registrar compra (entra al almacen)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_almacen}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api/compras",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "compras"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"empresaId\": 1,\n  \"proveedorId\": 1,\n  \"tipoComprobante\": \"FACTURA\",\n  \"serieNumero\": \"F001-4589\",\n  \"fechaEmision\": \"{{hoy}}\",\n  \"detalles\": [\n    {\n      \"productoId\": {{producto_id}},\n      \"presentacionId\": {{pres_caja_id}},\n      \"cantidad\": 5,\n      \"precioUnitario\": 100.0\n    },\n    {\n      \"productoId\": 13,\n      \"presentacionId\": 23,\n      \"cantidad\": 2,\n      \"precioUnitario\": 90.0\n    }\n  ]\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) pm.collectionVariables.set('compra_id', pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "5. Inventario",
+      "item": [
+        {
+          "name": "Stock del almacen",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_almacen}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api/inventario/stock?ubicacionId=1&texto=silicona",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "inventario",
+                "stock"
+              ],
+              "query": [
+                {
+                  "key": "ubicacionId",
+                  "value": "1"
+                },
+                {
+                  "key": "texto",
+                  "value": "silicona"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Enviar traslado almacen -> Tienda Centro",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_almacen}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api/traslados",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "traslados"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"destinoId\": 2,\n  \"observacion\": \"Reposicion semanal\",\n  \"detalles\": [\n    {\n      \"productoId\": {{producto_id}},\n      \"presentacionId\": {{pres_caja_id}},\n      \"cantidad\": 2\n    },\n    {\n      \"productoId\": 13,\n      \"cantidad\": 50\n    }\n  ]\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) pm.collectionVariables.set('traslado_id', pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Recibir traslado (vendedor de la tienda destino)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_vendedor}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api/traslados/{{traslado_id}}/recibir",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "traslados",
+                "{{traslado_id}}",
+                "recibir"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ajuste de inventario (rotura)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_almacen}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api/inventario/ajustes",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "inventario",
+                "ajustes"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"SALIDA\",\n  \"motivo\": \"Rotura al descargar\",\n  \"detalles\": [\n    {\n      \"productoId\": 9,\n      \"cantidad\": 2\n    }\n  ]\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "6. Caja y ventas",
+      "item": [
+        {
+          "name": "Abrir caja",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_vendedor}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api/cajas/abrir",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "cajas",
+                "abrir"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"montoApertura\": 100.0\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) pm.collectionVariables.set('caja_id', pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Venta al contado (paga 50, vuelto 1)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_vendedor}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api/ventas",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "ventas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"condicion\": \"CONTADO\",\n  \"detalles\": [\n    {\n      \"presentacionId\": {{pres_unidad_id}},\n      \"cantidad\": 3\n    },\n    {\n      \"presentacionId\": 22,\n      \"cantidad\": 10\n    }\n  ],\n  \"pagos\": [\n    {\n      \"metodoPago\": \"EFECTIVO\",\n      \"monto\": 50.0\n    }\n  ]\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) pm.collectionVariables.set('venta_contado_id', pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Venta al credito con adelanto por Yape",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_vendedor}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api/ventas",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "ventas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"condicion\": \"CREDITO\",\n  \"clienteId\": 1,\n  \"detalles\": [\n    {\n      \"presentacionId\": {{pres_caja_id}},\n      \"cantidad\": 1\n    }\n  ],\n  \"pagos\": [\n    {\n      \"metodoPago\": \"YAPE\",\n      \"monto\": 30.0,\n      \"numeroOperacion\": \"00123456\"\n    }\n  ]\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) pm.collectionVariables.set('venta_credito_id', pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Venta para anular",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_vendedor}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api/ventas",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "ventas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"condicion\": \"CONTADO\",\n  \"detalles\": [\n    {\n      \"presentacionId\": 11,\n      \"cantidad\": 1\n    }\n  ],\n  \"pagos\": [\n    {\n      \"metodoPago\": \"EFECTIVO\",\n      \"monto\": 35.0\n    }\n  ]\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) pm.collectionVariables.set('venta_anular_id', pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Anular venta (devuelve stock)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_vendedor}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api/ventas/{{venta_anular_id}}/anular",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "ventas",
+                "{{venta_anular_id}}",
+                "anular"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"motivo\": \"El cliente cambio de opinion\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ver venta con detalle y pagos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_vendedor}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api/ventas/{{venta_credito_id}}",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "ventas",
+                "{{venta_credito_id}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "7. Fiado",
+      "item": [
+        {
+          "name": "Abono en efectivo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_vendedor}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api/fiado/ventas/{{venta_credito_id}}/abonos",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "fiado",
+                "ventas",
+                "{{venta_credito_id}}",
+                "abonos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pagos\": [\n    {\n      \"metodoPago\": \"EFECTIVO\",\n      \"monto\": 40.0\n    }\n  ]\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Deudas pendientes",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_vendedor}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api/fiado/deudas",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "fiado",
+                "deudas"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reporte de deudores",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_vendedor}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api/fiado/deudores",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "fiado",
+                "deudores"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "8. Cierre de caja",
+      "item": [
+        {
+          "name": "Mi caja con resumen (esperado 189.00)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_vendedor}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api/cajas/actual",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "cajas",
+                "actual"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cerrar caja con cuadre",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_vendedor}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api/cajas/{{caja_id}}/cerrar",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "cajas",
+                "{{caja_id}}",
+                "cerrar"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"efectivoContado\": 189.0\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "9. Reportes",
+      "item": [
+        {
+          "name": "Kardex del producto",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api/inventario/kardex?productoId={{producto_id}}",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "inventario",
+                "kardex"
+              ],
+              "query": [
+                {
+                  "key": "productoId",
+                  "value": "{{producto_id}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ventas por tienda",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api/reportes/ventas-por-tienda?desde={{hoy}}&hasta={{hoy}}",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "reportes",
+                "ventas-por-tienda"
+              ],
+              "query": [
+                {
+                  "key": "desde",
+                  "value": "{{hoy}}"
+                },
+                {
+                  "key": "hasta",
+                  "value": "{{hoy}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Productos mas vendidos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api/reportes/productos-mas-vendidos?desde={{hoy}}&hasta={{hoy}}&orden=MONTO",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "reportes",
+                "productos-mas-vendidos"
+              ],
+              "query": [
+                {
+                  "key": "desde",
+                  "value": "{{hoy}}"
+                },
+                {
+                  "key": "hasta",
+                  "value": "{{hoy}}"
+                },
+                {
+                  "key": "orden",
+                  "value": "MONTO"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Traslados por tienda",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_almacen}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api/reportes/traslados-por-tienda?desde={{hoy}}&hasta={{hoy}}",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "reportes",
+                "traslados-por-tienda"
+              ],
+              "query": [
+                {
+                  "key": "desde",
+                  "value": "{{hoy}}"
+                },
+                {
+                  "key": "hasta",
+                  "value": "{{hoy}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Compras por proveedor",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api/reportes/compras-por-proveedor?desde={{hoy}}&hasta={{hoy}}",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "reportes",
+                "compras-por-proveedor"
+              ],
+              "query": [
+                {
+                  "key": "desde",
+                  "value": "{{hoy}}"
+                },
+                {
+                  "key": "hasta",
+                  "value": "{{hoy}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Stock bajo",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api/reportes/stock-bajo",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "reportes",
+                "stock-bajo"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "10. Seguridad",
+      "item": [
+        {
+          "name": "Sin token -> 401",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base}}/api/ventas",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "ventas"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Rol incorrecto -> 403",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_vendedor}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api/usuarios",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "usuarios"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Datos de otra tienda -> 403",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_vendedor}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api/ventas?ubicacionId=3",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "ventas"
+              ],
+              "query": [
+                {
+                  "key": "ubicacionId",
+                  "value": "3"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "hoy",
+      "value": ""
+    }
+  ]
+}

@@ -1,0 +1,437 @@
+# Coleccion de peticiones de la API Ferreteria (extension REST Client de VS Code).
+# Requiere la app levantada con los datos de demostracion (perfil dev) y la base recien creada.
+# Ejecutar las peticiones EN ORDEN con "Send Request": cada una guarda los ids/tokens que usan las siguientes.
+
+@base = http://localhost:8080
+@hoy = {{$localDatetime 'YYYY-MM-DD'}}
+
+
+######################################################################
+# 1. Autenticacion
+######################################################################
+
+###
+# Login ADMIN (espera 200)
+# @name r01
+POST {{base}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "Admin123!"
+}
+
+###
+# Login VENDEDOR (Tienda Centro) (espera 200)
+# @name r02
+POST {{base}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "vendedor1",
+  "password": "Demo123!"
+}
+
+###
+# Login ALMACENERO (espera 200)
+# @name r03
+POST {{base}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "almacen1",
+  "password": "Demo123!"
+}
+
+###
+# Mis datos (espera 200)
+# @name r04
+GET {{base}}/api/auth/me
+Authorization: Bearer {{r02.response.body.$.token}}
+
+
+######################################################################
+# 2. Organizacion
+######################################################################
+
+###
+# Listar ubicaciones (1 almacen, 2 tiendas) (espera 200)
+# @name r05
+GET {{base}}/api/ubicaciones
+Authorization: Bearer {{r01.response.body.$.token}}
+
+###
+# Listar usuarios (solo ADMIN) (espera 200)
+# @name r06
+GET {{base}}/api/usuarios?page=0&size=20
+Authorization: Bearer {{r01.response.body.$.token}}
+
+
+######################################################################
+# 3. Catalogo
+######################################################################
+
+###
+# Buscar productos (espera 200)
+# @name r07
+GET {{base}}/api/productos?texto=clavo
+Authorization: Bearer {{r02.response.body.$.token}}
+
+###
+# Crear producto con presentaciones (espera 201)
+# @name r08
+POST {{base}}/api/productos
+Authorization: Bearer {{r01.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "codigo": "SIL-280",
+  "nombre": "Silicona transparente 280 ml",
+  "marca": "Sika",
+  "categoriaId": 9,
+  "unidadBase": "UNIDAD",
+  "presentaciones": [
+    {
+      "nombre": "Unidad",
+      "factor": 1,
+      "precioVenta": 12.0,
+      "codigoBarras": "7751234000011"
+    },
+    {
+      "nombre": "Caja x 12",
+      "factor": 12,
+      "precioVenta": 130.0
+    }
+  ]
+}
+
+###
+# Buscar por codigo de barras (espera 200)
+# @name r09
+GET {{base}}/api/productos/codigo-barras/7751234000011
+Authorization: Bearer {{r02.response.body.$.token}}
+
+
+######################################################################
+# 4. Compras
+######################################################################
+
+###
+# Listar proveedores (espera 200)
+# @name r10
+GET {{base}}/api/proveedores
+Authorization: Bearer {{r03.response.body.$.token}}
+
+###
+# Registrar compra (entra al almacen) (espera 201)
+# @name r11
+POST {{base}}/api/compras
+Authorization: Bearer {{r03.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "empresaId": 1,
+  "proveedorId": 1,
+  "tipoComprobante": "FACTURA",
+  "serieNumero": "F001-4589",
+  "fechaEmision": "{{hoy}}",
+  "detalles": [
+    {
+      "productoId": {{r08.response.body.$.id}},
+      "presentacionId": {{r08.response.body.$.presentaciones[1].id}},
+      "cantidad": 5,
+      "precioUnitario": 100.0
+    },
+    {
+      "productoId": 13,
+      "presentacionId": 23,
+      "cantidad": 2,
+      "precioUnitario": 90.0
+    }
+  ]
+}
+
+
+######################################################################
+# 5. Inventario
+######################################################################
+
+###
+# Stock del almacen (espera 200)
+# @name r12
+GET {{base}}/api/inventario/stock?ubicacionId=1&texto=silicona
+Authorization: Bearer {{r03.response.body.$.token}}
+
+###
+# Enviar traslado almacen -> Tienda Centro (espera 201)
+# @name r13
+POST {{base}}/api/traslados
+Authorization: Bearer {{r03.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "destinoId": 2,
+  "observacion": "Reposicion semanal",
+  "detalles": [
+    {
+      "productoId": {{r08.response.body.$.id}},
+      "presentacionId": {{r08.response.body.$.presentaciones[1].id}},
+      "cantidad": 2
+    },
+    {
+      "productoId": 13,
+      "cantidad": 50
+    }
+  ]
+}
+
+###
+# Recibir traslado (vendedor de la tienda destino) (espera 200)
+# @name r14
+POST {{base}}/api/traslados/{{r13.response.body.$.id}}/recibir
+Authorization: Bearer {{r02.response.body.$.token}}
+
+###
+# Ajuste de inventario (rotura) (espera 201)
+# @name r15
+POST {{base}}/api/inventario/ajustes
+Authorization: Bearer {{r03.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "tipo": "SALIDA",
+  "motivo": "Rotura al descargar",
+  "detalles": [
+    {
+      "productoId": 9,
+      "cantidad": 2
+    }
+  ]
+}
+
+
+######################################################################
+# 6. Caja y ventas
+######################################################################
+
+###
+# Abrir caja (espera 201)
+# @name r16
+POST {{base}}/api/cajas/abrir
+Authorization: Bearer {{r02.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "montoApertura": 100.0
+}
+
+###
+# Venta al contado (paga 50, vuelto 1) (espera 201)
+# @name r17
+POST {{base}}/api/ventas
+Authorization: Bearer {{r02.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "condicion": "CONTADO",
+  "detalles": [
+    {
+      "presentacionId": {{r08.response.body.$.presentaciones[0].id}},
+      "cantidad": 3
+    },
+    {
+      "presentacionId": 22,
+      "cantidad": 10
+    }
+  ],
+  "pagos": [
+    {
+      "metodoPago": "EFECTIVO",
+      "monto": 50.0
+    }
+  ]
+}
+
+###
+# Venta al credito con adelanto por Yape (espera 201)
+# @name r18
+POST {{base}}/api/ventas
+Authorization: Bearer {{r02.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "condicion": "CREDITO",
+  "clienteId": 1,
+  "detalles": [
+    {
+      "presentacionId": {{r08.response.body.$.presentaciones[1].id}},
+      "cantidad": 1
+    }
+  ],
+  "pagos": [
+    {
+      "metodoPago": "YAPE",
+      "monto": 30.0,
+      "numeroOperacion": "00123456"
+    }
+  ]
+}
+
+###
+# Venta para anular (espera 201)
+# @name r19
+POST {{base}}/api/ventas
+Authorization: Bearer {{r02.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "condicion": "CONTADO",
+  "detalles": [
+    {
+      "presentacionId": 11,
+      "cantidad": 1
+    }
+  ],
+  "pagos": [
+    {
+      "metodoPago": "EFECTIVO",
+      "monto": 35.0
+    }
+  ]
+}
+
+###
+# Anular venta (devuelve stock) (espera 200)
+# @name r20
+POST {{base}}/api/ventas/{{r19.response.body.$.id}}/anular
+Authorization: Bearer {{r02.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "motivo": "El cliente cambio de opinion"
+}
+
+###
+# Ver venta con detalle y pagos (espera 200)
+# @name r21
+GET {{base}}/api/ventas/{{r18.response.body.$.id}}
+Authorization: Bearer {{r02.response.body.$.token}}
+
+
+######################################################################
+# 7. Fiado
+######################################################################
+
+###
+# Abono en efectivo (espera 201)
+# @name r22
+POST {{base}}/api/fiado/ventas/{{r18.response.body.$.id}}/abonos
+Authorization: Bearer {{r02.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "pagos": [
+    {
+      "metodoPago": "EFECTIVO",
+      "monto": 40.0
+    }
+  ]
+}
+
+###
+# Deudas pendientes (espera 200)
+# @name r23
+GET {{base}}/api/fiado/deudas
+Authorization: Bearer {{r02.response.body.$.token}}
+
+###
+# Reporte de deudores (espera 200)
+# @name r24
+GET {{base}}/api/fiado/deudores
+Authorization: Bearer {{r02.response.body.$.token}}
+
+
+######################################################################
+# 8. Cierre de caja
+######################################################################
+
+###
+# Mi caja con resumen (esperado 189.00) (espera 200)
+# @name r25
+GET {{base}}/api/cajas/actual
+Authorization: Bearer {{r02.response.body.$.token}}
+
+###
+# Cerrar caja con cuadre (espera 200)
+# @name r26
+POST {{base}}/api/cajas/{{r16.response.body.$.id}}/cerrar
+Authorization: Bearer {{r02.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "efectivoContado": 189.0
+}
+
+
+######################################################################
+# 9. Reportes
+######################################################################
+
+###
+# Kardex del producto (espera 200)
+# @name r27
+GET {{base}}/api/inventario/kardex?productoId={{r08.response.body.$.id}}
+Authorization: Bearer {{r01.response.body.$.token}}
+
+###
+# Ventas por tienda (espera 200)
+# @name r28
+GET {{base}}/api/reportes/ventas-por-tienda?desde={{hoy}}&hasta={{hoy}}
+Authorization: Bearer {{r01.response.body.$.token}}
+
+###
+# Productos mas vendidos (espera 200)
+# @name r29
+GET {{base}}/api/reportes/productos-mas-vendidos?desde={{hoy}}&hasta={{hoy}}&orden=MONTO
+Authorization: Bearer {{r01.response.body.$.token}}
+
+###
+# Traslados por tienda (espera 200)
+# @name r30
+GET {{base}}/api/reportes/traslados-por-tienda?desde={{hoy}}&hasta={{hoy}}
+Authorization: Bearer {{r03.response.body.$.token}}
+
+###
+# Compras por proveedor (espera 200)
+# @name r31
+GET {{base}}/api/reportes/compras-por-proveedor?desde={{hoy}}&hasta={{hoy}}
+Authorization: Bearer {{r01.response.body.$.token}}
+
+###
+# Stock bajo (espera 200)
+# @name r32
+GET {{base}}/api/reportes/stock-bajo
+Authorization: Bearer {{r01.response.body.$.token}}
+
+
+######################################################################
+# 10. Seguridad
+######################################################################
+
+###
+# Sin token -> 401 (espera 401)
+# @name r33
+GET {{base}}/api/ventas
+
+###
+# Rol incorrecto -> 403 (espera 403)
+# @name r34
+GET {{base}}/api/usuarios
+Authorization: Bearer {{r02.response.body.$.token}}
+
+###
+# Datos de otra tienda -> 403 (espera 403)
+# @name r35
+GET {{base}}/api/ventas?ubicacionId=3
+Authorization: Bearer {{r02.response.body.$.token}}
+
