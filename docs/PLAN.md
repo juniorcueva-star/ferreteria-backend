@@ -10,7 +10,7 @@ Marca `[x]` cuando un paso este terminado, verificado y con su commit.
   - [x] 5.1 Organizacion: empresa, ubicacion, usuario
   - [x] 5.2 Catalogo e inventario: categoria, producto, presentacion, stock, traslado, traslado_detalle, movimiento_inventario
   - [x] 5.3 Operaciones: proveedor, compra, compra_detalle, cliente, caja_sesion, serie_correlativo, venta, venta_detalle, metodo_pago, pago
-- [ ] Paso 6. Manejo global de errores, DTOs y validaciones
+- [x] Paso 6. Manejo global de errores, DTOs y validaciones
 - [ ] Paso 7. Seguridad: login, BCrypt, JWT, roles ADMIN/VENDEDOR/ALMACENERO y creacion del usuario admin al arrancar
 - [ ] Paso 8. Catalogo: categorias, productos, presentaciones y foto con Cloudinary
 - [ ] Paso 9. Proveedores y compras (entrada al stock y kardex, anulacion de compra)

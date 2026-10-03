@@ -36,6 +36,7 @@ Las pruebas usan PostgreSQL real (no H2), en el esquema `pruebas` de la misma ba
 | `security`    | JWT, usuario autenticado, acceso por tienda                               |
 | `exception`   | Excepciones de negocio y manejador global de errores                      |
 | `config`      | Configuracion (seguridad, OpenAPI, imagenes, datos de demostracion)       |
+| `util`        | Utilidades sin estado (`Montos`: redondeos e IGV)                         |
 
 ## Reglas del dominio que no se deben romper
 

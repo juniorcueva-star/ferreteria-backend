@@ -2,6 +2,11 @@ spring:
   application:
     name: ferreteria-backend
 
+  profiles:
+    # Sin perfil indicado se usa "dev", que carga los datos de demostracion.
+    # Para otro entorno: variable SPRING_PROFILES_ACTIVE (Ej: prod).
+    default: dev
+
   config:
     # En local lee el archivo .env como si fueran propiedades (busca en la carpeta
     # actual y en backend/, por si se ejecuta desde la raiz del proyecto).
@@ -23,6 +28,19 @@ spring:
       ddl-auto: validate
     # Cierra la conexion a la BD al terminar el servicio, no al terminar la respuesta HTTP
     open-in-view: false
+
+  data:
+    web:
+      pageable:
+        # Ningun listado devuelve todo: 20 por defecto y como maximo 100 por pagina
+        default-page-size: 20
+        max-page-size: 100
+
+  servlet:
+    multipart:
+      # Fotos de productos
+      max-file-size: 2MB
+      max-request-size: 3MB
 
   flyway:
     # Ejecuta los scripts de src/main/resources/db/migration al arrancar
