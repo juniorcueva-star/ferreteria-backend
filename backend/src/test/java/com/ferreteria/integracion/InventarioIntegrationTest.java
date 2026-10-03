@@ -183,7 +183,7 @@ class InventarioIntegrationTest extends IntegracionTestBase {
         Long proveedorId = datos.proveedor("20666666661").getId();
         Long compraId = leerId(postCon(datos.token(datos.almacenero), "/api/compras", Map.of(
                 "empresaId", datos.empresa1.getId(), "proveedorId", proveedorId, "tipoComprobante", "BOLETA",
-                "fechaEmision", LocalDate.now().toString(),
+                "fechaEmision", hoyLima().toString(),
                 "detalles", List.of(Map.of("productoId", perno.getId(), "cantidad", 100, "precioUnitario", 0.3))))
                 .andReturn(), "$.id");
         postCon(datos.token(datos.almacenero), "/api/traslados", Map.of("destinoId", datos.tienda1.getId(),

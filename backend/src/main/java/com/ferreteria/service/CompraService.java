@@ -48,11 +48,13 @@ public class CompraService {
     private final MovimientoStockService movimientoStock;
     private final AccesoUbicacionService accesoUbicacion;
     private final Buscador buscador;
+    private final Calendario calendario;
 
     @Transactional(readOnly = true)
     public PaginaResponse<CompraResponse> listar(Long proveedorId, Long empresaId, Long ubicacionId,
                                                  EstadoCompra estado, LocalDate desde, LocalDate hasta,
                                                  Pageable pageable) {
+        calendario.validarRango(desde, hasta);
         Specification<Compra> filtro = Specification.allOf(
                 Especificaciones.igual("proveedor.id", proveedorId),
                 Especificaciones.igual("empresa.id", empresaId),
@@ -73,6 +75,9 @@ public class CompraService {
     @Transactional
     public CompraResponse registrar(CompraRequest request) {
         Long ubicacionId = accesoUbicacion.ubicacionParaOperar(request.ubicacionId());
+        if (request.fechaEmision().isAfter(calendario.hoy())) {
+            throw new ReglaNegocioException("La fecha de emision no puede ser futura");
+        }
         String serieNumero = request.serieNumero() == null || request.serieNumero().isBlank()
                 ? null : request.serieNumero().trim().toUpperCase();
         if (serieNumero != null && compraRepository.existsByProveedorIdAndSerieNumeroIgnoreCaseAndEstado(

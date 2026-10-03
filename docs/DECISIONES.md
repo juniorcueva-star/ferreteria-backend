@@ -221,3 +221,16 @@ Registro de las decisiones de diseno tomadas durante el desarrollo (que se decid
   cuadre de caja, abonos, movimiento de stock, permisos por tienda); de repositorio (`@DataJpaTest`) para las
   restricciones de la BD; de integracion (`@SpringBootTest` + MockMvc) para los flujos completos por HTTP con JWT
   real; y de concurrencia con hilos que arrancan a la vez. Todas corren contra PostgreSQL real.
+
+## Datos de demostracion y prueba de punta a punta
+
+- **D68. Datos demo en Java, solo con el perfil `dev`** (`DatosDemoConfig`), no en migraciones: asi nunca llegan a
+  produccion y V1/V2 quedan intactas. Se cargan una sola vez (si ya existe "Almacen Central" no hace nada). El stock
+  inicial se registra con `MovimientoStockService` como `INVENTARIO_INICIAL`, por lo que queda en el kardex. La
+  contrasena de los usuarios demo viene de `DEMO_PASSWORD`; si falta, no se cargan.
+- **D69. El perfil por defecto es `dev`** (`spring.profiles.default`), para que en la laptop baste con arrancar.
+  Para otro entorno se define `SPRING_PROFILES_ACTIVE`.
+- **D70. Fechas de negocio siempre en hora de Lima.** La prueba de punta a punta se corrio a las 23:58 de Lima (04:58
+  UTC) y mostro que `@PastOrPresent` en la fecha de compra usaba la zona del servidor. Ahora esa regla se valida con el
+  componente `Calendario` (dia de Lima), igual que los reportes y el vencimiento del fiado, y las pruebas usan la
+  fecha de Lima.

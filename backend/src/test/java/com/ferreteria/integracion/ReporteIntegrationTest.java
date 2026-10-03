@@ -15,8 +15,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 class ReporteIntegrationTest extends IntegracionTestBase {
 
-    private static final String HOY = LocalDate.now().toString();
-    private static final String RANGO = "desde=" + LocalDate.now().minusDays(1) + "&hasta=" + LocalDate.now().plusDays(1);
+    private static final String HOY = hoyLima().toString();
+    private static final String RANGO = "desde=" + hoyLima().minusDays(1) + "&hasta=" + hoyLima().plusDays(1);
 
     private Producto martillo;
     private Producto cable;
@@ -140,7 +140,7 @@ class ReporteIntegrationTest extends IntegracionTestBase {
         getCon(v1, "/api/reportes/ventas-por-tienda?hasta=" + HOY)
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.detalle[0]").value("desde: es obligatorio"));
-        getCon(v1, "/api/reportes/ventas-por-tienda?desde=" + HOY + "&hasta=" + LocalDate.now().minusDays(3))
+        getCon(v1, "/api/reportes/ventas-por-tienda?desde=" + HOY + "&hasta=" + hoyLima().minusDays(3))
                 .andExpect(status().isUnprocessableContent());
         getCon(v1, "/api/reportes/ventas-por-tienda?desde=ayer&hasta=" + HOY)
                 .andExpect(status().isBadRequest())

@@ -75,6 +75,9 @@ app:
     # Opcional. Si se configura, las fotos se suben a Cloudinary; si no, se guardan en la carpeta local.
     cloudinary-url: ${CLOUDINARY_URL:}
     directorio: ${IMAGENES_DIRECTORIO:./imagenes}
+  demo:
+    # Contrasena de los usuarios de demostracion (solo perfil dev)
+    password: ${DEMO_PASSWORD:}
   # Zona horaria para "un dia" en los reportes y cierres
   zona-horaria: America/Lima
   cors:

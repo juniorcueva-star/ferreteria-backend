@@ -45,7 +45,7 @@ class CompraIntegrationTest extends IntegracionTestBase {
         compra.put("proveedorId", proveedor.getId());
         compra.put("tipoComprobante", "FACTURA");
         compra.put("serieNumero", serieNumero);
-        compra.put("fechaEmision", LocalDate.now().toString());
+        compra.put("fechaEmision", hoyLima().toString());
         compra.put("detalles", List.of(
                 Map.of("productoId", cemento.getId(), "cantidad", 10, "precioUnitario", 30.00),
                 Map.of("productoId", clavo.getId(), "presentacionId", datos.presentacionId(clavo, 1),
@@ -135,14 +135,20 @@ class CompraIntegrationTest extends IntegracionTestBase {
     }
 
     @Test
-    @DisplayName("Validaciones: sin detalle, cantidad 0 y fecha futura responden 400")
+    @DisplayName("Validaciones: cantidad 0 y sin proveedor responden 400; fecha futura (en Lima) 422")
     void validaciones() throws Exception {
         Map<String, Object> compra = compra("F1");
         compra.put("detalles", List.of(Map.of("productoId", cemento.getId(), "cantidad", 0, "precioUnitario", 1)));
-        compra.put("fechaEmision", LocalDate.now().plusDays(3).toString());
+        compra.remove("proveedorId");
         postCon(datos.token(datos.almacenero), "/api/compras", compra)
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.detalle.length()").value(2));
+
+        Map<String, Object> futura = compra("F2");
+        futura.put("fechaEmision", hoyLima().plusDays(1).toString());
+        postCon(datos.token(datos.almacenero), "/api/compras", futura)
+                .andExpect(status().isUnprocessableContent())
+                .andExpect(jsonPath("$.mensaje").value("La fecha de emision no puede ser futura"));
     }
 
     @Test

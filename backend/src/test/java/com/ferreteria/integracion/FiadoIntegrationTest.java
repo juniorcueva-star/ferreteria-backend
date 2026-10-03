@@ -126,7 +126,7 @@ class FiadoIntegrationTest extends IntegracionTestBase {
     @DisplayName("Reporte de deudores: ordenado por deuda y restringido a la tienda del vendedor")
     void reporteDeudores() throws Exception {
         fiar(vendedor, carlos, 1, null);                         // 30
-        fiar(vendedor, rosa, 2, LocalDate.now().plusDays(7));    // 60
+        fiar(vendedor, rosa, 2, hoyLima().plusDays(7));    // 60
         fiar(vendedor, carlos, 1, null);                         // 30 -> Carlos debe 60 en 2 ventas
         fiar(vendedor, rosa, 1, null);                           // 30 -> Rosa debe 90
 
@@ -139,7 +139,7 @@ class FiadoIntegrationTest extends IntegracionTestBase {
                 .andExpect(jsonPath("$.totalElementos").value(2))
                 .andExpect(jsonPath("$.contenido[0].clienteNombre").value("Rosa Diaz"))
                 .andExpect(jsonPath("$.contenido[0].deudaTotal").value(90.00))
-                .andExpect(jsonPath("$.contenido[0].proximoVencimiento").value(LocalDate.now().plusDays(7).toString()))
+                .andExpect(jsonPath("$.contenido[0].proximoVencimiento").value(hoyLima().plusDays(7).toString()))
                 .andExpect(jsonPath("$.contenido[1].cantidadVentas").value(2));
 
         getCon(datos.token(datos.admin), "/api/fiado/deudores")

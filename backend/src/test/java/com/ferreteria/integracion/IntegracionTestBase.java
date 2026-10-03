@@ -15,6 +15,8 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 import tools.jackson.databind.ObjectMapper;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 
@@ -59,6 +61,11 @@ public abstract class IntegracionTestBase {
 
     protected ResultActions deleteCon(String token, String url, Object... vars) throws Exception {
         return mockMvc.perform(delete(url, vars).header(HttpHeaders.AUTHORIZATION, "Bearer " + token));
+    }
+
+    /** Fecha de hoy en Lima: el sistema cuenta los dias en la zona del negocio, no en la del servidor. */
+    protected static LocalDate hoyLima() {
+        return LocalDate.now(ZoneId.of("America/Lima"));
     }
 
     /** Carga stock inicial (en unidad base) con el ADMIN, por la API. */
