@@ -1,0 +1,19 @@
+# Perfil de pruebas: usa el mismo PostgreSQL configurado en .env (o en variables de entorno),
+# pero en un esquema aparte ("pruebas"), para no tocar los datos de desarrollo.
+# Flyway crea el esquema y aplica las migraciones la primera vez.
+spring:
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5434}/${DB_NAME:ferreteria}?currentSchema=pruebas
+  flyway:
+    schemas: pruebas
+    default-schema: pruebas
+
+app:
+  jwt:
+    # Clave solo para pruebas automaticas (no es una credencial real)
+    secreto: clave-de-pruebas-automaticas-con-mas-de-32-caracteres
+  admin:
+    username: admin
+    password: Admin-Pruebas-123
+  imagenes:
+    directorio: target/imagenes-pruebas

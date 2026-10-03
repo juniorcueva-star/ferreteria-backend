@@ -12,16 +12,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.test.context.ActiveProfiles;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * Prueba los repositorios de empresa, ubicacion y usuario contra el PostgreSQL local.
+ * Prueba los repositorios de empresa, ubicacion y usuario contra PostgreSQL real (esquema de pruebas).
  * Cada test corre en una transaccion que se deshace al final (rollback): no deja datos.
  */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE) // usar PostgreSQL real, no una BD en memoria
+@ActiveProfiles("test")
 class OrganizacionRepositoryTest {
 
     @Autowired private EmpresaRepository empresaRepository;
@@ -52,11 +54,13 @@ class OrganizacionRepositoryTest {
     @Test
     @DisplayName("El almacen se puede guardar sin empresa (es compartido)")
     void almacenSinEmpresa() {
-        ubicacionRepository.saveAndFlush(nuevaUbicacion("Almacen Test", TipoUbicacion.ALMACEN, null));
+        Ubicacion almacen = ubicacionRepository.saveAndFlush(nuevaUbicacion("Almacen Test", TipoUbicacion.ALMACEN, null));
+        entityManager.clear();
 
-        assertThat(ubicacionRepository.findByTipoAndActivoTrue(TipoUbicacion.ALMACEN))
-                .extracting(Ubicacion::getNombre)
-                .contains("Almacen Test");
+        Ubicacion encontrado = ubicacionRepository.findById(almacen.getId()).orElseThrow();
+        assertThat(encontrado.getTipo()).isEqualTo(TipoUbicacion.ALMACEN);
+        assertThat(encontrado.getEmpresa()).isNull();
+        assertThat(ubicacionRepository.existsByNombre("Almacen Test")).isTrue();
     }
 
     @Test
@@ -98,7 +102,7 @@ class OrganizacionRepositoryTest {
         Usuario usuario = new Usuario();
         usuario.setNombres("Usuario de Prueba");
         usuario.setUsername(username);
-        usuario.setPasswordHash("hash-de-prueba"); // en el Paso 7 sera un hash BCrypt real
+        usuario.setPasswordHash("hash-de-prueba");
         usuario.setRol(rol);
         usuario.setUbicacion(ubicacion);
         return usuario;
