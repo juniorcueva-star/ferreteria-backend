@@ -28,7 +28,7 @@ Las pruebas usan PostgreSQL real (no H2), en el esquema `pruebas` de la misma ba
 
 | Paquete       | Contenido                                                                 |
 |---------------|---------------------------------------------------------------------------|
-| `controller`  | Endpoints REST. Solo reciben, validan (`@Valid`), autorizan por rol y delegan |
+| `controller`  | Endpoints REST. Solo reciben, validan (`@Valid`) y delegan al service      |
 | `service`     | Logica de negocio y transacciones. Reciben y devuelven DTOs               |
 | `repository`  | Interfaces Spring Data JPA. Solo acceso a datos                           |
 | `entity`      | Entidades JPA (una por tabla) y `entity.enums`                            |
@@ -52,8 +52,8 @@ Las pruebas usan PostgreSQL real (no H2), en el esquema `pruebas` de la misma ba
 Reglas obligatorias para todo el codigo del proyecto:
 
 1. **Arquitectura por capas estricta.**
-   - Los controllers no tienen logica de negocio: reciben el request, lo validan con `@Valid`,
-     declaran el rol permitido con `@PreAuthorize` y llaman a un service.
+   - Los controllers no tienen logica de negocio: reciben el request, lo validan con `@Valid`
+     y llaman a un service.
    - Los services no devuelven entidades: siempre devuelven DTOs (`...Response`, `PaginaResponse`).
    - Los repositories solo acceden a datos (consultas), sin reglas de negocio.
 2. **Operaciones de stock y dinero transaccionales.** Toda operacion que mueve stock o dinero usa
@@ -62,9 +62,10 @@ Reglas obligatorias para todo el codigo del proyecto:
 3. **Validacion y errores uniformes.** La entrada se valida con Bean Validation. Todos los errores
    salen del manejador global con el mismo formato: `codigo`, `mensaje`, `detalle`, `fecha`
    (incluidos 401 y 403 del filtro de seguridad).
-4. **Seguridad por rol y por tienda.** Cada endpoint declara los roles permitidos. Un usuario que no
-   es ADMIN solo puede ver y operar datos de su propia ubicacion; esto se valida en los services
-   (`AccesoUbicacionService`) y se prueba en `SeguridadIntegrationTest`.
+4. **Seguridad por rol y por tienda.** Los roles permitidos de cada endpoint estan en una sola tabla
+   (`SecurityConfig.permisosPorRol`), que se evalua antes de leer el cuerpo; una ruta no listada queda
+   cerrada. Un usuario que no es ADMIN solo puede ver y operar datos de su propia ubicacion; esto se
+   valida en los services (`AccesoUbicacionService`) y se prueba en `SeguridadIntegrationTest`.
 5. **Listados con paginacion y filtros.** Ningun endpoint devuelve una lista completa sin limite:
    se usa `Pageable` (tamano maximo 100) y se responde con `PaginaResponse`.
 6. **Nombres consistentes.** Conceptos del dominio en espanol (`Venta`, `registrar`, `anular`) y

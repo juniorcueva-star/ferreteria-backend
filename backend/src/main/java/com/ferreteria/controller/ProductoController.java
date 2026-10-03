@@ -16,7 +16,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -64,14 +63,12 @@ public class ProductoController {
     @Operation(summary = "Crear producto con sus presentaciones")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("hasRole('ADMIN')")
     public ProductoResponse crear(@Valid @RequestBody ProductoCrearRequest request) {
         return productoService.crear(request);
     }
 
     @Operation(summary = "Actualizar datos del producto", description = "Para desactivarlo enviar activo=false")
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
     public ProductoResponse actualizar(@PathVariable Long id, @Valid @RequestBody ProductoActualizarRequest request) {
         return productoService.actualizar(id, request);
     }
@@ -79,14 +76,12 @@ public class ProductoController {
     @Operation(summary = "Agregar una presentacion al producto")
     @PostMapping("/{id}/presentaciones")
     @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("hasRole('ADMIN')")
     public ProductoResponse agregarPresentacion(@PathVariable Long id, @Valid @RequestBody PresentacionRequest request) {
         return productoService.agregarPresentacion(id, request);
     }
 
     @Operation(summary = "Actualizar una presentacion (precio, factor, principal, activo)")
     @PutMapping("/{id}/presentaciones/{presentacionId}")
-    @PreAuthorize("hasRole('ADMIN')")
     public ProductoResponse actualizarPresentacion(@PathVariable Long id, @PathVariable Long presentacionId,
                                                    @Valid @RequestBody PresentacionRequest request) {
         return productoService.actualizarPresentacion(id, presentacionId, request);
@@ -95,14 +90,12 @@ public class ProductoController {
     @Operation(summary = "Subir o reemplazar la foto", description = "JPG, PNG o WEBP de hasta 2 MB. Se guarda en "
             + "Cloudinary si CLOUDINARY_URL esta configurada; si no, en la carpeta local")
     @PostMapping(value = "/{id}/imagen", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("hasRole('ADMIN')")
     public ProductoResponse actualizarImagen(@PathVariable Long id, @RequestPart("archivo") MultipartFile archivo) {
         return productoService.actualizarImagen(id, archivo);
     }
 
     @Operation(summary = "Quitar la foto")
     @DeleteMapping("/{id}/imagen")
-    @PreAuthorize("hasRole('ADMIN')")
     public ProductoResponse eliminarImagen(@PathVariable Long id) {
         return productoService.eliminarImagen(id);
     }

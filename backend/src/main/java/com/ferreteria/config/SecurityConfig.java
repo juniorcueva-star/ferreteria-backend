@@ -10,9 +10,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.annotation.web.configurers.AuthorizeHttpRequestsConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -33,12 +33,15 @@ import java.util.List;
 
 /**
  * Seguridad de la API: sin sesiones (stateless), autenticacion con token JWT en el header
- * "Authorization: Bearer ..." y permisos por rol con @PreAuthorize en cada controller.
+ * "Authorization: Bearer ..." y permisos por rol en la tabla {@link #permisosPorRol}.
  */
 @Configuration
-@EnableMethodSecurity
 @EnableConfigurationProperties(JwtProperties.class)
 public class SecurityConfig {
+
+    private static final String ADMIN = "ADMIN";
+    private static final String VENDEDOR = "VENDEDOR";
+    private static final String ALMACENERO = "ALMACENERO";
 
     private static final String[] RUTAS_PUBLICAS = {
             "/api/auth/login",
@@ -52,11 +55,7 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable) // API con token, no usa cookies
                 .cors(Customizer.withDefaults())
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(RUTAS_PUBLICAS).permitAll()
-                        .requestMatchers(HttpMethod.GET, "/imagenes/**").permitAll()
-                        .requestMatchers("/error").permitAll()
-                        .anyRequest().authenticated())
+                .authorizeHttpRequests(SecurityConfig::permisosPorRol)
                 .oauth2ResourceServer(oauth -> oauth
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(usuarioJwtConverter))
                         .authenticationEntryPoint(respuestaError.noAutenticado())
@@ -65,6 +64,53 @@ public class SecurityConfig {
                         .authenticationEntryPoint(respuestaError.noAutenticado())
                         .accessDeniedHandler(respuestaError.accesoDenegado()));
         return http.build();
+    }
+
+    /**
+     * Tabla de permisos por rol, en un solo lugar. Se evalua en el filtro de seguridad, ANTES de leer y validar
+     * el cuerpo de la peticion: un rol sin permiso recibe 403 aunque envie datos invalidos.
+     * El permiso por tienda (que un vendedor solo vea su tienda) se valida despues, en los services.
+     * El orden importa: las reglas mas especificas van primero.
+     */
+    private static void permisosPorRol(
+            AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry auth) {
+        auth
+                // Publico
+                .requestMatchers(RUTAS_PUBLICAS).permitAll()
+                .requestMatchers(HttpMethod.GET, "/imagenes/**").permitAll()
+                .requestMatchers("/error").permitAll()
+                // Organizacion
+                .requestMatchers("/api/auth/**").authenticated()
+                .requestMatchers("/api/empresas/**", "/api/usuarios/**").hasRole(ADMIN)
+                .requestMatchers(HttpMethod.GET, "/api/ubicaciones/**").authenticated()
+                .requestMatchers("/api/ubicaciones/**").hasRole(ADMIN)
+                // Catalogo: todos consultan, solo el ADMIN modifica
+                .requestMatchers(HttpMethod.GET, "/api/categorias/**", "/api/productos/**").authenticated()
+                .requestMatchers("/api/categorias/**", "/api/productos/**").hasRole(ADMIN)
+                // Compras
+                .requestMatchers(HttpMethod.POST, "/api/compras/*/anular").hasRole(ADMIN)
+                .requestMatchers("/api/compras/**", "/api/proveedores/**").hasAnyRole(ADMIN, ALMACENERO)
+                // Inventario y traslados
+                .requestMatchers(HttpMethod.POST, "/api/traslados/*/recibir").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/traslados", "/api/traslados/*/anular")
+                .hasAnyRole(ADMIN, ALMACENERO)
+                .requestMatchers(HttpMethod.GET, "/api/traslados/**").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/inventario/ajustes").hasAnyRole(ADMIN, ALMACENERO)
+                .requestMatchers(HttpMethod.POST, "/api/inventario/inicial").hasRole(ADMIN)
+                .requestMatchers(HttpMethod.PUT, "/api/inventario/stock/minimo").hasRole(ADMIN)
+                .requestMatchers(HttpMethod.GET, "/api/inventario/**").authenticated()
+                // Punto de venta
+                .requestMatchers("/api/clientes/**", "/api/cajas/**", "/api/ventas/**", "/api/fiado/**")
+                .hasAnyRole(ADMIN, VENDEDOR)
+                .requestMatchers(HttpMethod.GET, "/api/metodos-pago/**").authenticated()
+                // Reportes
+                .requestMatchers("/api/reportes/ventas-por-tienda", "/api/reportes/productos-mas-vendidos")
+                .hasAnyRole(ADMIN, VENDEDOR)
+                .requestMatchers("/api/reportes/traslados-por-tienda", "/api/reportes/compras-por-proveedor")
+                .hasAnyRole(ADMIN, ALMACENERO)
+                .requestMatchers(HttpMethod.GET, "/api/reportes/stock-bajo").authenticated()
+                // Cualquier otra ruta o metodo no listado arriba queda cerrado
+                .anyRequest().denyAll();
     }
 
     /** Origenes del frontend que pueden llamar a la API (variable CORS_ORIGENES). */

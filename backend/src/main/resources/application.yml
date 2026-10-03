@@ -47,6 +47,13 @@ spring:
     enabled: true
     locations: classpath:db/migration
 
+springdoc:
+  swagger-ui:
+    # Ordena los grupos por su numero (01. Autenticacion, 02. Empresas...) y recuerda el token al recargar
+    tags-sorter: alpha
+    persist-authorization: true
+  default-produces-media-type: application/json
+
 server:
   # Railway asigna el puerto en la variable PORT; en local se usa 8080
   port: ${PORT:8080}

@@ -18,7 +18,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -54,7 +53,6 @@ public class InventarioController {
 
     @Operation(summary = "Definir stock minimo de un producto en una ubicacion")
     @PutMapping("/stock/minimo")
-    @PreAuthorize("hasRole('ADMIN')")
     public StockResponse definirStockMinimo(@Valid @RequestBody StockMinimoRequest request) {
         return inventarioService.definirStockMinimo(request);
     }
@@ -63,7 +61,6 @@ public class InventarioController {
             + "(merma, rotura, conteo fisico). El almacenero solo ajusta su almacen")
     @PostMapping("/ajustes")
     @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("hasAnyRole('ADMIN', 'ALMACENERO')")
     public List<KardexResponse> registrarAjuste(@Valid @RequestBody AjusteRequest request) {
         return inventarioService.registrarAjuste(request);
     }
@@ -72,7 +69,6 @@ public class InventarioController {
             + "en esa ubicacion")
     @PostMapping("/inicial")
     @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("hasRole('ADMIN')")
     public List<KardexResponse> registrarInventarioInicial(@Valid @RequestBody InventarioInicialRequest request) {
         return inventarioService.registrarInventarioInicial(request);
     }

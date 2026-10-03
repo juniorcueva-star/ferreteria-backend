@@ -16,7 +16,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -31,7 +30,6 @@ import java.time.LocalDate;
 @Tag(name = "12. Caja", description = "Apertura y cierre de caja con cuadre. ADMIN y VENDEDOR")
 @RestController
 @RequestMapping("/api/cajas")
-@PreAuthorize("hasAnyRole('ADMIN', 'VENDEDOR')")
 @RequiredArgsConstructor
 public class CajaController {
 

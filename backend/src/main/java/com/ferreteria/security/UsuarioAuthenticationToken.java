@@ -7,7 +7,7 @@ import java.util.List;
 
 /**
  * Autenticacion de Spring Security cuyo "principal" es el UsuarioActual.
- * Su autoridad es ROLE_ + rol, que es lo que revisa @PreAuthorize("hasRole(...)").
+ * Su autoridad es ROLE_ + rol, que es lo que revisa hasRole(...) en la tabla de permisos de SecurityConfig.
  */
 public class UsuarioAuthenticationToken extends AbstractAuthenticationToken {
 

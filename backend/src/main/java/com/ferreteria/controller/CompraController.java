@@ -16,7 +16,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -32,7 +31,6 @@ import java.time.LocalDate;
         + "(el almacenero solo en su almacen). Anular: solo ADMIN")
 @RestController
 @RequestMapping("/api/compras")
-@PreAuthorize("hasAnyRole('ADMIN', 'ALMACENERO')")
 @RequiredArgsConstructor
 public class CompraController {
 
@@ -68,7 +66,6 @@ public class CompraController {
 
     @Operation(summary = "Anular compra", description = "Retira el stock que entro. Falla si ya se vendio o traslado")
     @PostMapping("/{id}/anular")
-    @PreAuthorize("hasRole('ADMIN')")
     public CompraResponse anular(@PathVariable Long id, @Valid @RequestBody AnulacionRequest request) {
         return compraService.anular(id, request);
     }

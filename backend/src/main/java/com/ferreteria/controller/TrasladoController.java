@@ -16,7 +16,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -61,7 +60,6 @@ public class TrasladoController {
             + "destino lo reciba")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("hasAnyRole('ADMIN', 'ALMACENERO')")
     public TrasladoResponse enviar(@Valid @RequestBody TrasladoRequest request) {
         return trasladoService.enviar(request);
     }
@@ -74,7 +72,6 @@ public class TrasladoController {
 
     @Operation(summary = "Anular traslado ENVIADO", description = "Devuelve el stock al origen")
     @PostMapping("/{id}/anular")
-    @PreAuthorize("hasAnyRole('ADMIN', 'ALMACENERO')")
     public TrasladoResponse anular(@PathVariable Long id, @Valid @RequestBody AnulacionRequest request) {
         return trasladoService.anular(id, request);
     }

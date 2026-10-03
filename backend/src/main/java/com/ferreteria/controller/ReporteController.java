@@ -14,7 +14,6 @@ import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -34,7 +33,6 @@ public class ReporteController {
     @Operation(summary = "Ventas por tienda", description = "Cantidad y montos de ventas (contado, credito, saldo "
             + "pendiente y anuladas) por tienda")
     @GetMapping("/ventas-por-tienda")
-    @PreAuthorize("hasAnyRole('ADMIN', 'VENDEDOR')")
     public PaginaResponse<VentasPorTiendaResponse> ventasPorTienda(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta,
@@ -46,7 +44,6 @@ public class ReporteController {
     @Operation(summary = "Traslados por tienda destino", description = "Recibidos, en camino y anulados. "
             + "El almacenero ve los que salieron de su almacen")
     @GetMapping("/traslados-por-tienda")
-    @PreAuthorize("hasAnyRole('ADMIN', 'ALMACENERO')")
     public PaginaResponse<TrasladosPorTiendaResponse> trasladosPorTienda(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta,
@@ -58,7 +55,6 @@ public class ReporteController {
     @Operation(summary = "Compras por proveedor", description = "Compras registradas por fecha de emision, de mayor "
             + "a menor monto. Filtros: ubicacionId y empresaId")
     @GetMapping("/compras-por-proveedor")
-    @PreAuthorize("hasAnyRole('ADMIN', 'ALMACENERO')")
     public PaginaResponse<ComprasPorProveedorResponse> comprasPorProveedor(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta,
@@ -70,7 +66,6 @@ public class ReporteController {
 
     @Operation(summary = "Productos mas vendidos", description = "orden=MONTO (por defecto) o CANTIDAD (en unidad base)")
     @GetMapping("/productos-mas-vendidos")
-    @PreAuthorize("hasAnyRole('ADMIN', 'VENDEDOR')")
     public PaginaResponse<ProductoVendidoResponse> productosMasVendidos(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta,

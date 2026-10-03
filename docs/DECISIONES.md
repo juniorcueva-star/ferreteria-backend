@@ -206,3 +206,18 @@ Registro de las decisiones de diseno tomadas durante el desarrollo (que se decid
   anulados) agrupados por tienda destino. "Productos mas vendidos" ordena por monto o por cantidad en unidad base.
 - **D64. Alcance por rol:** ventas por tienda y productos mas vendidos: ADMIN y VENDEDOR (su tienda). Traslados por
   tienda y compras por proveedor: ADMIN y ALMACENERO (su almacen). Stock bajo: todos (su ubicacion).
+
+## Swagger y pruebas (paso 15)
+
+- **D65. Permisos por rol en una tabla por URL (reemplaza a `@PreAuthorize` de D14).** Al escribir las pruebas de
+  seguridad se vio que con `@PreAuthorize` en el metodo, Spring valida el cuerpo (`@Valid`) antes de revisar el rol:
+  un vendedor que mandaba un cuerpo vacio a un endpoint de ADMIN recibia 400 con el detalle de los campos en vez de
+  403. Ahora todos los roles estan en `SecurityConfig.permisosPorRol`, que se evalua en el filtro antes de leer el
+  cuerpo. Ventajas: un solo lugar para revisar quien puede hacer que, y cualquier ruta no listada queda cerrada
+  (`denyAll`). La regla por tienda sigue en los services.
+- **D66. Swagger** agrupa los endpoints por modulo (numerados en orden de uso), recuerda el token
+  (`persist-authorization`) y cada operacion documenta las respuestas de error comunes con el esquema `ErrorResponse`.
+- **D67. Tipos de prueba:** unitarias con JUnit 5 y Mockito para la logica de negocio (calculos de venta, vuelto,
+  cuadre de caja, abonos, movimiento de stock, permisos por tienda); de repositorio (`@DataJpaTest`) para las
+  restricciones de la BD; de integracion (`@SpringBootTest` + MockMvc) para los flujos completos por HTTP con JWT
+  real; y de concurrencia con hilos que arrancan a la vez. Todas corren contra PostgreSQL real.

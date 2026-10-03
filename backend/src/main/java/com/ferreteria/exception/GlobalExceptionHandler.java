@@ -8,8 +8,6 @@ import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.data.core.PropertyReferenceException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
@@ -137,16 +135,6 @@ public class GlobalExceptionHandler {
         log.warn("Conflicto de bloqueo: {}", ex.getMessage());
         return responder(CodigoError.CONFLICTO_DATOS,
                 "Otra operacion estaba usando los mismos datos. Intente nuevamente", List.of());
-    }
-
-    @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ErrorResponse> manejarAccesoDenegado(AccessDeniedException ex) {
-        return responder(CodigoError.ACCESO_DENEGADO, "No tiene permiso para realizar esta operacion", List.of());
-    }
-
-    @ExceptionHandler(AuthenticationException.class)
-    public ResponseEntity<ErrorResponse> manejarNoAutenticado(AuthenticationException ex) {
-        return responder(CodigoError.NO_AUTENTICADO, "Debe iniciar sesion", List.of());
     }
 
     @ExceptionHandler(Exception.class)
