@@ -148,3 +148,34 @@ Registro de las decisiones de diseno tomadas durante el desarrollo (que se decid
   venta que llega despues del cierre ve la caja CERRADA y se rechaza.
 - **D45. Solo el duenio de la caja (o el ADMIN) la cierra.** Los vendedores pueden consultar las cajas de su tienda,
   no las de la otra.
+
+## Ventas (paso 12)
+
+- **D46. La venta se emite en la tienda de la caja abierta del usuario.** No se envia la tienda en el request:
+  sale de la caja (y el RUC, de la tienda). Asi un vendedor no puede vender a nombre de otra tienda. Si lo
+  cambiaron de tienda con la caja abierta, ya no puede cobrar en la anterior.
+- **D47. Solo NOTA_VENTA en la Fase 1.** Boleta y factura electronica (SUNAT) quedan para la Fase 2.
+- **D48. Correlativo por tienda** en `serie_correlativo`, con bloqueo exclusivo de la fila para que dos ventas no
+  reciban el mismo numero. Si la tienda aun no tiene serie, se crea sola: `NV` + id de la tienda con 2 digitos
+  (NV02...). Como el numero se toma dentro de la misma transaccion, si la venta falla (por ejemplo, sin stock) el
+  numero no se consume y no quedan huecos.
+- **D49. Orden de bloqueos en una venta:** caja (compartido) -> serie de la tienda (exclusivo) -> filas de stock
+  (por id de producto). Siempre el mismo orden, por eso no hay deadlocks. Como las ventas de una misma tienda se
+  ordenan en la serie, el bloqueo del stock protege sobre todo frente a traslados y ajustes simultaneos; las pruebas
+  de concurrencia cubren ambos casos (y se comprobo que sin el bloqueo de stock la prueba de ajustes falla).
+- **D50. El precio lo pone el sistema,** no el cliente: se toma de la presentacion. El vendedor solo puede aplicar
+  un descuento por linea que no supere el importe de la linea. `venta.descuento` guarda la suma (informativo).
+- **D51. IGV incluido:** total = suma de lineas; subtotal = total / 1.18 (redondeo HALF_UP); IGV = total - subtotal.
+  Asi el CHECK `total = subtotal + igv` siempre cuadra.
+- **D52. Pagos por codigo de metodo** (`"metodoPago": "EFECTIVO"`, `"YAPE"`...) en vez de id, porque son estables
+  (vienen de V2) y mas legibles en Swagger. Los metodos con `requiere_referencia` exigen `numeroOperacion`.
+- **D53. Contado:** los pagos deben cubrir el total. Si se paga de mas, la diferencia es vuelto y solo puede salir
+  del efectivo; el pago en efectivo se guarda por el monto neto (lo que realmente queda en la caja). Pagar de mas
+  con Yape o tarjeta se rechaza.
+- **D54. Credito (fiado):** requiere cliente; los pagos son un adelanto opcional (pago mixto permitido) que no puede
+  superar el total; el resto es `saldo_pendiente`. La fecha de vencimiento es opcional y no puede ser pasada.
+- **D55. Anulacion de venta:** devuelve el stock (kardex `ANULACION_VENTA`), pone los pagos en ANULADO (salen del
+  cuadre) y deja el saldo en 0. Se permite solo si todas las cajas donde se cobro siguen ABIERTAS, porque el dinero
+  se devuelve desde esa caja; con la caja cerrada la devolucion de dinero sera una nota de credito (Fase 2). El
+  vendedor solo anula ventas de su tienda emitidas en una caja aun abierta; el ADMIN puede anular, por ejemplo, un
+  fiado sin pagos de una caja ya cerrada.
