@@ -7,3 +7,11 @@ spring:
   flyway:
     schemas: pruebas
     default-schema: pruebas
+
+app:
+  jwt:
+    # Clave solo para pruebas automaticas (no es una credencial real)
+    secreto: clave-de-pruebas-automaticas-con-mas-de-32-caracteres
+  admin:
+    username: admin
+    password: Admin-Pruebas-123

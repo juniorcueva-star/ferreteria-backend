@@ -40,3 +40,28 @@ Registro de las decisiones de diseno tomadas durante el desarrollo (que se decid
   maximo 100 (`spring.data.web.pageable.max-page-size`): aunque se pida `size=5000` se devuelven 100.
 - **D11. DTOs como `record`** de Java: inmutables, con validaciones Bean Validation en los `...Request` y un
   metodo estatico `desde(entidad)` en los `...Response` para convertir dentro del service.
+
+## Seguridad (paso 7)
+
+- **D12. JWT con el "resource server" de Spring Security** (HS256, `NimbusJwtEncoder`/`NimbusJwtDecoder`) en vez
+  de un filtro escrito a mano: Spring valida firma y vencimiento, y se escribe menos codigo propio que pueda fallar.
+  La clave viene de `JWT_SECRET` (minimo 32 caracteres; si falta, la app no arranca). El token dura 8 horas
+  (`JWT_EXPIRACION_MINUTOS`), un turno de trabajo.
+- **D13. El usuario se lee de la BD en cada peticion** (`UsuarioJwtConverter`). El token solo sirve para
+  identificarlo; rol y tienda se toman de la BD. Asi un usuario desactivado pierde el acceso al instante y un
+  cambio de tienda aplica sin esperar a que venza el token. Costo: una consulta por id (clave primaria) por peticion.
+- **D14. Permisos por rol con `@PreAuthorize`** en cada controller y **permisos por tienda en los services**
+  (`AccesoUbicacionService`): el ADMIN ve y opera todo; VENDEDOR y ALMACENERO solo su propia ubicacion. Si piden
+  datos de otra ubicacion se responde 403; si no indican ubicacion se usa la suya.
+- **D15. Roles y ubicaciones:** VENDEDOR solo puede asignarse a una TIENDA y ALMACENERO a un ALMACEN; el ADMIN no
+  tiene ubicacion. No se puede quitar el ultimo ADMIN activo ni un ADMIN puede desactivarse a si mismo.
+- **D16. Admin inicial:** al arrancar, si no hay ningun ADMIN activo se crea uno con `ADMIN_USERNAME` y
+  `ADMIN_PASSWORD`. Si `ADMIN_PASSWORD` no esta configurada solo se registra una advertencia (no hay contrasenas
+  en el codigo).
+- **D17. Login sin pistas:** usuario inexistente, contrasena incorrecta o usuario inactivo dan el mismo 401
+  `CREDENCIALES_INVALIDAS`, y cuando el usuario no existe igual se calcula un BCrypt para que el tiempo de respuesta
+  no revele que usuarios existen.
+- **D18. Empresas, ubicaciones y usuarios** se administran por API (solo ADMIN). Las ubicaciones las puede listar
+  cualquier usuario autenticado: su nombre no es un dato sensible y se necesita, por ejemplo, para ver el destino
+  de un traslado. No se borran registros: se desactivan (`activo=false`) para no romper el historial.
+- **D19. CORS** configurable con `CORS_ORIGENES` (por defecto los puertos tipicos de Vite y React en localhost).

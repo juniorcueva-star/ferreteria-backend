@@ -50,3 +50,22 @@ spring:
 server:
   # Railway asigna el puerto en la variable PORT; en local se usa 8080
   port: ${PORT:8080}
+
+# ---------------------------------------------------------------------
+# Configuracion propia de la aplicacion
+# ---------------------------------------------------------------------
+app:
+  jwt:
+    # Clave para firmar los tokens (minimo 32 caracteres). Obligatoria: variable JWT_SECRET.
+    secreto: ${JWT_SECRET:}
+    # 8 horas = un turno de trabajo
+    expiracion-minutos: ${JWT_EXPIRACION_MINUTOS:480}
+  admin:
+    # Se crea al arrancar si no existe ningun ADMIN activo
+    username: ${ADMIN_USERNAME:admin}
+    password: ${ADMIN_PASSWORD:}
+  # Zona horaria para "un dia" en los reportes y cierres
+  zona-horaria: America/Lima
+  cors:
+    # Origenes del frontend que pueden llamar a la API (separados por coma)
+    origenes: ${CORS_ORIGENES:http://localhost:5173,http://localhost:3000}
