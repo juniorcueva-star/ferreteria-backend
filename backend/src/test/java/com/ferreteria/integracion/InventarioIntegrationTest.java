@@ -181,6 +181,33 @@ class InventarioIntegrationTest extends IntegracionTestBase {
     }
 
     @Test
+    @DisplayName("Stock de varios productos a la vez (productoIds) en todas las ubicaciones visibles")
+    void stockDeVariosProductos() throws Exception {
+        Producto clavo = datos.producto("CLA-02", UnidadBase.UNIDAD, "0.10", "Ciento", "100", "8.00");
+        cargarStock(clavo, datos.tienda1, 300);
+        cargarStock(cable, datos.tienda1, 40);
+
+        getCon(datos.token(datos.admin), "/api/inventario/stock?productoIds={a},{b}&sort=producto.codigo",
+                cable.getId(), clavo.getId())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElementos").value(3))
+                .andExpect(jsonPath("$.contenido[*].productoCodigo")
+                        .value(org.hamcrest.Matchers.containsInAnyOrder("CAB-14", "CAB-14", "CLA-02")));
+        // El vendedor solo ve su tienda aunque pida varios productos
+        getCon(datos.token(datos.vendedor1), "/api/inventario/stock?productoIds={a},{b},{c}",
+                cable.getId(), clavo.getId(), perno.getId())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElementos").value(2))
+                .andExpect(jsonPath("$.contenido[*].ubicacionId")
+                        .value(org.hamcrest.Matchers.everyItem(org.hamcrest.Matchers.is(datos.tienda1.getId().intValue()))));
+        // Mas de 100 productos en una consulta se rechaza
+        String muchos = String.join(",", java.util.stream.LongStream.rangeClosed(1, 101)
+                .mapToObj(String::valueOf).toList());
+        getCon(datos.token(datos.admin), "/api/inventario/stock?productoIds=" + muchos)
+                .andExpect(status().isUnprocessableContent());
+    }
+
+    @Test
     @DisplayName("No se puede anular una compra cuya mercaderia ya salio del almacen")
     void anularCompraConStockConsumido() throws Exception {
         Long proveedorId = datos.proveedor("20666666661").getId();

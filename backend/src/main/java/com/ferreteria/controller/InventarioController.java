@@ -40,15 +40,17 @@ public class InventarioController {
     private final InventarioService inventarioService;
 
     @Operation(summary = "Stock por ubicacion", description = "Cantidades en unidad base. Filtros: ubicacionId, "
-            + "productoId, texto (codigo o nombre) y soloBajo=true para ver lo que llego al stock minimo")
+            + "productoId, productoIds (varios a la vez, maximo 100), texto (codigo o nombre) y soloBajo=true para "
+            + "ver lo que llego al stock minimo")
     @GetMapping("/stock")
     public PaginaResponse<StockResponse> listarStock(
             @RequestParam(required = false) Long ubicacionId,
             @RequestParam(required = false) Long productoId,
+            @RequestParam(required = false) List<Long> productoIds,
             @RequestParam(required = false) String texto,
             @RequestParam(defaultValue = "false") boolean soloBajo,
             @ParameterObject @PageableDefault(size = 20, sort = "producto.nombre") Pageable pageable) {
-        return inventarioService.listarStock(ubicacionId, productoId, texto, soloBajo, pageable);
+        return inventarioService.listarStock(ubicacionId, productoId, productoIds, texto, soloBajo, pageable);
     }
 
     @Operation(summary = "Definir stock minimo de un producto en una ubicacion")
