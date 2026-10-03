@@ -179,3 +179,16 @@ Registro de las decisiones de diseno tomadas durante el desarrollo (que se decid
   se devuelve desde esa caja; con la caja cerrada la devolucion de dinero sera una nota de credito (Fase 2). El
   vendedor solo anula ventas de su tienda emitidas en una caja aun abierta; el ADMIN puede anular, por ejemplo, un
   fiado sin pagos de una caja ya cerrada.
+
+## Fiado (paso 13)
+
+- **D56. El abono se cobra en la tienda que vendio,** en la caja abierta del usuario (puede ser otro dia y otra caja
+  que la de la venta). Cada tienda tiene su RUC: el dinero de una deuda de la tienda 1 no entra a la caja de la
+  tienda 2. Admite varios metodos a la vez y no puede superar el saldo pendiente.
+- **D57. Bloqueo de la venta al abonar** (`FOR UPDATE`): dos abonos simultaneos a la misma deuda no pueden pagar de
+  mas. Orden de bloqueo en abonos y anulaciones: venta -> caja (igual en ambos, sin deadlocks).
+- **D58. Reporte de deudores** agrupado por cliente (deuda total, cantidad de ventas, deuda mas antigua y vencimiento
+  mas proximo), de mayor a menor deuda, paginado y por tienda (el vendedor solo ve los deudores de su tienda).
+  El orden lo fija la consulta; el parametro `sort` se ignora en este reporte.
+- **D59. Abonos en el cuadre:** los abonos en efectivo suman al efectivo esperado de la caja donde se cobraron; el
+  resumen de caja los muestra aparte (`totalAbonos`).

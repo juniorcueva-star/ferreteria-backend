@@ -1,5 +1,6 @@
 package com.ferreteria.repository;
 
+import com.ferreteria.dto.fiado.DeudorResponse;
 import com.ferreteria.entity.Venta;
 import com.ferreteria.entity.enums.EstadoVenta;
 import jakarta.persistence.LockModeType;
@@ -30,6 +31,22 @@ public interface VentaRepository extends JpaRepository<Venta, Long>, JpaSpecific
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select v from Venta v where v.id = :id")
     Optional<Venta> bloquear(@Param("id") Long id);
+
+    /** Clientes con deuda, de mayor a menor. ubicacionId null = todas las tiendas. */
+    @Query(value = """
+            select new com.ferreteria.dto.fiado.DeudorResponse(c.id, c.nombre, c.tipoDocumento, c.numeroDocumento,
+                   c.telefono, count(v), sum(v.saldoPendiente), min(v.fecha), min(v.fechaVencimiento))
+            from Venta v join v.cliente c
+            where v.estado = com.ferreteria.entity.enums.EstadoVenta.EMITIDA and v.saldoPendiente > 0
+              and (:ubicacionId is null or v.ubicacion.id = :ubicacionId)
+            group by c.id, c.nombre, c.tipoDocumento, c.numeroDocumento, c.telefono
+            order by sum(v.saldoPendiente) desc, c.id
+            """, countQuery = """
+            select count(distinct v.cliente.id) from Venta v
+            where v.estado = com.ferreteria.entity.enums.EstadoVenta.EMITIDA and v.saldoPendiente > 0
+              and (:ubicacionId is null or v.ubicacion.id = :ubicacionId)
+            """)
+    Page<DeudorResponse> deudores(@Param("ubicacionId") Long ubicacionId, Pageable pageable);
 
     @Override
     @EntityGraph(attributePaths = {"ubicacion", "empresa", "usuario", "cajaSesion", "cliente"})
