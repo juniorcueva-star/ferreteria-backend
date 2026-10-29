@@ -22,17 +22,17 @@ public record VentaResponse(Long id, TipoDocumentoVenta tipoDocumento, String nu
                             String vendedor, Long cajaId, Long clienteId, String clienteNombre,
                             CondicionVenta condicion, LocalDate fechaVencimiento, BigDecimal subtotal,
                             BigDecimal igv, BigDecimal descuento, BigDecimal total, BigDecimal saldoPendiente,
-                            EstadoVenta estado, String motivoAnulacion, BigDecimal vuelto,
+                            EstadoVenta estado, String motivoAnulacion, BigDecimal vuelto, Long cotizacionId, String cotizacionCodigo,
                             List<Detalle> detalles, List<PagoResponse> pagos) {
 
     public record Detalle(Long productoId, Long presentacionId, String descripcion, BigDecimal cantidad,
-                          BigDecimal factor, BigDecimal cantidadBase, BigDecimal precioUnitario,
-                          BigDecimal descuento, BigDecimal subtotal) {
+                           BigDecimal factor, BigDecimal cantidadBase, BigDecimal precioUnitario,
+                           BigDecimal descuento, BigDecimal ajustePorcentaje, BigDecimal subtotal) {
 
         static Detalle desde(VentaDetalle d) {
             return new Detalle(d.getProducto().getId(), d.getPresentacion().getId(), d.getDescripcion(),
                     d.getCantidad(), d.getFactor(), d.getCantidadBase(), d.getPrecioUnitario(), d.getDescuento(),
-                    d.getSubtotal());
+                    d.getAjustePorcentaje(), d.getSubtotal());
         }
     }
 
@@ -56,6 +56,8 @@ public record VentaResponse(Long id, TipoDocumentoVenta tipoDocumento, String nu
                 v.getCliente() == null ? null : v.getCliente().getId(),
                 v.getCliente() == null ? null : v.getCliente().getNombre(),
                 v.getCondicion(), v.getFechaVencimiento(), v.getSubtotal(), v.getIgv(), v.getDescuento(),
-                v.getTotal(), v.getSaldoPendiente(), v.getEstado(), v.getMotivoAnulacion(), vuelto, detalles, pagos);
+                v.getTotal(), v.getSaldoPendiente(), v.getEstado(), v.getMotivoAnulacion(), vuelto,
+                v.getCotizacion() == null ? null : v.getCotizacion().getId(),
+                v.getCotizacion() == null ? null : v.getCotizacion().getCodigo(), detalles, pagos);
     }
 }

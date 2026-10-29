@@ -98,9 +98,10 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/inventario/ajustes").hasAnyRole(ADMIN, ALMACENERO)
                 .requestMatchers(HttpMethod.POST, "/api/inventario/inicial").hasRole(ADMIN)
                 .requestMatchers(HttpMethod.PUT, "/api/inventario/stock/minimo").hasRole(ADMIN)
+                .requestMatchers(HttpMethod.GET, "/api/inventario/disponibilidad").hasAnyRole(ADMIN, VENDEDOR)
                 .requestMatchers(HttpMethod.GET, "/api/inventario/**").authenticated()
                 // Punto de venta
-                .requestMatchers("/api/clientes/**", "/api/cajas/**", "/api/ventas/**", "/api/fiado/**")
+                .requestMatchers("/api/clientes/**", "/api/cajas/**", "/api/ventas/**", "/api/fiado/**", "/api/cotizaciones/**")
                 .hasAnyRole(ADMIN, VENDEDOR)
                 .requestMatchers(HttpMethod.GET, "/api/metodos-pago/**").authenticated()
                 // Reportes

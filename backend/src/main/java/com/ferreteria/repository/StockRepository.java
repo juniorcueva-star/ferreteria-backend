@@ -14,6 +14,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.Optional;
+import java.util.List;
+import java.util.Collection;
 
 public interface StockRepository extends JpaRepository<Stock, Long>, JpaSpecificationExecutor<Stock> {
 
@@ -36,6 +38,9 @@ public interface StockRepository extends JpaRepository<Stock, Long>, JpaSpecific
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select s from Stock s where s.producto.id = :productoId and s.ubicacion.id = :ubicacionId")
     Optional<Stock> bloquear(@Param("productoId") Long productoId, @Param("ubicacionId") Long ubicacionId);
+
+    @EntityGraph(attributePaths = {"producto", "ubicacion"})
+    List<Stock> findByProductoIdInAndUbicacionActivoTrueAndProductoActivoTrue(Collection<Long> productoIds);
 
     Optional<Stock> findByProductoIdAndUbicacionId(Long productoId, Long ubicacionId);
 

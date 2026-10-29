@@ -5,8 +5,11 @@ import com.ferreteria.dto.comun.PaginaResponse;
 import com.ferreteria.dto.ventas.VentaDetalleRequest;
 import com.ferreteria.dto.ventas.VentaRequest;
 import com.ferreteria.dto.ventas.VentaResponse;
+import com.ferreteria.dto.ventas.VentaDesdeCotizacionRequest;
 import com.ferreteria.entity.CajaSesion;
 import com.ferreteria.entity.Cliente;
+import com.ferreteria.entity.Cotizacion;
+import com.ferreteria.entity.CotizacionDetalle;
 import com.ferreteria.entity.Pago;
 import com.ferreteria.entity.Presentacion;
 import com.ferreteria.entity.SerieCorrelativo;
@@ -15,6 +18,7 @@ import com.ferreteria.entity.Usuario;
 import com.ferreteria.entity.Venta;
 import com.ferreteria.entity.VentaDetalle;
 import com.ferreteria.entity.enums.CondicionVenta;
+import com.ferreteria.entity.enums.EstadoCotizacion;
 import com.ferreteria.entity.enums.EstadoCaja;
 import com.ferreteria.entity.enums.EstadoPago;
 import com.ferreteria.entity.enums.EstadoVenta;
@@ -25,6 +29,7 @@ import com.ferreteria.exception.RecursoNoEncontradoException;
 import com.ferreteria.exception.ReglaNegocioException;
 import com.ferreteria.repository.CajaSesionRepository;
 import com.ferreteria.repository.ClienteRepository;
+import com.ferreteria.repository.CotizacionRepository;
 import com.ferreteria.repository.Especificaciones;
 import com.ferreteria.repository.PresentacionRepository;
 import com.ferreteria.repository.SerieCorrelativoRepository;
@@ -59,8 +64,10 @@ public class VentaService {
 
     private static final TipoDocumentoVenta DOCUMENTO_FASE_1 = TipoDocumentoVenta.NOTA_VENTA;
     private static final int MAX_DESCRIPCION = 200;
+    private static final BigDecimal CIEN = new BigDecimal("100");
 
     private final VentaRepository ventaRepository;
+    private final CotizacionRepository cotizacionRepository;
     private final PresentacionRepository presentacionRepository;
     private final ClienteRepository clienteRepository;
     private final SerieCorrelativoRepository serieRepository;
@@ -103,6 +110,53 @@ public class VentaService {
                 .map(d -> LineaMovimiento.de(d.getProducto(), d.getCantidadBase()))
                 .toList();
         movimientoStock.aplicar(tienda, TipoMovimiento.VENTA, lineas,
+                OrigenMovimiento.venta(venta, usuario, null));
+        return VentaResponse.completa(venta, vuelto);
+    }
+
+    /** Lee los snapshots bloqueados de la cotizacion; el cliente nunca envia precios ni cantidades. */
+    @Transactional
+    public VentaResponse registrarDesdeCotizacion(Long cotizacionId, VentaDesdeCotizacionRequest request) {
+        Cotizacion cotizacion = cotizacionRepository.bloquear(cotizacionId)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Cotizacion", cotizacionId));
+        accesoUbicacion.validarAcceso(cotizacion.getUbicacion().getId());
+        if (cotizacion.getEstado() != EstadoCotizacion.EMITIDA) {
+            throw new ReglaNegocioException("Solo se puede convertir una cotizacion EMITIDA");
+        }
+        if (ventaRepository.existsByCotizacionId(cotizacionId)) {
+            throw new ReglaNegocioException("La cotizacion " + cotizacion.getCodigo() + " ya origino una venta");
+        }
+        CajaSesion caja = cobros.cajaAbiertaDelUsuario();
+        Ubicacion tienda = caja.getUbicacion();
+        if (!tienda.getId().equals(cotizacion.getUbicacion().getId())) {
+            throw new ReglaNegocioException("La caja abierta debe pertenecer a la ubicacion de la cotizacion");
+        }
+        Usuario usuario = buscador.usuarioActual();
+        Venta venta = new Venta();
+        venta.setUbicacion(tienda);
+        venta.setEmpresa(tienda.getEmpresa());
+        venta.setUsuario(usuario);
+        venta.setCajaSesion(caja);
+        venta.setCotizacion(cotizacion);
+        venta.setTipoDocumento(DOCUMENTO_FASE_1);
+        venta.setCondicion(request.condicion());
+        venta.setCliente(cotizacion.getCliente());
+        if (request.fechaVencimiento() != null && request.condicion() != CondicionVenta.CREDITO) {
+            throw new ReglaNegocioException("La fecha de vencimiento solo aplica a ventas al credito");
+        }
+        if (request.fechaVencimiento() != null && request.fechaVencimiento().isBefore(calendario.hoy())) {
+            throw new ReglaNegocioException("La fecha de vencimiento no puede ser anterior a hoy");
+        }
+        venta.setFechaVencimiento(request.fechaVencimiento());
+        agregarDetallesDesdeCotizacion(venta, cotizacion.getDetalles());
+        calcularTotales(venta);
+        List<Pago> pagos = cobros.crearPagos(request.pagos() == null ? List.of() : request.pagos(), TipoPago.VENTA,
+                caja, usuario);
+        BigDecimal vuelto = aplicarPagos(venta, pagos);
+        asignarNumero(venta);
+        ventaRepository.saveAndFlush(venta);
+        movimientoStock.aplicar(tienda, TipoMovimiento.VENTA, venta.getDetalles().stream()
+                .map(d -> LineaMovimiento.de(d.getProducto(), d.getCantidadBase())).toList(),
                 OrigenMovimiento.venta(venta, usuario, null));
         return VentaResponse.completa(venta, vuelto);
     }
@@ -215,10 +269,25 @@ public class VentaService {
             }
             BigDecimal cantidad = Montos.cantidad(d.cantidad());
             BigDecimal importe = Montos.dinero(cantidad.multiply(presentacion.getPrecioVenta()));
-            BigDecimal descuento = Montos.dinero(d.descuento() == null ? BigDecimal.ZERO : d.descuento());
+            if (d.descuento() != null && d.ajustePorcentaje() != null) {
+                throw new ReglaNegocioException("Use descuento monetario o ajuste porcentual, no ambos en la misma linea");
+            }
+            BigDecimal porcentaje = d.ajustePorcentaje();
+            if (porcentaje != null && porcentaje.compareTo(CIEN.negate()) < 0) {
+                throw new ReglaNegocioException("El descuento porcentual no puede superar 100 %");
+            }
+            BigDecimal descuento = porcentaje == null
+                    ? Montos.dinero(d.descuento() == null ? BigDecimal.ZERO : d.descuento())
+                    : BigDecimal.ZERO;
             if (descuento.compareTo(importe) > 0) {
                 throw new ReglaNegocioException("El descuento de " + presentacion.getProducto().getNombre()
                         + " supera el importe de la linea (" + importe.toPlainString() + ")");
+            }
+            BigDecimal subtotal = porcentaje == null ? importe.subtract(descuento)
+                    : Montos.dinero(importe.add(importe.multiply(porcentaje).divide(CIEN)));
+            if (porcentaje != null && porcentaje.signum() < 0) {
+                // El descuento informado debe ser el efecto real despues de redondear el subtotal.
+                descuento = importe.subtract(subtotal);
             }
             VentaDetalle detalle = new VentaDetalle();
             detalle.setProducto(presentacion.getProducto());
@@ -230,10 +299,28 @@ public class VentaService {
             detalle.setCantidadBase(Montos.cantidad(cantidad.multiply(presentacion.getFactor())));
             detalle.setPrecioUnitario(presentacion.getPrecioVenta());
             detalle.setDescuento(descuento);
-            detalle.setSubtotal(importe.subtract(descuento));
+            detalle.setAjustePorcentaje(porcentaje);
+            detalle.setSubtotal(subtotal);
             if (detalle.getCantidadBase().signum() <= 0) {
                 throw new ReglaNegocioException("La cantidad de " + detalle.getDescripcion() + " es demasiado pequena");
             }
+            venta.agregarDetalle(detalle);
+        }
+    }
+
+    private static void agregarDetallesDesdeCotizacion(Venta venta, List<CotizacionDetalle> detalles) {
+        for (CotizacionDetalle origen : detalles) {
+            VentaDetalle detalle = new VentaDetalle();
+            detalle.setProducto(origen.getProducto());
+            detalle.setPresentacion(origen.getPresentacion());
+            detalle.setDescripcion(origen.getDescripcion());
+            detalle.setCantidad(origen.getCantidad());
+            detalle.setFactor(origen.getFactor());
+            detalle.setCantidadBase(origen.getCantidadBase());
+            detalle.setPrecioUnitario(origen.getPrecioUnitario());
+            detalle.setDescuento(origen.getDescuento());
+            detalle.setAjustePorcentaje(origen.getAjustePorcentaje());
+            detalle.setSubtotal(origen.getSubtotal());
             venta.agregarDetalle(detalle);
         }
     }

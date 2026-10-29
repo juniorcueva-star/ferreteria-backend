@@ -65,6 +65,10 @@ public class Venta {
     @JoinColumn(name = "cliente_id")
     private Cliente cliente;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "cotizacion_id", unique = true)
+    private Cotizacion cotizacion;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "tipo_documento", nullable = false, length = 12)
     private TipoDocumentoVenta tipoDocumento = TipoDocumentoVenta.NOTA_VENTA;

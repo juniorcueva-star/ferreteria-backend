@@ -1,11 +1,13 @@
 package com.ferreteria.service;
 
 import com.ferreteria.dto.catalogo.PresentacionRequest;
+import com.ferreteria.dto.catalogo.HistorialPrecioResponse;
 import com.ferreteria.dto.catalogo.ProductoActualizarRequest;
 import com.ferreteria.dto.catalogo.ProductoCrearRequest;
 import com.ferreteria.dto.catalogo.ProductoResponse;
 import com.ferreteria.dto.comun.PaginaResponse;
 import com.ferreteria.entity.Categoria;
+import com.ferreteria.entity.HistorialPrecioPresentacion;
 import com.ferreteria.entity.Presentacion;
 import com.ferreteria.entity.Producto;
 import com.ferreteria.entity.enums.UnidadBase;
@@ -15,7 +17,9 @@ import com.ferreteria.exception.DuplicadoException;
 import com.ferreteria.exception.RecursoNoEncontradoException;
 import com.ferreteria.exception.ReglaNegocioException;
 import com.ferreteria.repository.CategoriaRepository;
+import com.ferreteria.repository.BusquedaTexto;
 import com.ferreteria.repository.Especificaciones;
+import com.ferreteria.repository.HistorialPrecioPresentacionRepository;
 import com.ferreteria.repository.PresentacionRepository;
 import com.ferreteria.repository.ProductoRepository;
 import com.ferreteria.service.imagen.AlmacenImagenes;
@@ -24,6 +28,7 @@ import com.ferreteria.service.imagen.TipoImagen;
 import com.ferreteria.util.Montos;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -48,17 +53,23 @@ public class ProductoService {
     private final ProductoRepository productoRepository;
     private final PresentacionRepository presentacionRepository;
     private final CategoriaRepository categoriaRepository;
+    private final HistorialPrecioPresentacionRepository historialPrecioRepository;
+    private final Buscador buscador;
     private final AlmacenImagenes almacenImagenes;
 
     @Transactional(readOnly = true)
     public PaginaResponse<ProductoResponse> listar(String texto, Long categoriaId, UnidadBase unidadBase,
-                                                   Boolean activo, Pageable pageable) {
+                                                    Boolean activo, Pageable pageable) {
         Specification<Producto> filtro = Specification.allOf(
-                Especificaciones.contiene(texto, "codigo", "nombre", "marca"),
+                Especificaciones.contienePalabras(texto, "codigo", "nombre", "marca"),
+                Especificaciones.ordenarBusqueda(texto, "codigo", "nombre"),
                 Especificaciones.igual("categoria.id", categoriaId),
                 Especificaciones.igual("unidadBase", unidadBase),
                 Especificaciones.igual("activo", activo));
-        return PaginaResponse.de(productoRepository.findAll(filtro, Ordenamiento.validar(pageable, "id", "codigo", "nombre", "marca", "createdAt")), ProductoResponse::desde);
+        Pageable ordenado = BusquedaTexto.tokens(texto).isEmpty()
+                ? Ordenamiento.validar(pageable, "id", "codigo", "nombre", "marca", "createdAt")
+                : PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
+        return PaginaResponse.de(productoRepository.findAll(filtro, ordenado), ProductoResponse::desde);
     }
 
     @Transactional(readOnly = true)
@@ -66,12 +77,23 @@ public class ProductoService {
         return ProductoResponse.desde(buscar(id));
     }
 
+    @Transactional(readOnly = true)
+    public List<HistorialPrecioResponse> historialPrecios(Long productoId) {
+        buscar(productoId);
+        return historialPrecioRepository.findByProductoIdOrderByFechaDesc(productoId).stream()
+                .map(HistorialPrecioResponse::desde).toList();
+    }
+
     /** Para el lector de codigo de barras del punto de venta. */
     @Transactional(readOnly = true)
     public ProductoResponse obtenerPorCodigoBarras(String codigoBarras) {
-        Presentacion presentacion = presentacionRepository.findByCodigoBarras(codigoBarras)
+        String codigo = normalizarCodigoBarras(codigoBarras);
+        Presentacion presentacion = presentacionRepository.findByCodigoBarras(codigo)
                 .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "No hay un producto con el codigo de barras " + codigoBarras));
+                        "No hay un producto con el codigo de barras " + codigo));
+        if (!presentacion.isActivo() || !presentacion.getProducto().isActivo()) {
+            throw new ReglaNegocioException("El codigo de barras " + codigo + " no corresponde a una presentacion activa");
+        }
         return ProductoResponse.desde(presentacion.getProducto());
     }
 
@@ -164,9 +186,13 @@ public class ProductoService {
         if (seraPrincipal && !eraPrincipal) {
             quitarPrincipalActual(producto);
         }
+        BigDecimal precioAnterior = presentacion.getPrecioVenta();
         copiarPresentacion(request, presentacion);
         presentacion.setPrincipal(seraPrincipal);
         presentacion.setActivo(seraActiva);
+        if (precioAnterior.compareTo(presentacion.getPrecioVenta()) != 0) {
+            registrarCambioPrecio(producto, presentacion, precioAnterior);
+        }
         return ProductoResponse.desde(producto);
     }
 
@@ -274,6 +300,16 @@ public class ProductoService {
         presentacion.setCodigoBarras(normalizarCodigoBarras(request.codigoBarras()));
         presentacion.setPrincipal(Boolean.TRUE.equals(request.principal()));
         presentacion.setActivo(request.activo() == null || request.activo());
+    }
+
+    private void registrarCambioPrecio(Producto producto, Presentacion presentacion, BigDecimal precioAnterior) {
+        HistorialPrecioPresentacion historial = new HistorialPrecioPresentacion();
+        historial.setProducto(producto);
+        historial.setPresentacion(presentacion);
+        historial.setPrecioAnterior(precioAnterior);
+        historial.setPrecioNuevo(presentacion.getPrecioVenta());
+        historial.setUsuario(buscador.usuarioActual());
+        historialPrecioRepository.save(historial);
     }
 
     private static String normalizarCodigoBarras(String codigoBarras) {

@@ -3,6 +3,7 @@ package com.ferreteria.controller;
 import com.ferreteria.dto.comun.AnulacionRequest;
 import com.ferreteria.dto.comun.PaginaResponse;
 import com.ferreteria.dto.ventas.VentaRequest;
+import com.ferreteria.dto.ventas.VentaDesdeCotizacionRequest;
 import com.ferreteria.dto.ventas.VentaResponse;
 import com.ferreteria.entity.enums.CondicionVenta;
 import com.ferreteria.entity.enums.EstadoVenta;
@@ -43,6 +44,13 @@ public class VentaController {
     @ResponseStatus(HttpStatus.CREATED)
     public VentaResponse registrar(@Valid @RequestBody VentaRequest request) {
         return ventaService.registrar(request);
+    }
+
+    @PostMapping("/desde-cotizacion/{cotizacionId}")
+    @ResponseStatus(HttpStatus.CREATED)
+    public VentaResponse registrarDesdeCotizacion(@PathVariable Long cotizacionId,
+                                                   @Valid @RequestBody VentaDesdeCotizacionRequest request) {
+        return ventaService.registrarDesdeCotizacion(cotizacionId, request);
     }
 
     @Operation(summary = "Obtener una venta con detalle y pagos")

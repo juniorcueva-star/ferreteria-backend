@@ -1,0 +1,30 @@
+spring:
+  config:
+    import: optional:file:.env.test[.properties]
+  datasource:
+    url: jdbc:postgresql://${TEST_DB_HOST:127.0.0.1}:${TEST_DB_PORT:5545}/${TEST_DB_NAME:ivera_sprint16_1_test}
+    username: ${TEST_DB_USER}
+    password: ${TEST_DB_PASSWORD}
+
+app:
+  pruebas:
+    base-esperada: ${TEST_DB_NAME:ivera_sprint16_1_test}
+    usuario-esperado: ${TEST_DB_USER}
+    puerto-cliente-esperado: ${TEST_DB_PORT:5545}
+    puerto-servidor-esperado: 5432
+    reset-escenario: ${E2E_RESET_SCENARIO:false}
+  jwt:
+    secreto: ${TEST_JWT_SECRET}
+  admin:
+    username: admin
+    password: ${E2E_ADMIN_PASSWORD}
+  demo:
+    password: ${E2E_DEMO_PASSWORD}
+  imagenes:
+    cloudinary-url: ""
+    directorio: target/e2e-imagenes
+  cors:
+    origenes: http://localhost:5174
+
+server:
+  port: ${E2E_BACKEND_PORT:8081}

@@ -24,7 +24,7 @@ class CatalogoIntegrationTest extends IntegracionTestBase {
                 "categoriaId", 2, "unidadBase", "UNIDAD",
                 "presentaciones", List.of(
                         Map.of("nombre", "Unidad", "factor", 1, "precioVenta", 0.10, "codigoBarras", "7750001"),
-                        Map.of("nombre", "Ciento", "factor", 100, "precioVenta", 8.00),
+                        Map.of("nombre", "Ciento", "factor", 100, "precioVenta", 8.00, "codigoBarras", "7750100"),
                         Map.of("nombre", "Millar", "factor", 1000, "precioVenta", 70.00)));
     }
 
@@ -46,14 +46,73 @@ class CatalogoIntegrationTest extends IntegracionTestBase {
 
         getCon(token, "/api/productos/codigo-barras/7750001")
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.codigo").value("CLA-001"));
+                .andExpect(jsonPath("$.codigo").value("CLA-001"))
+                .andExpect(jsonPath("$.presentaciones[1].factor").value(100));
+        getCon(token, "/api/productos/codigo-barras/no-existe").andExpect(status().isNotFound());
     }
 
     @Test
-    @DisplayName("Codigo repetido da 409 y un vendedor no puede crear productos (403)")
+    @DisplayName("La busqueda de catalogo acepta palabras parciales, abreviaturas y tildes")
+    void busquedaTolerante() throws Exception {
+        String token = datos.token(datos.admin);
+        postCon(token, "/api/productos", Map.of("codigo", "PER-GAL", "nombre", "Perno galvanizado",
+                "marca", "MetalPro", "categoriaId", 1, "unidadBase", "UNIDAD",
+                "presentaciones", List.of(Map.of("nombre", "Unidad", "factor", 1, "precioVenta", 1))))
+                .andExpect(status().isCreated());
+        postCon(token, "/api/productos", Map.of("codigo", "TOR-HEX", "nombre", "Tornillo hexagonal",
+                "categoriaId", 1, "unidadBase", "UNIDAD",
+                "presentaciones", List.of(Map.of("nombre", "Unidad", "factor", 1, "precioVenta", 1))))
+                .andExpect(status().isCreated());
+        postCon(token, "/api/productos", Map.of("codigo", "ARA-PES", "nombre", "Arandela pesada",
+                "categoriaId", 1, "unidadBase", "UNIDAD",
+                "presentaciones", List.of(Map.of("nombre", "Unidad", "factor", 1, "precioVenta", 1))))
+                .andExpect(status().isCreated());
+
+        getCon(token, "/api/productos?texto=pe%20gal")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElementos").value(1))
+                .andExpect(jsonPath("$.contenido[0].codigo").value("PER-GAL"));
+        getCon(token, "/api/productos?texto=TOR%20HEX")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElementos").value(1))
+                .andExpect(jsonPath("$.contenido[0].codigo").value("TOR-HEX"));
+        getCon(token, "/api/productos?texto=ARÁN%20PÉS")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElementos").value(1))
+                .andExpect(jsonPath("$.contenido[0].codigo").value("ARA-PES"));
+        getCon(token, "/api/productos?texto=no%20existe")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElementos").value(0));
+    }
+
+    @Test
+    @DisplayName("Un codigo de una presentacion inactiva no se puede escanear")
+    void codigoDePresentacionInactiva() throws Exception {
+        String token = datos.token(datos.admin);
+        MvcResult creado = postCon(token, "/api/productos", clavo()).andReturn();
+        Long productoId = leerId(creado, "$.id");
+        Long cientoId = leerId(creado, "$.presentaciones[1].id");
+
+        putCon(token, "/api/productos/{id}/presentaciones/{pid}",
+                Map.of("nombre", "Ciento", "factor", 100, "precioVenta", 8, "codigoBarras", "7750100", "activo", false),
+                productoId, cientoId).andExpect(status().isOk());
+        getCon(token, "/api/productos/codigo-barras/7750100")
+                .andExpect(status().isUnprocessableContent())
+                .andExpect(jsonPath("$.codigo").value("REGLA_NEGOCIO"));
+    }
+
+    @Test
+    @DisplayName("No admite codigos de producto o barras ambiguos y un vendedor no puede crear productos")
     void reglasDeCreacion() throws Exception {
-        postCon(datos.token(datos.admin), "/api/productos", clavo()).andExpect(status().isCreated());
-        postCon(datos.token(datos.admin), "/api/productos", clavo())
+        String tokenAdmin = datos.token(datos.admin);
+        postCon(tokenAdmin, "/api/productos", clavo()).andExpect(status().isCreated());
+        postCon(tokenAdmin, "/api/productos", clavo())
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.codigo").value("DUPLICADO"));
+        postCon(tokenAdmin, "/api/productos", Map.of("codigo", "CLA-002", "nombre", "Clavo alternativo",
+                "categoriaId", 2, "unidadBase", "UNIDAD",
+                "presentaciones", List.of(Map.of("nombre", "Unidad", "factor", 1, "precioVenta", 0.15,
+                        "codigoBarras", "7750001"))))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.codigo").value("DUPLICADO"));
         postCon(datos.token(datos.vendedor1), "/api/productos", clavo()).andExpect(status().isForbidden());

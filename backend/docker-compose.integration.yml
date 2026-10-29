@@ -1,0 +1,23 @@
+name: ivera-cotizacion-it
+
+services:
+  postgres-integration:
+    image: postgres:16-alpine
+    container_name: ivera-cotizacion-it-postgres
+    environment:
+      POSTGRES_DB: ${INTEGRATION_DB_NAME:?Falta INTEGRATION_DB_NAME en .env.integration}
+      POSTGRES_USER: ${INTEGRATION_DB_USER:?Falta INTEGRATION_DB_USER en .env.integration}
+      POSTGRES_PASSWORD: ${INTEGRATION_DB_PASSWORD:?Falta INTEGRATION_DB_PASSWORD en .env.integration}
+    ports:
+      - "127.0.0.1:${INTEGRATION_DB_PORT:?Falta INTEGRATION_DB_PORT en .env.integration}:5432"
+    volumes:
+      - ivera_cotizacion_it_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  ivera_cotizacion_it_postgres_data:
+    name: ivera_cotizacion_it_postgres_data

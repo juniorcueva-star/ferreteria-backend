@@ -18,10 +18,20 @@ import org.springframework.data.repository.query.Param;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.Optional;
+import java.util.List;
+import java.util.Collection;
 
 public interface VentaRepository extends JpaRepository<Venta, Long>, JpaSpecificationExecutor<Venta> {
 
     long countByCajaSesionIdAndEstado(Long cajaId, EstadoVenta estado);
+
+    Optional<Venta> findByCotizacionId(Long cotizacionId);
+
+    List<Venta> findByCotizacionIdIn(Collection<Long> cotizacionIds);
+
+    boolean existsByCotizacionId(Long cotizacionId);
+
+    long countByCotizacionId(Long cotizacionId);
 
     @Query("""
             select coalesce(sum(v.total), 0) from Venta v

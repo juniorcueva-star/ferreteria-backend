@@ -1,0 +1,27 @@
+spring:
+  config:
+    import: optional:file:.env.integration[.properties]
+  datasource:
+    url: jdbc:postgresql://${INTEGRATION_DB_HOST:?Falta INTEGRATION_DB_HOST}:${INTEGRATION_DB_PORT:?Falta INTEGRATION_DB_PORT}/${INTEGRATION_DB_NAME:?Falta INTEGRATION_DB_NAME}
+    username: ${INTEGRATION_DB_USER:?Falta INTEGRATION_DB_USER}
+    password: ${INTEGRATION_DB_PASSWORD:?Falta INTEGRATION_DB_PASSWORD}
+  flyway:
+    # Se habilita solo de forma explicita en la fase autorizada de migraciones.
+    enabled: ${INTEGRATION_FLYWAY_ENABLED:false}
+
+app:
+  integracion:
+    host-esperado: 127.0.0.1
+    puerto-esperado: 5546
+    base-esperada: ivera_cotizacion_it
+    usuario-esperado: ${INTEGRATION_DB_USER:?Falta INTEGRATION_DB_USER}
+  jwt:
+    secreto: ${INTEGRATION_JWT_SECRET:?Falta INTEGRATION_JWT_SECRET}
+  imagenes:
+    cloudinary-url: ""
+    directorio: target/imagenes-integracion
+  cors:
+    origenes: http://localhost:5174
+
+server:
+  port: 8082

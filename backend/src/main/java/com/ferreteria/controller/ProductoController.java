@@ -1,6 +1,7 @@
 package com.ferreteria.controller;
 
 import com.ferreteria.dto.catalogo.PresentacionRequest;
+import com.ferreteria.dto.catalogo.HistorialPrecioResponse;
 import com.ferreteria.dto.catalogo.ProductoActualizarRequest;
 import com.ferreteria.dto.catalogo.ProductoCrearRequest;
 import com.ferreteria.dto.catalogo.ProductoResponse;
@@ -29,6 +30,8 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 @Tag(name = "06. Productos", description = "Catalogo con presentaciones y foto. Consultar: todos; modificar: ADMIN")
 @RestController
 @RequestMapping("/api/productos")
@@ -52,6 +55,12 @@ public class ProductoController {
     @GetMapping("/{id}")
     public ProductoResponse obtener(@PathVariable Long id) {
         return productoService.obtener(id);
+    }
+
+    @Operation(summary = "Historial de precios de un producto", description = "Solo incluye cambios desde que se aplico la migracion de historial")
+    @GetMapping("/{id}/historial-precios")
+    public List<HistorialPrecioResponse> historialPrecios(@PathVariable Long id) {
+        return productoService.historialPrecios(id);
     }
 
     @Operation(summary = "Buscar producto por codigo de barras de una presentacion")

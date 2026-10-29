@@ -39,6 +39,19 @@ class InventarioIntegrationTest extends IntegracionTestBase {
     }
 
     @Test
+    @DisplayName("Stock acepta productoIds repetido sin perder la restriccion de ubicacion")
+    void filtrarStockPorVariosProductos() throws Exception {
+        getCon(datos.token(datos.almacenero), "/api/inventario/stock?productoIds={cable}&productoIds={perno}",
+                cable.getId(), perno.getId())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElementos").value(2));
+        getCon(datos.token(datos.almacenero), "/api/inventario/stock?productoIds={cable}", cable.getId())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElementos").value(1))
+                .andExpect(jsonPath("$.contenido[0].productoCodigo").value("CAB-14"));
+    }
+
+    @Test
     @DisplayName("Traslado: enviar resta del almacen, recibir suma en la tienda y queda el kardex de ambos lados")
     void enviarYRecibir() throws Exception {
         MvcResult enviado = postCon(datos.token(datos.almacenero), "/api/traslados", traslado())

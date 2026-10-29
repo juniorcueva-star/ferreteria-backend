@@ -149,6 +149,54 @@ class VentaServiceTest {
     }
 
     @Test
+    @DisplayName("Descuentos e incrementos porcentuales se calculan por linea y quedan como snapshot")
+    void ajustesPorcentuales() {
+        when(cobros.crearPagos(anyList(), eq(TipoPago.VENTA), eq(caja), eq(vendedor)))
+                .thenAnswer(inv -> List.of(Fabrica.pago("EFECTIVO", true, "100.00", caja, vendedor)));
+
+        VentaResponse descuento5 = ventaService.registrar(request(CondicionVenta.CONTADO, null, "1", null, "-5"));
+        VentaResponse descuento10 = ventaService.registrar(request(CondicionVenta.CONTADO, null, "1", null, "-10"));
+        VentaResponse descuento20 = ventaService.registrar(request(CondicionVenta.CONTADO, null, "1", null, "-20"));
+        VentaResponse incremento5 = ventaService.registrar(request(CondicionVenta.CONTADO, null, "1", null, "5"));
+        VentaResponse incremento10 = ventaService.registrar(request(CondicionVenta.CONTADO, null, "1", null, "10"));
+        VentaResponse incremento20 = ventaService.registrar(request(CondicionVenta.CONTADO, null, "1", null, "20"));
+
+        assertThat(descuento5.total()).isEqualByComparingTo("7.60");
+        assertThat(descuento10.total()).isEqualByComparingTo("7.20");
+        assertThat(descuento20.total()).isEqualByComparingTo("6.40");
+        assertThat(incremento5.total()).isEqualByComparingTo("8.40");
+        assertThat(incremento10.total()).isEqualByComparingTo("8.80");
+        assertThat(incremento20.total()).isEqualByComparingTo("9.60");
+        assertThat(descuento5.detalles().getFirst().ajustePorcentaje()).isEqualByComparingTo("-5");
+        assertThat(incremento20.detalles().getFirst().ajustePorcentaje()).isEqualByComparingTo("20");
+    }
+
+    @Test
+    @DisplayName("El descuento porcentual se deriva del subtotal final redondeado")
+    void descuentoPorcentualConMedioCentimo() {
+        ciento.setPrecioVenta(BigDecimal.ONE);
+        pagos(Fabrica.pago("EFECTIVO", true, "1.00", caja, vendedor));
+
+        VentaResponse venta = ventaService.registrar(request(CondicionVenta.CONTADO, null, "1", null, "-0.5"));
+
+        assertThat(venta.total()).isEqualByComparingTo("1.00");
+        assertThat(venta.descuento()).isEqualByComparingTo("0.00");
+        assertThat(venta.detalles().getFirst().subtotal()).isEqualByComparingTo("1.00");
+        assertThat(venta.detalles().getFirst().descuento()).isEqualByComparingTo("0.00");
+    }
+
+    @Test
+    @DisplayName("No combina descuento monetario con porcentaje ni permite descuento mayor a cien por ciento")
+    void ajustePorcentualInvalido() {
+        pagos();
+
+        assertThatThrownBy(() -> ventaService.registrar(request(CondicionVenta.CONTADO, null, "1", "1", "-5")))
+                .isInstanceOf(ReglaNegocioException.class).hasMessageContaining("no ambos");
+        assertThatThrownBy(() -> ventaService.registrar(request(CondicionVenta.CONTADO, null, "1", null, "-100.01")))
+                .isInstanceOf(ReglaNegocioException.class).hasMessageContaining("descuento");
+    }
+
+    @Test
     @DisplayName("Un producto por unidades admite fracciones de presentacion si el total en unidades es entero")
     void mediaCientoEsValido() {
         pagos(Fabrica.pago("EFECTIVO", true, "4.00", caja, vendedor));
@@ -164,9 +212,15 @@ class VentaServiceTest {
     }
 
     private static VentaRequest request(CondicionVenta condicion, Long clienteId, String cantidad, String descuento) {
+        return request(condicion, clienteId, cantidad, descuento, null);
+    }
+
+    private static VentaRequest request(CondicionVenta condicion, Long clienteId, String cantidad, String descuento,
+                                        String ajustePorcentaje) {
         return new VentaRequest(condicion, clienteId, null,
                 List.of(new VentaDetalleRequest(5L, new BigDecimal(cantidad),
-                        descuento == null ? null : new BigDecimal(descuento))),
+                        descuento == null ? null : new BigDecimal(descuento),
+                        ajustePorcentaje == null ? null : new BigDecimal(ajustePorcentaje))),
                 List.of(new PagoRequest("EFECTIVO", BigDecimal.ONE, null)));
     }
 }

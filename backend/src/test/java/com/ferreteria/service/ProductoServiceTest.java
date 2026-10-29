@@ -3,10 +3,13 @@ package com.ferreteria.service;
 import com.ferreteria.dto.catalogo.PresentacionRequest;
 import com.ferreteria.dto.catalogo.ProductoCrearRequest;
 import com.ferreteria.entity.Categoria;
+import com.ferreteria.entity.Presentacion;
 import com.ferreteria.entity.Producto;
+import com.ferreteria.entity.Usuario;
 import com.ferreteria.entity.enums.UnidadBase;
 import com.ferreteria.exception.ReglaNegocioException;
 import com.ferreteria.repository.CategoriaRepository;
+import com.ferreteria.repository.HistorialPrecioPresentacionRepository;
 import com.ferreteria.repository.PresentacionRepository;
 import com.ferreteria.repository.ProductoRepository;
 import com.ferreteria.service.imagen.AlmacenImagenes;
@@ -34,6 +37,8 @@ class ProductoServiceTest {
     @Mock private ProductoRepository productoRepository;
     @Mock private PresentacionRepository presentacionRepository;
     @Mock private CategoriaRepository categoriaRepository;
+    @Mock private HistorialPrecioPresentacionRepository historialPrecioRepository;
+    @Mock private Buscador buscador;
     @Mock private AlmacenImagenes almacenImagenes;
     @InjectMocks private ProductoService productoService;
 
@@ -72,6 +77,40 @@ class ProductoServiceTest {
         assertThat(respuesta.presentaciones()).hasSize(2);
         assertThat(respuesta.presentaciones().get(0).principal()).isTrue();
         assertThat(respuesta.presentaciones().get(1).factor()).isEqualByComparingTo("0.5");
+    }
+
+    @Test
+    @DisplayName("Solo registra historial cuando el precio de una presentacion cambia")
+    void historialPrecioSoloConCambio() {
+        Categoria categoria = new Categoria();
+        categoria.setId(1L);
+        Producto producto = new Producto();
+        producto.setId(10L);
+        producto.setCategoria(categoria);
+        producto.setUnidadBase(UnidadBase.UNIDAD);
+        Presentacion presentacion = new Presentacion();
+        presentacion.setId(5L);
+        presentacion.setNombre("Unidad");
+        presentacion.setFactor(BigDecimal.ONE);
+        presentacion.setPrecioVenta(new BigDecimal("8.00"));
+        presentacion.setActivo(true);
+        presentacion.setPrincipal(true);
+        producto.agregarPresentacion(presentacion);
+        Usuario usuario = new Usuario();
+        usuario.setId(2L);
+        when(productoRepository.findById(10L)).thenReturn(Optional.of(producto));
+        when(buscador.usuarioActual()).thenReturn(usuario);
+
+        productoService.actualizarPresentacion(10L, 5L, new PresentacionRequest("Unidad", BigDecimal.ONE,
+                new BigDecimal("8.00"), null, true, true));
+        verify(historialPrecioRepository, never()).save(any());
+
+        productoService.actualizarPresentacion(10L, 5L, new PresentacionRequest("Unidad", BigDecimal.ONE,
+                new BigDecimal("9.50"), null, true, true));
+        verify(historialPrecioRepository).save(org.mockito.ArgumentMatchers.argThat(h ->
+                h.getPrecioAnterior().compareTo(new BigDecimal("8.00")) == 0
+                        && h.getPrecioNuevo().compareTo(new BigDecimal("9.50")) == 0
+                        && h.getProducto() == producto && h.getPresentacion() == presentacion && h.getUsuario() == usuario));
     }
 
     private static ProductoCrearRequest request(UnidadBase unidad, PresentacionRequest... presentaciones) {

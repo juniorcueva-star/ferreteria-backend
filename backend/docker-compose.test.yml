@@ -1,0 +1,23 @@
+name: ivera-s16-test
+
+services:
+  postgres-test:
+    image: postgres:16-alpine
+    container_name: ivera-s16-test-postgres
+    environment:
+      POSTGRES_DB: ${TEST_DB_NAME:?Falta TEST_DB_NAME en .env.test}
+      POSTGRES_USER: ${TEST_DB_USER:?Falta TEST_DB_USER en .env.test}
+      POSTGRES_PASSWORD: ${TEST_DB_PASSWORD:?Falta TEST_DB_PASSWORD en .env.test}
+    ports:
+      - "${TEST_DB_PORT:-5545}:5432"
+    volumes:
+      - ivera_s16_test_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+ ivera_s16_test_postgres_data:
+    name: ivera_s16_test_postgres_data

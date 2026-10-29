@@ -47,15 +47,15 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
- * Datos de demostracion para probar el sistema apenas se levanta. SOLO en el perfil "dev" (nunca en produccion
- * ni en las migraciones). Se cargan una sola vez: si ya existe el "Almacen Central" no hace nada.
+ * Datos de demostracion para desarrollo y datos reproducibles para E2E aislado. Nunca se cargan en produccion
+ * ni en migraciones. Se cargan una sola vez: si ya existe el "Almacen Central" no hace nada.
  * <p>
  * La contrasena de los usuarios de demostracion viene de la variable DEMO_PASSWORD (no esta en el codigo).
  * El stock inicial se registra con el mismo servicio que usa el sistema, asi queda en el kardex.
  */
 @Slf4j
 @Component
-@Profile("dev")
+@Profile({"dev", "e2e"})
 @Order(2) // despues de crear el admin inicial
 @RequiredArgsConstructor
 public class DatosDemoConfig implements ApplicationRunner {

@@ -62,6 +62,10 @@ public class VentaDetalle {
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal descuento = BigDecimal.ZERO;
 
+    // null = precio de lista o descuento monetario; negativo = descuento %, positivo = incremento %.
+    @Column(name = "ajuste_porcentaje", precision = 12, scale = 4)
+    private BigDecimal ajustePorcentaje;
+
     // cantidad * precio - descuento
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal subtotal;

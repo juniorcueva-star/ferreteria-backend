@@ -7,6 +7,8 @@ import com.ferreteria.dto.inventario.KardexResponse;
 import com.ferreteria.dto.inventario.LineaProductoRequest;
 import com.ferreteria.dto.inventario.StockMinimoRequest;
 import com.ferreteria.dto.inventario.StockResponse;
+import com.ferreteria.dto.inventario.DisponibilidadResponse;
+import com.ferreteria.exception.ReglaNegocioException;
 import com.ferreteria.entity.MovimientoInventario;
 import com.ferreteria.entity.Producto;
 import com.ferreteria.entity.Stock;
@@ -51,16 +53,26 @@ public class InventarioService {
      * @param soloBajo true = solo productos con stock menor o igual a su minimo (reporte de stock bajo)
      */
     @Transactional(readOnly = true)
-    public PaginaResponse<StockResponse> listarStock(Long ubicacionId, Long productoId, String texto,
-                                                     boolean soloBajo, Pageable pageable) {
+    public PaginaResponse<StockResponse> listarStock(Long ubicacionId, Long productoId, List<Long> productoIds, String texto,
+                                                      boolean soloBajo, Pageable pageable) {
         Specification<Stock> filtro = Specification.allOf(
                 Especificaciones.igual("ubicacion.id", accesoUbicacion.ubicacionParaConsultar(ubicacionId)),
                 Especificaciones.igual("producto.id", productoId),
-                Especificaciones.contiene(texto, "producto.codigo", "producto.nombre"),
+                Especificaciones.en("producto.id", productoIds),
+                Especificaciones.contienePalabras(texto, "producto.codigo", "producto.nombre"),
                 Especificaciones.igual("producto.activo", true),
                 soloBajo ? stockBajo() : Specification.unrestricted());
         return PaginaResponse.de(stockRepository.findAll(filtro, Ordenamiento.validar(pageable,
                 "producto.nombre", "producto.codigo", "cantidad", "stockMinimo", "ubicacion.nombre")), StockResponse::desde);
+    }
+
+    @Transactional(readOnly = true)
+    public List<DisponibilidadResponse> disponibilidadParaVenta(List<Long> productoIds) {
+        if (productoIds == null || productoIds.isEmpty() || productoIds.size() > 100 || productoIds.stream().anyMatch(id -> id == null || id <= 0)) {
+            throw new ReglaNegocioException("Indique entre 1 y 100 productos válidos");
+        }
+        return stockRepository.findByProductoIdInAndUbicacionActivoTrueAndProductoActivoTrue(productoIds)
+                .stream().map(DisponibilidadResponse::desde).toList();
     }
 
     @Transactional

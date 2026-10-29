@@ -6,6 +6,7 @@ import com.ferreteria.dto.inventario.InventarioInicialRequest;
 import com.ferreteria.dto.inventario.KardexResponse;
 import com.ferreteria.dto.inventario.StockMinimoRequest;
 import com.ferreteria.dto.inventario.StockResponse;
+import com.ferreteria.dto.inventario.DisponibilidadResponse;
 import com.ferreteria.entity.enums.TipoMovimiento;
 import com.ferreteria.service.InventarioService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -40,15 +41,22 @@ public class InventarioController {
     private final InventarioService inventarioService;
 
     @Operation(summary = "Stock por ubicacion", description = "Cantidades en unidad base. Filtros: ubicacionId, "
-            + "productoId, texto (codigo o nombre) y soloBajo=true para ver lo que llego al stock minimo")
+            + "productoId, productoIds repetido, texto (codigo o nombre) y soloBajo=true para ver lo que llego al stock minimo")
     @GetMapping("/stock")
     public PaginaResponse<StockResponse> listarStock(
             @RequestParam(required = false) Long ubicacionId,
             @RequestParam(required = false) Long productoId,
+            @RequestParam(required = false) List<Long> productoIds,
             @RequestParam(required = false) String texto,
             @RequestParam(defaultValue = "false") boolean soloBajo,
             @ParameterObject @PageableDefault(size = 20, sort = "producto.nombre") Pageable pageable) {
-        return inventarioService.listarStock(ubicacionId, productoId, texto, soloBajo, pageable);
+        return inventarioService.listarStock(ubicacionId, productoId, productoIds, texto, soloBajo, pageable);
+    }
+
+    @Operation(summary = "Disponibilidad de productos por ubicación para venta")
+    @GetMapping("/disponibilidad")
+    public List<DisponibilidadResponse> disponibilidad(@RequestParam List<Long> productoIds) {
+        return inventarioService.disponibilidadParaVenta(productoIds);
     }
 
     @Operation(summary = "Definir stock minimo de un producto en una ubicacion")
