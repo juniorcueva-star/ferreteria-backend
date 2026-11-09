@@ -22,7 +22,7 @@ subidos a `origin/catalogo-busqueda` y su checkpoint.
 | B2 | backend | V10 costo de referencia, ganancia, adicional, precio sugerido e historial de precios | Formula HALF_UP, historial y costo tras compra probados | Terminada |
 | F2 | frontend | Precios por presentacion: sugerido, usar sugerido, historial | Vitest + Playwright | Terminada |
 | B3 | backend | `GET /api/inventario/resumen`: stock por ubicacion y total en una sola consulta | Lectura de otras tiendas permitida; escritura sigue bloqueada | Terminada |
-| F3 | frontend | Pantalla "Disponibilidad" y resumen en el punto de venta | Vitest + Playwright | Pendiente |
+| F3 | frontend | Pantalla "Disponibilidad" y resumen en el punto de venta | Vitest + Playwright | Terminada |
 | B4 | backend | V11 encargos: crear, listar, entregar (crea la venta) y anular | Stock solo cambia al entregar | Pendiente |
 | F4 | frontend | "Hacer encargo" en el punto de venta y pantalla de encargos | Playwright: crear, entregar y ver el stock | Pendiente |
 | B5 | backend | V12 cotizaciones: CRUD, convertir en venta, PDF, correo y WhatsApp | PDF valido, total igual al de la venta, correo 422 sin configuracion | Pendiente |
