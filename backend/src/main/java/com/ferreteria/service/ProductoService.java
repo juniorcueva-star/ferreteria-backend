@@ -1,5 +1,7 @@
 package com.ferreteria.service;
 
+import com.ferreteria.dto.catalogo.AccionLoteRequest;
+import com.ferreteria.dto.catalogo.AccionLoteResponse;
 import com.ferreteria.dto.catalogo.PresentacionRequest;
 import com.ferreteria.dto.catalogo.ProductoActualizarRequest;
 import com.ferreteria.dto.catalogo.ProductoCrearRequest;
@@ -39,6 +41,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -50,6 +53,8 @@ import java.util.Set;
 @Service
 @RequiredArgsConstructor
 public class ProductoService {
+
+    private static final String MARCA_POR_DEFECTO = "VARIADO";
 
     private final ProductoRepository productoRepository;
     private final PresentacionRepository presentacionRepository;
@@ -94,7 +99,7 @@ public class ProductoService {
         producto.setCodigo(codigo);
         producto.setNombre(request.nombre().trim());
         producto.setDescripcion(request.descripcion());
-        producto.setMarca(request.marca());
+        producto.setMarca(marca(request.marca()));
         producto.setCategoria(buscarCategoria(request.categoriaId()));
         producto.setUnidadBase(request.unidadBase());
         producto.setTipo(request.tipo());
@@ -105,7 +110,7 @@ public class ProductoService {
         for (int i = 0; i < request.presentaciones().size(); i++) {
             Presentacion presentacion = new Presentacion();
             copiarPresentacion(request.presentaciones().get(i), presentacion);
-            presentacion.setDecimales(decimalesPorDefecto(request.unidadBase()));
+            presentacion.setDecimales(decimales(request.presentaciones().get(i), request.unidadBase()));
             presentacion.setPrincipal(hayPrincipal ? presentacion.isPrincipal() : i == 0);
             producto.agregarPresentacion(presentacion);
         }
@@ -126,7 +131,7 @@ public class ProductoService {
         producto.setCodigo(codigo);
         producto.setNombre(request.nombre().trim());
         producto.setDescripcion(request.descripcion());
-        producto.setMarca(request.marca());
+        producto.setMarca(marca(request.marca()));
         producto.setCategoria(buscarCategoria(request.categoriaId()));
         producto.setActivo(request.activo());
         producto.setTipo(request.tipo());
@@ -134,6 +139,34 @@ public class ProductoService {
         producto.setMedida(request.medida());
         actualizarTerminoBusqueda(producto);
         return ProductoResponse.desde(producto);
+    }
+
+    /**
+     * Aplica la misma accion a varios productos (asignar categoria, activar o desactivar). Es todo o nada: si
+     * algun producto no existe, no se cambia ninguno.
+     */
+    @Transactional
+    public AccionLoteResponse aplicarAccionLote(AccionLoteRequest request) {
+        Set<Long> ids = new LinkedHashSet<>(request.productoIds());
+        List<Producto> productos = productoRepository.findAllById(ids);
+        if (productos.size() != ids.size()) {
+            Set<Long> encontrados = new HashSet<>();
+            productos.forEach(p -> encontrados.add(p.getId()));
+            List<Long> faltantes = ids.stream().filter(id -> !encontrados.contains(id)).toList();
+            throw new ReglaNegocioException("No existen los productos " + faltantes + ": no se cambio ninguno");
+        }
+        switch (request.accion()) {
+            case ASIGNAR_CATEGORIA -> {
+                if (request.categoriaId() == null) {
+                    throw new ReglaNegocioException("Indique la categoria a asignar (categoriaId)");
+                }
+                Categoria categoria = buscarCategoria(request.categoriaId());
+                productos.forEach(p -> p.setCategoria(categoria));
+            }
+            case ACTIVAR -> productos.forEach(p -> p.setActivo(true));
+            case DESACTIVAR -> productos.forEach(p -> p.setActivo(false));
+        }
+        return new AccionLoteResponse(request.accion(), productos.size());
     }
 
     @Transactional
@@ -145,7 +178,7 @@ public class ProductoService {
 
         Presentacion presentacion = new Presentacion();
         copiarPresentacion(request, presentacion);
-        presentacion.setDecimales(decimalesPorDefecto(producto.getUnidadBase()));
+        presentacion.setDecimales(decimales(request, producto.getUnidadBase()));
         if (presentacion.isPrincipal()) {
             if (!presentacion.isActivo()) {
                 throw new ReglaNegocioException("La presentacion principal debe estar activa");
@@ -184,6 +217,9 @@ public class ProductoService {
         copiarPresentacion(request, presentacion);
         presentacion.setPrincipal(seraPrincipal);
         presentacion.setActivo(seraActiva);
+        if (request.decimales() != null) {
+            presentacion.setDecimales(request.decimales());
+        }
         return ProductoResponse.desde(producto);
     }
 
@@ -345,8 +381,12 @@ public class ProductoService {
                 producto.getMarca(), producto.getTipo(), producto.getAcabado(), producto.getMedida()));
     }
 
-    /** Unidades enteras para las unidades contables; kilo y metro aceptan 3 decimales. */
-    private static int decimalesPorDefecto(UnidadBase unidadBase) {
-        return unidadBase == UnidadBase.UNIDAD ? 0 : 3;
+    /** Si no se indica marca, el producto queda como VARIADO (igual que en el sistema actual del cliente). */
+    private static String marca(String marca) {
+        return marca == null || marca.isBlank() ? MARCA_POR_DEFECTO : marca.trim();
+    }
+
+    private static int decimales(PresentacionRequest request, UnidadBase unidadBase) {
+        return request.decimales() != null ? request.decimales() : ReglaDecimales.porUnidadBase(unidadBase);
     }
 }

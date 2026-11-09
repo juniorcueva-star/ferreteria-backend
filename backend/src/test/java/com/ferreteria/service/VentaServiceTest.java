@@ -149,14 +149,25 @@ class VentaServiceTest {
     }
 
     @Test
-    @DisplayName("Un producto por unidades admite fracciones de presentacion si el total en unidades es entero")
-    void mediaCientoEsValido() {
+    @DisplayName("Una presentacion sin decimales (Ciento) rechaza fracciones como 0.5")
+    void cientoNoAceptaFracciones() {
         pagos(Fabrica.pago("EFECTIVO", true, "4.00", caja, vendedor));
 
-        VentaResponse venta = ventaService.registrar(request(CondicionVenta.CONTADO, null, "0.5", null));
+        assertThatThrownBy(() -> ventaService.registrar(request(CondicionVenta.CONTADO, null, "0.5", null)))
+                .isInstanceOf(ReglaNegocioException.class)
+                .hasMessageContaining("no acepta fracciones");
+        verify(movimientoStock, never()).aplicar(any(), any(), anyList(), any());
+    }
 
-        assertThat(venta.detalles().getFirst().cantidadBase()).isEqualByComparingTo("50");
-        assertThat(venta.total()).isEqualByComparingTo("4.00");
+    @Test
+    @DisplayName("Una presentacion con 3 decimales (kilo) acepta 0.250 y respeta el limite")
+    void kiloAceptaHastaTresDecimales() {
+        ciento.setDecimales(3);
+        pagos(Fabrica.pago("EFECTIVO", true, "2.00", caja, vendedor));
+
+        VentaResponse venta = ventaService.registrar(request(CondicionVenta.CONTADO, null, "0.25", null));
+
+        assertThat(venta.total()).isEqualByComparingTo("2.00");
     }
 
     private void pagos(Pago... pagos) {

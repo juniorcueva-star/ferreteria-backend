@@ -25,6 +25,7 @@ import com.ferreteria.repository.SerieCorrelativoRepository;
 import com.ferreteria.repository.StockRepository;
 import com.ferreteria.repository.UbicacionRepository;
 import com.ferreteria.repository.UsuarioRepository;
+import com.ferreteria.service.ReglaDecimales;
 import com.ferreteria.service.stock.LineaMovimiento;
 import com.ferreteria.service.stock.MovimientoStockService;
 import com.ferreteria.service.stock.OrigenMovimiento;
@@ -237,6 +238,7 @@ public class DatosDemoConfig implements ApplicationRunner {
         producto.setUnidadBase(unidad);
         for (int i = 0; i < presentaciones.length; i++) {
             presentaciones[i].setPrincipal(i == 0);
+            presentaciones[i].setDecimales(ReglaDecimales.porUnidadBase(unidad));
             producto.agregarPresentacion(presentaciones[i]);
         }
         return productoRepository.save(producto);

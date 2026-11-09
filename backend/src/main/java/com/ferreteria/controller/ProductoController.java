@@ -1,5 +1,7 @@
 package com.ferreteria.controller;
 
+import com.ferreteria.dto.catalogo.AccionLoteRequest;
+import com.ferreteria.dto.catalogo.AccionLoteResponse;
 import com.ferreteria.dto.catalogo.PresentacionRequest;
 import com.ferreteria.dto.catalogo.ProductoActualizarRequest;
 import com.ferreteria.dto.catalogo.ProductoCrearRequest;
@@ -71,6 +73,13 @@ public class ProductoController {
     @PutMapping("/{id}")
     public ProductoResponse actualizar(@PathVariable Long id, @Valid @RequestBody ProductoActualizarRequest request) {
         return productoService.actualizar(id, request);
+    }
+
+    @Operation(summary = "Accion en lote", description = "Asignar categoria, activar o desactivar de 1 a 200 "
+            + "productos. Todo o nada: si un producto no existe no se cambia ninguno (422). Solo ADMIN")
+    @PostMapping("/acciones-lote")
+    public AccionLoteResponse aplicarAccionLote(@Valid @RequestBody AccionLoteRequest request) {
+        return productoService.aplicarAccionLote(request);
     }
 
     @Operation(summary = "Agregar una presentacion al producto")

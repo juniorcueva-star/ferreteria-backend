@@ -258,3 +258,22 @@ Registro de las decisiones de diseno tomadas durante el desarrollo (que se decid
   (`?productoIds=1,2,3&size=100`). Es un cambio minimo: un parametro opcional, sin cambios de esquema; respeta la
   regla por tienda (el vendedor sigue viendo solo su ubicacion) y acepta como maximo 100 productos (422 si se pasa).
   Prueba: `InventarioIntegrationTest.stockDeVariosProductos`.
+
+## Segunda fase (rama catalogo-busqueda)
+
+- **D79. Categorias de ferreteria en V9** (Pernos, Tuercas, Remaches pop, Autoroscantes, Tornillos, Tirafones,
+  Brocas, Bridas), escritas como las de V2 (primera letra en mayuscula). No se borra ninguna de V2 y se omite una si
+  ya existe con el mismo nombre sin importar mayusculas, porque el nombre de categoria es unico.
+- **D80. Decimales y factor sugerido en `unidad_medida` (V9).** El formulario de presentaciones necesita mostrar
+  cuantos decimales acepta cada unidad (docena 0, kilo 3) y proponer el factor (docena 12, ciento 100). La
+  presentacion no se enlaza a la unidad: copia nombre, factor y decimales al crearse y luego se pueden editar
+  (`decimales` es opcional en el request; si falta, 0 para productos por UNIDAD y 3 para KILO o METRO).
+- **D81. Regla de decimales (D8) en ventas y compras** (`ReglaDecimales`). Si la cantidad tiene mas decimales de los
+  que acepta la presentacion responde 422 ("La presentacion Docena de ... no acepta fracciones"). En una compra sin
+  presentacion se usa la regla de la unidad base. Cotizaciones y encargos la aplican cuando se construyan (B4 y B5).
+  Cambio de comportamiento: antes se podia vender 0.5 Ciento; ahora se usa la presentacion Medio ciento o Unidad.
+- **D82. Marca por defecto VARIADO** tambien en el backend: un producto creado o actualizado sin marca queda como
+  VARIADO, igual que en el sistema actual del cliente. Los productos ya existentes no se modifican.
+- **D83. Acciones en lote** (`POST /api/productos/acciones-lote`, solo ADMIN): asignar categoria, activar o
+  desactivar de 1 a 200 productos. Todo o nada: si algun id no existe responde 422 con los ids faltantes y no cambia
+  ninguno. Los ids repetidos cuentan una sola vez.

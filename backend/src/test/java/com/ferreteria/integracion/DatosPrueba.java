@@ -18,6 +18,7 @@ import com.ferreteria.repository.StockRepository;
 import com.ferreteria.repository.UbicacionRepository;
 import com.ferreteria.repository.UsuarioRepository;
 import com.ferreteria.security.JwtService;
+import com.ferreteria.service.ReglaDecimales;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -105,6 +106,7 @@ public class DatosPrueba {
         if (otra.length == 3) {
             producto.agregarPresentacion(presentacion(otra[0], otra[1], otra[2], false));
         }
+        producto.getPresentaciones().forEach(p -> p.setDecimales(ReglaDecimales.porUnidadBase(unidad)));
         return productoRepository.save(producto);
     }
 

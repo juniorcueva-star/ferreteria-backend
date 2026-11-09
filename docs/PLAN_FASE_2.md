@@ -17,7 +17,7 @@ subidos a `origin/catalogo-busqueda` y su checkpoint.
 | Etapa | Repositorio | Contenido | Criterio de terminado | Estado |
 |-------|-------------|-----------|-----------------------|--------|
 | E0 | ambos | Preparacion: ramas, pruebas base, este plan | `./mvnw verify` (137) y lint/build/test del frontend (53) en verde | Terminada |
-| B1 | backend | Decimales por presentacion en ventas y compras; V9 categorias de ferreteria y decimales por unidad de medida; acciones en lote | Pruebas de decimales y de acciones en lote en verde | Pendiente |
+| B1 | backend | Decimales por presentacion en ventas y compras; V9 categorias de ferreteria y decimales por unidad de medida; acciones en lote | Pruebas de decimales y de acciones en lote en verde | Terminada |
 | F1 | frontend | Formulario de producto (tipo, acabado, medida, marca VARIADO), unidad de medida en presentaciones, buscador por palabras, acciones en lote | Vitest + Playwright ("per hex zin" y accion en lote) | Pendiente |
 | B2 | backend | V10 costo de referencia, ganancia, adicional, precio sugerido e historial de precios | Formula HALF_UP, historial y costo tras compra probados | Pendiente |
 | F2 | frontend | Precios por presentacion: sugerido, usar sugerido, historial | Vitest + Playwright | Pendiente |

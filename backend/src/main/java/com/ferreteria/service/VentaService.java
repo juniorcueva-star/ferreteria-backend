@@ -213,6 +213,7 @@ public class VentaService {
                 throw new ReglaNegocioException(presentacion.getProducto().getNombre() + " ("
                         + presentacion.getNombre() + ") no esta disponible para la venta");
             }
+            ReglaDecimales.validar(d.cantidad(), presentacion, presentacion.getProducto());
             BigDecimal cantidad = Montos.cantidad(d.cantidad());
             BigDecimal importe = Montos.dinero(cantidad.multiply(presentacion.getPrecioVenta()));
             BigDecimal descuento = Montos.dinero(d.descuento() == null ? BigDecimal.ZERO : d.descuento());

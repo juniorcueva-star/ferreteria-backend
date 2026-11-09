@@ -147,6 +147,7 @@ public class CompraService {
     private CompraDetalle crearDetalle(CompraDetalleRequest request) {
         ProductoCantidad linea = buscador.lineaProducto(request.productoId(), request.presentacionId(),
                 request.cantidad());
+        ReglaDecimales.validar(request.cantidad(), linea.presentacion(), linea.producto());
         BigDecimal factor = linea.presentacion() == null ? BigDecimal.ONE : linea.presentacion().getFactor();
 
         CompraDetalle detalle = new CompraDetalle();
