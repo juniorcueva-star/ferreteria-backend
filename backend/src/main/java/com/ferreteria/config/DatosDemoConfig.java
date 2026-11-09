@@ -27,6 +27,7 @@ import com.ferreteria.repository.UbicacionRepository;
 import com.ferreteria.repository.UsuarioRepository;
 import com.ferreteria.service.ReglaDecimales;
 import com.ferreteria.service.stock.LineaMovimiento;
+import com.ferreteria.util.BusquedaTexto;
 import com.ferreteria.service.stock.MovimientoStockService;
 import com.ferreteria.service.stock.OrigenMovimiento;
 import lombok.RequiredArgsConstructor;
@@ -62,6 +63,12 @@ import java.util.stream.IntStream;
 public class DatosDemoConfig implements ApplicationRunner {
 
     private static final String ALMACEN = "Almacen Central";
+
+    /** Tipo, acabado y medida de los productos que se diferencian por tamano (pernos y tornillos). */
+    private static final Map<String, String[]> ATRIBUTOS = Map.of(
+            "PER-3802", new String[]{"Hexagonal", "Zincado", "3/8 X 2"},
+            "TOR-0610", new String[]{"Drywall", "Fosfatado", "6 X 1"},
+            "CLA-0200", new String[]{"Con cabeza", null, "2"});
 
     private final EmpresaRepository empresaRepository;
     private final UbicacionRepository ubicacionRepository;
@@ -236,6 +243,14 @@ public class DatosDemoConfig implements ApplicationRunner {
         producto.setNombre(nombre);
         producto.setCategoria(categorias.get(categoria));
         producto.setUnidadBase(unidad);
+        producto.setMarca("VARIADO");
+        String[] atributos = ATRIBUTOS.getOrDefault(codigo, new String[3]);
+        producto.setTipo(atributos[0]);
+        producto.setAcabado(atributos[1]);
+        producto.setMedida(atributos[2]);
+        // Indice de la busqueda por palabras ("per hex zin"); el service lo calcula igual al crear por la API
+        producto.setTerminoBusqueda(BusquedaTexto.indice(codigo, nombre, producto.getMarca(), atributos[0],
+                atributos[1], atributos[2]));
         for (int i = 0; i < presentaciones.length; i++) {
             presentaciones[i].setPrincipal(i == 0);
             presentaciones[i].setDecimales(ReglaDecimales.porUnidadBase(unidad));
