@@ -102,7 +102,8 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.PUT, "/api/inventario/stock/minimo").hasRole(ADMIN)
                 .requestMatchers(HttpMethod.GET, "/api/inventario/**").authenticated()
                 // Punto de venta
-                .requestMatchers("/api/clientes/**", "/api/cajas/**", "/api/ventas/**", "/api/fiado/**")
+                .requestMatchers("/api/clientes/**", "/api/cajas/**", "/api/ventas/**", "/api/fiado/**",
+                        "/api/encargos/**")
                 .hasAnyRole(ADMIN, VENDEDOR)
                 .requestMatchers(HttpMethod.GET, "/api/metodos-pago/**").authenticated()
                 .requestMatchers(HttpMethod.GET, "/api/unidades-medida/**").authenticated()

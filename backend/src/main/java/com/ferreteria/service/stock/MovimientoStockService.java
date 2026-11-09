@@ -65,7 +65,7 @@ public class MovimientoStockService {
             stockRepository.crearSiNoExiste(producto.getId(), ubicacion.getId());
         }
         Stock stock = stockRepository.bloquear(producto.getId(), ubicacion.getId()).orElse(null);
-        BigDecimal disponible = stock == null ? BigDecimal.ZERO : stock.getCantidad();
+        BigDecimal disponible = stock == null ? Montos.cantidad(BigDecimal.ZERO) : stock.getCantidad();
         BigDecimal saldo = tipo.esEntrada() ? disponible.add(cantidad) : disponible.subtract(cantidad);
         if (stock == null || saldo.signum() < 0) {
             throw new StockInsuficienteException(producto.getNombre(), ubicacion.getNombre(), disponible, cantidad);

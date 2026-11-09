@@ -299,3 +299,14 @@ Registro de las decisiones de diseno tomadas durante el desarrollo (que se decid
 - **D88. Indice de busqueda en los datos de demostracion.** Al probar la disponibilidad se vio que los productos demo
   se cargaban sin `termino_busqueda` (la V8 solo completa los productos que ya existian al migrar), asi que en una base
   nueva, como la de la nube, no aparecian al buscar por palabras. Ahora el cargador demo lo calcula.
+- **D89. Encargos (V11, reglas D6 y D7).** Tabla `encargo` de un solo producto por encargo, con codigo EN-000001
+  (secuencia, igual que traslados) y `observacion` (para el formulario del frontend). Crear o anular no toca el stock.
+  Al entregar se crea una venta normal (contado o credito, con pagos y cliente; si no se indica cliente se usa el del
+  encargo) en la caja abierta de quien entrega, que debe estar en la tienda del encargo. Si no hay stock suficiente
+  responde 422 (no 409) con lo disponible y no cambia nada. Un encargo entregado o anulado no se vuelve a entregar ni
+  anular. El costo puede venir en el request (lo que cuesta conseguirlo fuera); si no, se usa el costo de referencia
+  de la presentacion. El precio no puede ser menor que el costo (422 y CHECK en la BD). El recargo se calcula frente al
+  precio de lista y es solo informativo.
+- **D90. Venta con precio acordado.** `VentaService.registrarConPrecios` permite que un documento ya acordado
+  (encargo o cotizacion) fije el precio de sus lineas. El endpoint `POST /api/ventas` sigue usando siempre el precio de
+  lista: el vendedor no puede cambiar precios en una venta normal.

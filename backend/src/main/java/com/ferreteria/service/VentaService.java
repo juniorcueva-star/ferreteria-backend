@@ -73,6 +73,18 @@ public class VentaService {
 
     @Transactional
     public VentaResponse registrar(VentaRequest request) {
+        return registrarConPrecios(request, Map.of());
+    }
+
+    /**
+     * Registra la venta usando, para las presentaciones indicadas, un precio ya acordado en otro documento (el
+     * precio de un encargo o de una cotizacion) en vez del precio de lista. Solo lo usan los services de encargos y
+     * cotizaciones; el endpoint de ventas siempre usa el precio de lista.
+     *
+     * @param preciosAcordados presentacionId -> precio unitario con IGV
+     */
+    @Transactional
+    public VentaResponse registrarConPrecios(VentaRequest request, Map<Long, BigDecimal> preciosAcordados) {
         CajaSesion caja = cobros.cajaAbiertaDelUsuario();
         Ubicacion tienda = caja.getUbicacion();
         if (!tienda.isActivo()) {
@@ -89,7 +101,7 @@ public class VentaService {
         venta.setCondicion(request.condicion());
         venta.setCliente(resolverCliente(request));
         venta.setFechaVencimiento(resolverVencimiento(request));
-        agregarDetalles(venta, request.detalles());
+        agregarDetalles(venta, request.detalles(), preciosAcordados);
         calcularTotales(venta);
 
         List<Pago> pagos = cobros.crearPagos(request.pagos() == null ? List.of() : request.pagos(), TipoPago.VENTA,
@@ -200,7 +212,8 @@ public class VentaService {
         return request.fechaVencimiento();
     }
 
-    private void agregarDetalles(Venta venta, List<VentaDetalleRequest> detalles) {
+    private void agregarDetalles(Venta venta, List<VentaDetalleRequest> detalles,
+                                 Map<Long, BigDecimal> preciosAcordados) {
         Map<Long, Presentacion> presentaciones = presentacionRepository.findByIdIn(
                         detalles.stream().map(VentaDetalleRequest::presentacionId).toList())
                 .stream().collect(Collectors.toMap(Presentacion::getId, Function.identity()));
@@ -215,7 +228,8 @@ public class VentaService {
             }
             ReglaDecimales.validar(d.cantidad(), presentacion, presentacion.getProducto());
             BigDecimal cantidad = Montos.cantidad(d.cantidad());
-            BigDecimal importe = Montos.dinero(cantidad.multiply(presentacion.getPrecioVenta()));
+            BigDecimal precio = preciosAcordados.getOrDefault(presentacion.getId(), presentacion.getPrecioVenta());
+            BigDecimal importe = Montos.dinero(cantidad.multiply(precio));
             BigDecimal descuento = Montos.dinero(d.descuento() == null ? BigDecimal.ZERO : d.descuento());
             if (descuento.compareTo(importe) > 0) {
                 throw new ReglaNegocioException("El descuento de " + presentacion.getProducto().getNombre()
@@ -229,7 +243,7 @@ public class VentaService {
             detalle.setFactor(presentacion.getFactor());
             // Igual que el CHECK ck_venta_det_base: ROUND(cantidad * factor, 3)
             detalle.setCantidadBase(Montos.cantidad(cantidad.multiply(presentacion.getFactor())));
-            detalle.setPrecioUnitario(presentacion.getPrecioVenta());
+            detalle.setPrecioUnitario(precio);
             detalle.setDescuento(descuento);
             detalle.setSubtotal(importe.subtract(descuento));
             if (detalle.getCantidadBase().signum() <= 0) {
