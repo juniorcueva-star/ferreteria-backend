@@ -134,7 +134,7 @@ class CatalogoIntegrationTest extends IntegracionTestBase {
     void categorias() throws Exception {
         getCon(datos.token(datos.vendedor1), "/api/categorias")
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.totalElementos").value(9));
+                .andExpect(jsonPath("$.totalElementos").value(17)); // 9 de V2 + 8 de ferreteria de V9
         postCon(datos.token(datos.admin), "/api/categorias", Map.of("nombre", "pinturas"))
                 .andExpect(status().isConflict());
         postCon(datos.token(datos.vendedor1), "/api/categorias", Map.of("nombre", "Jardineria"))
