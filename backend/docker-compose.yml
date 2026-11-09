@@ -1,6 +1,7 @@
 # Base de datos local para desarrollo.
 # Los valores (${...}) se leen del archivo .env de esta misma carpeta.
 # Uso:  docker compose up -d   (levantar)   |   docker compose down   (detener)
+# Incluye el respaldo automatico diario de la base (servicio "respaldo", carpeta ./respaldos).
 
 # Nombre fijo del proyecto: evita chocar con otros proyectos de Docker
 # que tambien esten en una carpeta llamada "backend".
@@ -23,6 +24,27 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+
+  # Respaldo automatico: un respaldo por dia en la carpeta backend/respaldos (se guardan los ultimos 30 dias).
+  # Respaldo inmediato:  docker exec ferreteria-respaldo sh /respaldar.sh --ahora
+  respaldo:
+    image: postgres:16-alpine
+    container_name: ferreteria-respaldo
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGHOST: postgres
+      PGUSER: ${DB_USER:?Falta DB_USER en .env}
+      PGPASSWORD: ${DB_PASSWORD:?Falta DB_PASSWORD en .env}
+      PGDATABASE: ${DB_NAME:?Falta DB_NAME en .env}
+      TZ: America/Lima
+      RESPALDO_DIAS: ${RESPALDO_DIAS:-30}
+    volumes:
+      - ./respaldos:/respaldos
+      - ./scripts/respaldar.sh:/respaldar.sh:ro
+    entrypoint: ["sh", "/respaldar.sh"]
+    restart: unless-stopped
 
 volumes:
   postgres_data:

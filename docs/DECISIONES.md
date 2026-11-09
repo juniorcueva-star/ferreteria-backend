@@ -355,3 +355,12 @@ Registro de las decisiones de diseno tomadas durante el desarrollo (que se decid
   precio, stock minimo, ajustes, inventario inicial, ventas y compras anuladas, usuarios (crear, editar, contrasena)
   y empresas. Solo el ADMIN la consulta (`GET /api/auditoria`, pantalla "Auditoria"). Las ventas, compras, traslados
   y el kardex ya guardaban su usuario; la auditoria cubre lo que no tenia rastro.
+- **D100. Respaldo automatico diario con un servicio de Docker Compose.** El servicio `respaldo` (imagen
+  `postgres:16-alpine`, la misma version de la base) ejecuta `scripts/respaldar.sh`: cada hora revisa si ya existe
+  el respaldo del dia y, si no, lo crea con `pg_dump --format=custom` (primero en un `.parcial` que se renombra al
+  terminar). Asi funciona en una laptop que no esta encendida a una hora fija y no necesita el Programador de tareas
+  de Windows. Guarda 30 dias (`RESPALDO_DIAS`); los respaldos manuales (`--ahora`, con hora en el nombre) no se
+  borran. `scripts/restaurar.ps1` hace un respaldo de seguridad antes de restaurar. La carpeta `respaldos/` y los
+  `.dump` estan en `.gitignore` (contienen datos del negocio) y `.gitattributes` fija LF en los `.sh` para que
+  funcionen en contenedores Linux aunque el repositorio se clone en Windows. Probado: respaldo, limpieza de
+  respaldos viejos y restauracion en una base aparte con los mismos conteos.

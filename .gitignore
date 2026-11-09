@@ -50,3 +50,7 @@ Thumbs.db
 desktop.ini
 .DS_Store
 imagenes/
+
+# ===== Respaldos de la base de datos (contienen datos del negocio: nunca se suben) =====
+respaldos/
+*.dump

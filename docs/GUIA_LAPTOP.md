@@ -84,7 +84,9 @@ docker compose up -d
 docker compose ps
 ```
 
-Debe aparecer `ferreteria-postgres` con estado **running** o **healthy**.
+Deben aparecer `ferreteria-postgres` (estado **running** o **healthy**) y `ferreteria-respaldo` (**running**).
+El segundo hace el **respaldo automático diario** de la base en la carpeta `backend\respaldos`
+(ver `docs/RESPALDOS.md`).
 
 ---
 
@@ -167,6 +169,13 @@ cd C:\ferreteria\ferreteria-frontend
 git pull origin catalogo-busqueda
 npm install
 ```
+
+---
+
+## Respaldos
+
+Cada día se crea solo un respaldo en `C:\ferreteria\ferreteria-backend\backend\respaldos`. Para hacer uno en el
+momento, restaurar uno o guardarlos en una USB, sigue `docs/RESPALDOS.md`.
 
 ---
 

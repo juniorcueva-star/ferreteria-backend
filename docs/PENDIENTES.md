@@ -55,9 +55,6 @@ Variables del backend: `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER` y `DB_PASSWORD
   usuario si corta el acceso al instante).
 - **Recepcion parcial de traslados** (hoy se recibe completo y la diferencia se registra con un ajuste).
 - Administracion de **varias series** por tienda (hoy cada tienda usa una serie NV que se crea sola).
-- **Exportar reportes** a Excel o PDF.
-- **Auditoria** de cambios de precios y de datos maestros (quien y cuando).
-- **Respaldos** automaticos de la base de datos (`pg_dump`).
 - Frontend (web): se desarrolla en el repositorio `ferreteria-frontend`.
 - Si se pide una respuesta en un formato distinto de JSON (cabecera `Accept: text/plain`), un error se responde con
   500 sin cuerpo; los clientes normales (navegador, Postman, frontend) no se ven afectados.
