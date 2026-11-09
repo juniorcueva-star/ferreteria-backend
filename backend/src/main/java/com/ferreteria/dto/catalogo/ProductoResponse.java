@@ -7,11 +7,13 @@ import java.util.List;
 
 public record ProductoResponse(Long id, String codigo, String nombre, String descripcion, String marca,
                                Long categoriaId, String categoriaNombre, UnidadBase unidadBase, String imagenUrl,
-                               boolean activo, List<PresentacionResponse> presentaciones) {
+                               boolean activo, List<PresentacionResponse> presentaciones,
+                               String tipo, String acabado, String medida) {
 
     public static ProductoResponse desde(Producto p) {
         return new ProductoResponse(p.getId(), p.getCodigo(), p.getNombre(), p.getDescripcion(), p.getMarca(),
                 p.getCategoria().getId(), p.getCategoria().getNombre(), p.getUnidadBase(), p.getImagenUrl(),
-                p.isActivo(), p.getPresentaciones().stream().map(PresentacionResponse::desde).toList());
+                p.isActivo(), p.getPresentaciones().stream().map(PresentacionResponse::desde).toList(),
+                p.getTipo(), p.getAcabado(), p.getMedida());
     }
 }

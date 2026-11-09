@@ -9,6 +9,7 @@ import com.ferreteria.exception.ReglaNegocioException;
 import com.ferreteria.repository.CategoriaRepository;
 import com.ferreteria.repository.PresentacionRepository;
 import com.ferreteria.repository.ProductoRepository;
+import com.ferreteria.repository.SinonimoBusquedaRepository;
 import com.ferreteria.service.imagen.AlmacenImagenes;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -35,6 +36,7 @@ class ProductoServiceTest {
     @Mock private PresentacionRepository presentacionRepository;
     @Mock private CategoriaRepository categoriaRepository;
     @Mock private AlmacenImagenes almacenImagenes;
+    @Mock private SinonimoBusquedaRepository sinonimoBusquedaRepository;
     @InjectMocks private ProductoService productoService;
 
     @Test
@@ -75,7 +77,7 @@ class ProductoServiceTest {
     }
 
     private static ProductoCrearRequest request(UnidadBase unidad, PresentacionRequest... presentaciones) {
-        return new ProductoCrearRequest("P-1", "Producto", null, null, 1L, unidad, List.of(presentaciones));
+        return new ProductoCrearRequest("P-1", "Producto", null, null, 1L, unidad, List.of(presentaciones), null, null, null);
     }
 
     private static PresentacionRequest presentacion(String nombre, String factor, boolean principal) {

@@ -61,6 +61,20 @@ public class Producto {
     @Column(name = "unidad_base", nullable = false, length = 10)
     private UnidadBase unidadBase;
 
+    // Atributos para pernos, tornillos, arandelas...: el nombre se arma con ellos
+    @Column(length = 60)
+    private String tipo;
+
+    @Column(length = 60)
+    private String acabado;
+
+    @Column(length = 60)
+    private String medida;
+
+    // Texto normalizado para la busqueda por palabras (lo mantiene ProductoService)
+    @Column(name = "termino_busqueda", nullable = false, length = 500)
+    private String terminoBusqueda = " ";
+
     @Column(name = "imagen_url", length = 500)
     private String imagenUrl;
 

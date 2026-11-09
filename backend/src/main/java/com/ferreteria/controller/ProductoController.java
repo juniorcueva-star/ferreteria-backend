@@ -37,7 +37,7 @@ public class ProductoController {
 
     private final ProductoService productoService;
 
-    @Operation(summary = "Listar productos", description = "Filtros: texto (codigo, nombre o marca), categoriaId, "
+    @Operation(summary = "Listar productos", description = "Filtros: texto (palabras del codigo, nombre, marca, tipo o medida; acepta abreviaturas como per o hex), categoriaId, "
             + "unidadBase y activo. Incluye las presentaciones con sus precios")
     @GetMapping
     public PaginaResponse<ProductoResponse> listar(@RequestParam(required = false) String texto,

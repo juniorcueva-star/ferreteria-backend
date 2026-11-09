@@ -13,5 +13,8 @@ public record ProductoActualizarRequest(
         @Size(max = 300) String descripcion,
         @Size(max = 80) String marca,
         @NotNull Long categoriaId,
-        @NotNull Boolean activo) {
+        @NotNull Boolean activo,
+        @Size(max = 60) String tipo,
+        @Size(max = 60) String acabado,
+        @Size(max = 60) String medida) {
 }

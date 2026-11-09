@@ -8,6 +8,7 @@ import com.ferreteria.dto.comun.PaginaResponse;
 import com.ferreteria.entity.Categoria;
 import com.ferreteria.entity.Presentacion;
 import com.ferreteria.entity.Producto;
+import com.ferreteria.entity.SinonimoBusqueda;
 import com.ferreteria.entity.enums.UnidadBase;
 import com.ferreteria.exception.ApiException;
 import com.ferreteria.exception.CodigoError;
@@ -18,11 +19,14 @@ import com.ferreteria.repository.CategoriaRepository;
 import com.ferreteria.repository.Especificaciones;
 import com.ferreteria.repository.PresentacionRepository;
 import com.ferreteria.repository.ProductoRepository;
+import com.ferreteria.repository.SinonimoBusquedaRepository;
 import com.ferreteria.service.imagen.AlmacenImagenes;
 import com.ferreteria.service.imagen.ImagenGuardada;
 import com.ferreteria.service.imagen.TipoImagen;
+import com.ferreteria.util.BusquedaTexto;
 import com.ferreteria.util.Montos;
 import lombok.RequiredArgsConstructor;
+import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -33,9 +37,11 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -49,12 +55,13 @@ public class ProductoService {
     private final PresentacionRepository presentacionRepository;
     private final CategoriaRepository categoriaRepository;
     private final AlmacenImagenes almacenImagenes;
+    private final SinonimoBusquedaRepository sinonimoBusquedaRepository;
 
     @Transactional(readOnly = true)
     public PaginaResponse<ProductoResponse> listar(String texto, Long categoriaId, UnidadBase unidadBase,
                                                    Boolean activo, Pageable pageable) {
         Specification<Producto> filtro = Specification.allOf(
-                Especificaciones.contiene(texto, "codigo", "nombre", "marca"),
+                coincidenPalabras(texto),
                 Especificaciones.igual("categoria.id", categoriaId),
                 Especificaciones.igual("unidadBase", unidadBase),
                 Especificaciones.igual("activo", activo));
@@ -90,17 +97,22 @@ public class ProductoService {
         producto.setMarca(request.marca());
         producto.setCategoria(buscarCategoria(request.categoriaId()));
         producto.setUnidadBase(request.unidadBase());
+        producto.setTipo(request.tipo());
+        producto.setAcabado(request.acabado());
+        producto.setMedida(request.medida());
 
         boolean hayPrincipal = request.presentaciones().stream().anyMatch(p -> Boolean.TRUE.equals(p.principal()));
         for (int i = 0; i < request.presentaciones().size(); i++) {
             Presentacion presentacion = new Presentacion();
             copiarPresentacion(request.presentaciones().get(i), presentacion);
+            presentacion.setDecimales(decimalesPorDefecto(request.unidadBase()));
             presentacion.setPrincipal(hayPrincipal ? presentacion.isPrincipal() : i == 0);
             producto.agregarPresentacion(presentacion);
         }
         if (producto.getPresentaciones().stream().noneMatch(p -> p.isPrincipal() && p.isActivo())) {
             throw new ReglaNegocioException("La presentacion principal debe estar activa");
         }
+        actualizarTerminoBusqueda(producto);
         return ProductoResponse.desde(productoRepository.save(producto));
     }
 
@@ -117,6 +129,10 @@ public class ProductoService {
         producto.setMarca(request.marca());
         producto.setCategoria(buscarCategoria(request.categoriaId()));
         producto.setActivo(request.activo());
+        producto.setTipo(request.tipo());
+        producto.setAcabado(request.acabado());
+        producto.setMedida(request.medida());
+        actualizarTerminoBusqueda(producto);
         return ProductoResponse.desde(producto);
     }
 
@@ -129,6 +145,7 @@ public class ProductoService {
 
         Presentacion presentacion = new Presentacion();
         copiarPresentacion(request, presentacion);
+        presentacion.setDecimales(decimalesPorDefecto(producto.getUnidadBase()));
         if (presentacion.isPrincipal()) {
             if (!presentacion.isActivo()) {
                 throw new ReglaNegocioException("La presentacion principal debe estar activa");
@@ -302,5 +319,34 @@ public class ProductoService {
 
     private Producto buscar(Long id) {
         return productoRepository.findById(id).orElseThrow(() -> new RecursoNoEncontradoException("Producto", id));
+    }
+
+    /** Busqueda por palabras: cada palabra debe aparecer al inicio de una palabra del producto. Acepta abreviaturas (per, hex). */
+    private Specification<Producto> coincidenPalabras(String texto) {
+        List<String> palabras = BusquedaTexto.tokens(texto);
+        if (palabras.isEmpty()) {
+            return Specification.unrestricted();
+        }
+        Map<String, String> sinonimos = new HashMap<>();
+        for (SinonimoBusqueda sinonimo : sinonimoBusquedaRepository.findAll()) {
+            sinonimos.put(BusquedaTexto.normalizar(sinonimo.getAbreviatura()),
+                    BusquedaTexto.normalizar(sinonimo.getTermino()));
+        }
+        return (root, query, cb) -> cb.and(palabras.stream()
+                .map(palabra -> cb.or(BusquedaTexto.alternativas(palabra, sinonimos).stream()
+                        .map(alternativa -> cb.like(root.<String>get("terminoBusqueda"),
+                                BusquedaTexto.patronInicioPalabra(alternativa), '\\'))
+                        .toArray(Predicate[]::new)))
+                .toArray(Predicate[]::new));
+    }
+
+    private static void actualizarTerminoBusqueda(Producto producto) {
+        producto.setTerminoBusqueda(BusquedaTexto.indice(producto.getCodigo(), producto.getNombre(),
+                producto.getMarca(), producto.getTipo(), producto.getAcabado(), producto.getMedida()));
+    }
+
+    /** Unidades enteras para las unidades contables; kilo y metro aceptan 3 decimales. */
+    private static int decimalesPorDefecto(UnidadBase unidadBase) {
+        return unidadBase == UnidadBase.UNIDAD ? 0 : 3;
     }
 }

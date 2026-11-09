@@ -48,6 +48,10 @@ public class Presentacion {
     @Column(name = "codigo_barras", unique = true, length = 50)
     private String codigoBarras;
 
+    // Decimales que acepta al vender (0 = enteros, 3 = kilo/metro)
+    @Column(nullable = false)
+    private int decimales;
+
     @Column(name = "es_principal", nullable = false)
     private boolean principal;
 

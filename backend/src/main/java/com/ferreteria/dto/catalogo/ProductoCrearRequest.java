@@ -19,5 +19,8 @@ public record ProductoCrearRequest(
         @Size(max = 80) String marca,
         @NotNull Long categoriaId,
         @NotNull UnidadBase unidadBase,
-        @NotEmpty @Size(max = 20) List<@Valid @NotNull PresentacionRequest> presentaciones) {
+        @NotEmpty @Size(max = 20) List<@Valid @NotNull PresentacionRequest> presentaciones,
+        @Size(max = 60) String tipo,
+        @Size(max = 60) String acabado,
+        @Size(max = 60) String medida) {
 }
