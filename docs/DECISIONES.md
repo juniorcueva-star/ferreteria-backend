@@ -335,3 +335,10 @@ Registro de las decisiones de diseno tomadas durante el desarrollo (que se decid
   archivo; "Imprimir" abre una pestana en el clic (para que el navegador no la bloquee) y le pasa el PDF; si se
   bloquea, se descarga. WhatsApp abre el enlace del backend y ademas lo deja visible por si el navegador bloquea la
   ventana. Convertir en venta pide caja abierta en la tienda de la cotizacion, como la entrega de encargos.
+- **D97. Membrete del negocio en los documentos (pedido del dueno).** V13 agrega a `empresa` el telefono, el lema y
+  los datos bancarios (editables por el ADMIN en Configuracion). `MembretePdf` arma el encabezado comun (logo de
+  `documentos/logo.png`, nombre comercial, lema, razon social, tienda, telefono y recuadro con RUC, tipo y numero) y
+  el pie con las cuentas bancarias; lo usan la cotizacion y la nueva **nota de venta en PDF**
+  (`GET /api/ventas/{id}/pdf`, mismo control de tienda que ver la venta). Colores amarillo, negro y blanco. La nota
+  de venta no es boleta electronica (SUNAT queda pendiente). Los datos de demostracion usan los de la tarjeta del
+  negocio para la Tienda Centro; el numero de cuenta BBVA se completo con los digitos del C.C.I. (confirmar).

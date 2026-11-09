@@ -25,6 +25,6 @@ public class CotizacionPublicaController {
     @SecurityRequirements
     @GetMapping(value = "/{token}/pdf", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<byte[]> descargarPdf(@PathVariable String token) {
-        return CotizacionController.RespuestaPdf.de(cotizacionService.generarPdfPublico(token), "cotizacion.pdf", false);
+        return RespuestaPdf.de(cotizacionService.generarPdfPublico(token), "cotizacion.pdf", false);
     }
 }

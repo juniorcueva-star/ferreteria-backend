@@ -9,5 +9,8 @@ public record EmpresaRequest(
         @NotBlank @Size(max = 150) String razonSocial,
         @Size(max = 150) String nombreComercial,
         @Size(max = 200) String direccion,
+        @Size(max = 60) String telefono,
+        @Size(max = 100) String lema,
+        @Size(max = 300) String datosBancarios,
         Boolean activo) {
 }

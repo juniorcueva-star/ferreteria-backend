@@ -24,6 +24,7 @@ import com.ferreteria.entity.enums.TipoPago;
 import com.ferreteria.exception.RecursoNoEncontradoException;
 import com.ferreteria.exception.ReglaNegocioException;
 import com.ferreteria.repository.CajaSesionRepository;
+import com.ferreteria.service.documentos.VentaPdf;
 import com.ferreteria.repository.ClienteRepository;
 import com.ferreteria.repository.Especificaciones;
 import com.ferreteria.repository.PresentacionRepository;
@@ -60,6 +61,7 @@ public class VentaService {
     private static final TipoDocumentoVenta DOCUMENTO_FASE_1 = TipoDocumentoVenta.NOTA_VENTA;
     private static final int MAX_DESCRIPCION = 200;
 
+    private final VentaPdf ventaPdf;
     private final VentaRepository ventaRepository;
     private final PresentacionRepository presentacionRepository;
     private final ClienteRepository clienteRepository;
@@ -117,6 +119,14 @@ public class VentaService {
         movimientoStock.aplicar(tienda, TipoMovimiento.VENTA, lineas,
                 OrigenMovimiento.venta(venta, usuario, null));
         return VentaResponse.completa(venta, vuelto);
+    }
+
+    /** PDF de la nota de venta (para descargar o imprimir), con el mismo control de tienda que obtener. */
+    @Transactional(readOnly = true)
+    public byte[] generarPdf(Long id) {
+        Venta venta = ventaRepository.findById(id).orElseThrow(() -> new RecursoNoEncontradoException("Venta", id));
+        accesoUbicacion.validarAcceso(venta.getUbicacion().getId());
+        return ventaPdf.generar(venta);
     }
 
     @Transactional(readOnly = true)

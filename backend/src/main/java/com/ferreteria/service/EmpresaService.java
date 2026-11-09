@@ -61,6 +61,9 @@ public class EmpresaService {
         empresa.setRazonSocial(request.razonSocial().trim());
         empresa.setNombreComercial(request.nombreComercial());
         empresa.setDireccion(request.direccion());
+        empresa.setTelefono(textoOpcional(request.telefono()));
+        empresa.setLema(textoOpcional(request.lema()));
+        empresa.setDatosBancarios(textoOpcional(request.datosBancarios()));
         if (request.activo() != null) {
             empresa.setActivo(request.activo());
         }
@@ -68,5 +71,9 @@ public class EmpresaService {
 
     private Empresa buscar(Long id) {
         return empresaRepository.findById(id).orElseThrow(() -> new RecursoNoEncontradoException("Empresa", id));
+    }
+
+    private static String textoOpcional(String texto) {
+        return texto == null || texto.isBlank() ? null : texto.trim();
     }
 }

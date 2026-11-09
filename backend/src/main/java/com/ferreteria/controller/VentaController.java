@@ -17,6 +17,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -49,6 +51,14 @@ public class VentaController {
     @GetMapping("/{id}")
     public VentaResponse obtener(@PathVariable Long id) {
         return ventaService.obtener(id);
+    }
+
+    @Operation(summary = "PDF de la nota de venta", description = "descargar=true lo descarga; si no, se muestra "
+            + "para imprimir. Lleva el logo, los datos de la empresa y sus cuentas bancarias")
+    @GetMapping(value = "/{id}/pdf", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<byte[]> descargarPdf(@PathVariable Long id,
+                                               @RequestParam(defaultValue = "false") boolean descargar) {
+        return RespuestaPdf.de(ventaService.generarPdf(id), "nota-venta-" + id + ".pdf", descargar);
     }
 
     @Operation(summary = "Listar ventas", description = "Filtros: ubicacionId, usuarioId (vendedor), clienteId, "

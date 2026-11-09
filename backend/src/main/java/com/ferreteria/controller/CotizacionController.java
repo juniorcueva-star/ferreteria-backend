@@ -17,8 +17,6 @@ import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
-import org.springframework.http.ContentDisposition;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -113,21 +111,5 @@ public class CotizacionController {
     @GetMapping("/{id}/enlace-whatsapp")
     public EnlaceWhatsappResponse generarEnlaceWhatsapp(@PathVariable Long id, @RequestParam String telefono) {
         return cotizacionService.generarEnlaceWhatsapp(id, telefono);
-    }
-
-    /** Arma la respuesta HTTP de un PDF (en linea para imprimir, o como descarga). */
-    static final class RespuestaPdf {
-
-        private RespuestaPdf() {
-        }
-
-        static ResponseEntity<byte[]> de(byte[] pdf, String nombre, boolean descargar) {
-            ContentDisposition disposicion = (descargar ? ContentDisposition.attachment() : ContentDisposition.inline())
-                    .filename(nombre).build();
-            return ResponseEntity.ok()
-                    .contentType(MediaType.APPLICATION_PDF)
-                    .header(HttpHeaders.CONTENT_DISPOSITION, disposicion.toString())
-                    .body(pdf);
-        }
     }
 }

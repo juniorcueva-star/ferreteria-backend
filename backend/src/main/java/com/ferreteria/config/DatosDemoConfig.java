@@ -107,7 +107,12 @@ public class DatosDemoConfig implements ApplicationRunner {
     }
 
     private void cargar(Usuario admin) {
-        Empresa constructor = empresa("20601234561", "Ferreteria El Constructor S.A.C.", "El Constructor");
+        // Empresa de la Tienda Centro: datos de la tarjeta del negocio (Bonifaz & Cia, Pernos y afines)
+        Empresa constructor = empresa("10076281047", "Romel Bonifaz Valladares", "Bonifaz & Cia");
+        constructor.setLema("Pernos y afines");
+        constructor.setTelefono("950 104 503 / 947 319 013");
+        constructor.setDatosBancarios("BBVA Continental: 0011-0814-0219320979\n"
+                + "C.C.I.: 011-814-000219320979-14\nTitular: Romel Bonifaz Valladares");
         Empresa laLlave = empresa("20609876542", "Ferreteria La Llave E.I.R.L.", "La Llave");
         Ubicacion almacen = ubicacion(ALMACEN, TipoUbicacion.ALMACEN, null, "Av. Industrial 450, Ate");
         Ubicacion centro = ubicacion("Tienda Centro", TipoUbicacion.TIENDA, constructor, "Jr. Ayacucho 120, Lima");

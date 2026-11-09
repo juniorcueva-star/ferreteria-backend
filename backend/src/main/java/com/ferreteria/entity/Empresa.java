@@ -40,6 +40,18 @@ public class Empresa {
     @Column(length = 200)
     private String direccion;
 
+    /** Telefono o WhatsApp que se imprime en los documentos */
+    @Column(length = 60)
+    private String telefono;
+
+    /** Frase bajo el nombre comercial, Ej: "Pernos y afines" */
+    @Column(length = 100)
+    private String lema;
+
+    /** Cuentas para depositos (una por linea), se imprimen al pie de la cotizacion y la nota de venta */
+    @Column(name = "datos_bancarios", length = 300)
+    private String datosBancarios;
+
     @Column(nullable = false)
     private boolean activo = true;
 
