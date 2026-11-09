@@ -289,3 +289,13 @@ Registro de las decisiones de diseno tomadas durante el desarrollo (que se decid
 - **D86. Historial de precios** (`historial_precio_presentacion`, adaptada de la V4 de mejoras sin sus cambios en
   `venta_detalle`): una fila por cada cambio real del precio final (precio anterior, nuevo, usuario y fecha). Guardar
   el mismo precio no agrega fila. Si cambia el factor de una presentacion, su costo de referencia se escala.
+- **D87. Disponibilidad en todas las ubicaciones** (`GET /api/inventario/resumen`, punto 1). Cualquier usuario
+  autenticado puede leer el stock de todas las tiendas y el almacen activos, con su total, para atender pedidos
+  grandes. Es solo lectura: no cambia `GET /api/inventario/stock` (cada uno ve el detalle de su ubicacion) ni quien
+  vende, traslada o ajusta. Son tres consultas fijas (pagina de productos, ubicaciones activas y una consulta
+  agregada del stock de esos productos), nunca una por ubicacion. Los productos sin stock aparecen con 0. Orden: las
+  tiendas primero y despues el almacen. La busqueda por palabras se movio a `BusquedaProductos` para usarla aqui y en
+  el catalogo.
+- **D88. Indice de busqueda en los datos de demostracion.** Al probar la disponibilidad se vio que los productos demo
+  se cargaban sin `termino_busqueda` (la V8 solo completa los productos que ya existian al migrar), asi que en una base
+  nueva, como la de la nube, no aparecian al buscar por palabras. Ahora el cargador demo lo calcula.

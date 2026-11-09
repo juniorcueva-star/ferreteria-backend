@@ -13,7 +13,6 @@ import com.ferreteria.entity.Categoria;
 import com.ferreteria.entity.HistorialPrecioPresentacion;
 import com.ferreteria.entity.Presentacion;
 import com.ferreteria.entity.Producto;
-import com.ferreteria.entity.SinonimoBusqueda;
 import com.ferreteria.entity.enums.UnidadBase;
 import com.ferreteria.exception.ApiException;
 import com.ferreteria.exception.CodigoError;
@@ -25,14 +24,12 @@ import com.ferreteria.repository.Especificaciones;
 import com.ferreteria.repository.HistorialPrecioPresentacionRepository;
 import com.ferreteria.repository.PresentacionRepository;
 import com.ferreteria.repository.ProductoRepository;
-import com.ferreteria.repository.SinonimoBusquedaRepository;
 import com.ferreteria.service.imagen.AlmacenImagenes;
 import com.ferreteria.service.imagen.ImagenGuardada;
 import com.ferreteria.service.imagen.TipoImagen;
 import com.ferreteria.util.BusquedaTexto;
 import com.ferreteria.util.Montos;
 import lombok.RequiredArgsConstructor;
-import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -44,12 +41,10 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -67,13 +62,13 @@ public class ProductoService {
     private final AlmacenImagenes almacenImagenes;
     private final HistorialPrecioPresentacionRepository historialPrecioRepository;
     private final Buscador buscador;
-    private final SinonimoBusquedaRepository sinonimoBusquedaRepository;
+    private final BusquedaProductos busquedaProductos;
 
     @Transactional(readOnly = true)
     public PaginaResponse<ProductoResponse> listar(String texto, Long categoriaId, UnidadBase unidadBase,
                                                    Boolean activo, Pageable pageable) {
         Specification<Producto> filtro = Specification.allOf(
-                coincidenPalabras(texto),
+                busquedaProductos.coincidenPalabras(texto),
                 Especificaciones.igual("categoria.id", categoriaId),
                 Especificaciones.igual("unidadBase", unidadBase),
                 Especificaciones.igual("activo", activo));
@@ -405,25 +400,6 @@ public class ProductoService {
 
     private Producto buscar(Long id) {
         return productoRepository.findById(id).orElseThrow(() -> new RecursoNoEncontradoException("Producto", id));
-    }
-
-    /** Busqueda por palabras: cada palabra debe aparecer al inicio de una palabra del producto. Acepta abreviaturas (per, hex). */
-    private Specification<Producto> coincidenPalabras(String texto) {
-        List<String> palabras = BusquedaTexto.tokens(texto);
-        if (palabras.isEmpty()) {
-            return Specification.unrestricted();
-        }
-        Map<String, String> sinonimos = new HashMap<>();
-        for (SinonimoBusqueda sinonimo : sinonimoBusquedaRepository.findAll()) {
-            sinonimos.put(BusquedaTexto.normalizar(sinonimo.getAbreviatura()),
-                    BusquedaTexto.normalizar(sinonimo.getTermino()));
-        }
-        return (root, query, cb) -> cb.and(palabras.stream()
-                .map(palabra -> cb.or(BusquedaTexto.alternativas(palabra, sinonimos).stream()
-                        .map(alternativa -> cb.like(root.<String>get("terminoBusqueda"),
-                                BusquedaTexto.patronInicioPalabra(alternativa), '\\'))
-                        .toArray(Predicate[]::new)))
-                .toArray(Predicate[]::new));
     }
 
     private static void actualizarTerminoBusqueda(Producto producto) {

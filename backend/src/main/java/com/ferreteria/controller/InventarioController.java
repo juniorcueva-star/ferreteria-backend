@@ -4,6 +4,7 @@ import com.ferreteria.dto.comun.PaginaResponse;
 import com.ferreteria.dto.inventario.AjusteRequest;
 import com.ferreteria.dto.inventario.InventarioInicialRequest;
 import com.ferreteria.dto.inventario.KardexResponse;
+import com.ferreteria.dto.inventario.ResumenStockResponse;
 import com.ferreteria.dto.inventario.StockMinimoRequest;
 import com.ferreteria.dto.inventario.StockResponse;
 import com.ferreteria.entity.enums.TipoMovimiento;
@@ -51,6 +52,19 @@ public class InventarioController {
             @RequestParam(defaultValue = "false") boolean soloBajo,
             @ParameterObject @PageableDefault(size = 20, sort = "producto.nombre") Pageable pageable) {
         return inventarioService.listarStock(ubicacionId, productoId, productoIds, texto, soloBajo, pageable);
+    }
+
+    @Operation(summary = "Disponibilidad en todas las ubicaciones (solo lectura)", description = "Para cada producto, "
+            + "el stock de cada tienda y del almacen activos y su total, en unidad base. Lo puede leer cualquier "
+            + "usuario (el vendedor ve las otras tiendas para pedidos grandes) pero no cambia quien vende, traslada o "
+            + "ajusta. Filtros: productoIds (hasta 100), texto (busqueda por palabras) y categoriaId")
+    @GetMapping("/resumen")
+    public PaginaResponse<ResumenStockResponse> resumirStock(
+            @RequestParam(required = false) List<Long> productoIds,
+            @RequestParam(required = false) String texto,
+            @RequestParam(required = false) Long categoriaId,
+            @ParameterObject @PageableDefault(size = 20, sort = "nombre") Pageable pageable) {
+        return inventarioService.resumirStock(productoIds, texto, categoriaId, pageable);
     }
 
     @Operation(summary = "Definir stock minimo de un producto en una ubicacion")

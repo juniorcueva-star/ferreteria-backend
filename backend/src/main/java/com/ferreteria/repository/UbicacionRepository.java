@@ -8,9 +8,13 @@ import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
+import java.util.List;
+
 public interface UbicacionRepository extends JpaRepository<Ubicacion, Long>, JpaSpecificationExecutor<Ubicacion> {
 
     boolean existsByNombre(String nombre);
+
+    List<Ubicacion> findByActivoTrueOrderByTipoDescIdAsc();
 
     boolean existsByNombreAndIdNot(String nombre, Long id);
 

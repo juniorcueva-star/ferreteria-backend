@@ -2,9 +2,11 @@ package com.ferreteria.service;
 
 import com.ferreteria.dto.comun.PaginaResponse;
 import com.ferreteria.dto.inventario.AjusteRequest;
+import com.ferreteria.dto.inventario.CantidadEnUbicacion;
 import com.ferreteria.dto.inventario.InventarioInicialRequest;
 import com.ferreteria.dto.inventario.KardexResponse;
 import com.ferreteria.dto.inventario.LineaProductoRequest;
+import com.ferreteria.dto.inventario.ResumenStockResponse;
 import com.ferreteria.dto.inventario.StockMinimoRequest;
 import com.ferreteria.dto.inventario.StockResponse;
 import com.ferreteria.entity.MovimientoInventario;
@@ -15,13 +17,16 @@ import com.ferreteria.entity.enums.TipoMovimiento;
 import com.ferreteria.exception.ReglaNegocioException;
 import com.ferreteria.repository.Especificaciones;
 import com.ferreteria.repository.MovimientoInventarioRepository;
+import com.ferreteria.repository.ProductoRepository;
 import com.ferreteria.repository.StockRepository;
+import com.ferreteria.repository.UbicacionRepository;
 import com.ferreteria.security.AccesoUbicacionService;
 import com.ferreteria.service.stock.LineaMovimiento;
 import com.ferreteria.service.stock.MovimientoStockService;
 import com.ferreteria.service.stock.OrigenMovimiento;
 import com.ferreteria.util.Montos;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -29,8 +34,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -48,6 +55,9 @@ public class InventarioService {
     private final AccesoUbicacionService accesoUbicacion;
     private final Buscador buscador;
     private final Calendario calendario;
+    private final ProductoRepository productoRepository;
+    private final UbicacionRepository ubicacionRepository;
+    private final BusquedaProductos busquedaProductos;
 
     /**
      * @param productoIds varios productos a la vez (Ej: los de una pagina del catalogo), como maximo 100
@@ -56,10 +66,7 @@ public class InventarioService {
     @Transactional(readOnly = true)
     public PaginaResponse<StockResponse> listarStock(Long ubicacionId, Long productoId, List<Long> productoIds,
                                                      String texto, boolean soloBajo, Pageable pageable) {
-        if (productoIds != null && productoIds.size() > MAXIMO_PRODUCTOS_POR_CONSULTA) {
-            throw new ReglaNegocioException("Puede consultar como maximo " + MAXIMO_PRODUCTOS_POR_CONSULTA
-                    + " productos a la vez (productoIds)");
-        }
+        validarCantidadDeProductos(productoIds);
         Specification<Stock> filtro = Specification.allOf(
                 Especificaciones.igual("ubicacion.id", accesoUbicacion.ubicacionParaConsultar(ubicacionId)),
                 Especificaciones.igual("producto.id", productoId),
@@ -69,6 +76,48 @@ public class InventarioService {
                 soloBajo ? stockBajo() : Specification.unrestricted());
         return PaginaResponse.de(stockRepository.findAll(filtro, Ordenamiento.validar(pageable,
                 "producto.nombre", "producto.codigo", "cantidad", "stockMinimo", "ubicacion.nombre")), StockResponse::desde);
+    }
+
+    /**
+     * Disponibilidad de cada producto en todas las tiendas y el almacen activos, con su total (punto 1 del
+     * encargado: el vendedor ve el stock de otras ubicaciones en solo lectura para atender pedidos grandes).
+     * Lectura para cualquier usuario autenticado; no cambia quien puede vender, trasladar o ajustar.
+     * Son tres consultas fijas: la pagina de productos, las ubicaciones activas y el stock de esos productos en todas
+     * las ubicaciones (una sola consulta agregada, nunca una por ubicacion).
+     */
+    @Transactional(readOnly = true)
+    public PaginaResponse<ResumenStockResponse> resumirStock(List<Long> productoIds, String texto, Long categoriaId,
+                                                            Pageable pageable) {
+        validarCantidadDeProductos(productoIds);
+        Specification<Producto> filtro = Specification.allOf(
+                Especificaciones.en("id", productoIds),
+                busquedaProductos.coincidenPalabras(texto),
+                Especificaciones.igual("categoria.id", categoriaId),
+                Especificaciones.igual("activo", true));
+        Page<Producto> productos = productoRepository.findAll(filtro,
+                Ordenamiento.validar(pageable, "nombre", "codigo"));
+        List<Ubicacion> ubicaciones = ubicacionRepository.findByActivoTrueOrderByTipoDescIdAsc();
+        Map<String, CantidadEnUbicacion> cantidades = new HashMap<>();
+        if (productos.hasContent()) {
+            stockRepository.cantidadesPorUbicacion(productos.map(Producto::getId).getContent())
+                    .forEach(c -> cantidades.put(c.productoId() + "-" + c.ubicacionId(), c));
+        }
+        return PaginaResponse.de(productos, p -> resumen(p, ubicaciones, cantidades));
+    }
+
+    private static ResumenStockResponse resumen(Producto producto, List<Ubicacion> ubicaciones,
+                                                Map<String, CantidadEnUbicacion> cantidades) {
+        List<ResumenStockResponse.StockUbicacion> porUbicacion = ubicaciones.stream().map(u -> {
+            CantidadEnUbicacion c = cantidades.get(producto.getId() + "-" + u.getId());
+            BigDecimal cantidad = c == null ? Montos.cantidad(BigDecimal.ZERO) : c.cantidad();
+            BigDecimal minimo = c == null ? Montos.cantidad(BigDecimal.ZERO) : c.stockMinimo();
+            boolean bajo = minimo.signum() > 0 && cantidad.compareTo(minimo) <= 0;
+            return new ResumenStockResponse.StockUbicacion(u.getId(), u.getNombre(), u.getTipo(), cantidad, minimo, bajo);
+        }).toList();
+        BigDecimal total = porUbicacion.stream().map(ResumenStockResponse.StockUbicacion::cantidad)
+                .reduce(Montos.cantidad(BigDecimal.ZERO), BigDecimal::add);
+        return new ResumenStockResponse(producto.getId(), producto.getCodigo(), producto.getNombre(),
+                producto.getUnidadBase(), producto.getCategoria().getNombre(), porUbicacion, total);
     }
 
     @Transactional
@@ -121,6 +170,13 @@ public class InventarioService {
                 Especificaciones.desde("fecha", calendario.inicio(desde)),
                 Especificaciones.antesDe("fecha", calendario.finExclusivo(hasta)));
         return PaginaResponse.de(movimientoRepository.findAll(filtro, Ordenamiento.validar(pageable, "id", "fecha")), KardexResponse::desde);
+    }
+
+    private static void validarCantidadDeProductos(List<Long> productoIds) {
+        if (productoIds != null && productoIds.size() > MAXIMO_PRODUCTOS_POR_CONSULTA) {
+            throw new ReglaNegocioException("Puede consultar como maximo " + MAXIMO_PRODUCTOS_POR_CONSULTA
+                    + " productos a la vez (productoIds)");
+        }
     }
 
     private List<LineaMovimiento> lineas(List<LineaProductoRequest> detalles) {

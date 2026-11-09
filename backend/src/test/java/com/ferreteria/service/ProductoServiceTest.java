@@ -9,7 +9,6 @@ import com.ferreteria.exception.ReglaNegocioException;
 import com.ferreteria.repository.CategoriaRepository;
 import com.ferreteria.repository.PresentacionRepository;
 import com.ferreteria.repository.ProductoRepository;
-import com.ferreteria.repository.SinonimoBusquedaRepository;
 import com.ferreteria.service.imagen.AlmacenImagenes;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -36,7 +35,7 @@ class ProductoServiceTest {
     @Mock private PresentacionRepository presentacionRepository;
     @Mock private CategoriaRepository categoriaRepository;
     @Mock private AlmacenImagenes almacenImagenes;
-    @Mock private SinonimoBusquedaRepository sinonimoBusquedaRepository;
+    @Mock private BusquedaProductos busquedaProductos;
     @InjectMocks private ProductoService productoService;
 
     @Test

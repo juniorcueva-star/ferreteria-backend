@@ -1,5 +1,6 @@
 package com.ferreteria.repository;
 
+import com.ferreteria.dto.inventario.CantidadEnUbicacion;
 import com.ferreteria.entity.Stock;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Page;
@@ -13,6 +14,8 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 public interface StockRepository extends JpaRepository<Stock, Long>, JpaSpecificationExecutor<Stock> {
@@ -36,6 +39,14 @@ public interface StockRepository extends JpaRepository<Stock, Long>, JpaSpecific
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select s from Stock s where s.producto.id = :productoId and s.ubicacion.id = :ubicacionId")
     Optional<Stock> bloquear(@Param("productoId") Long productoId, @Param("ubicacionId") Long ubicacionId);
+
+    /** Stock de varios productos en todas las ubicaciones activas, en una sola consulta. */
+    @Query("""
+            select new com.ferreteria.dto.inventario.CantidadEnUbicacion(s.producto.id, u.id, s.cantidad, s.stockMinimo)
+            from Stock s join s.ubicacion u
+            where s.producto.id in :productoIds and u.activo = true
+            """)
+    List<CantidadEnUbicacion> cantidadesPorUbicacion(@Param("productoIds") Collection<Long> productoIds);
 
     Optional<Stock> findByProductoIdAndUbicacionId(Long productoId, Long ubicacionId);
 
