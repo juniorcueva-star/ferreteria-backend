@@ -109,7 +109,7 @@ La base debe estar levantada (paso 4).
 .\mvnw.cmd verify
 ```
 
-Al final debe decir `BUILD SUCCESS` y `Tests run: 131, Failures: 0, Errors: 0`.
+Al final debe decir `BUILD SUCCESS` y `Tests run: 132, Failures: 0, Errors: 0`.
 
 ---
 

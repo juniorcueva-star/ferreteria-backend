@@ -260,7 +260,7 @@ trae `contenido`, `pagina`, `tamano`, `totalElementos` y `totalPaginas`. Con 50 
 
 ---
 
-## 15. Pruebas (131 en total, todas contra PostgreSQL real)
+## 15. Pruebas (132 en total, todas contra PostgreSQL real)
 
 | Tipo | Que prueba | Ejemplos |
 |------|------------|----------|

@@ -39,6 +39,6 @@ por ahora el sistema solo se usa en la laptop.
 - **Exportar reportes** a Excel o PDF.
 - **Auditoria** de cambios de precios y de datos maestros (quien y cuando).
 - **Respaldos** automaticos de la base de datos (`pg_dump`).
-- Frontend (web) para el punto de venta.
+- Frontend (web): se desarrolla en el repositorio `ferreteria-frontend`.
 - Si se pide una respuesta en un formato distinto de JSON (cabecera `Accept: text/plain`), un error se responde con
   500 sin cuerpo; los clientes normales (navegador, Postman, frontend) no se ven afectados.

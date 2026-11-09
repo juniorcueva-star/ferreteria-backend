@@ -7,6 +7,7 @@ import jakarta.persistence.criteria.Root;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Locale;
 
 /**
@@ -23,6 +24,14 @@ public final class Especificaciones {
             return Specification.unrestricted();
         }
         return (root, query, cb) -> cb.equal(ruta(root, ruta), valor);
+    }
+
+    /** El valor esta en la lista (Ej: varios ids). Lista null o vacia = sin filtro. */
+    public static <T> Specification<T> en(String ruta, Collection<?> valores) {
+        if (valores == null || valores.isEmpty()) {
+            return Specification.unrestricted();
+        }
+        return (root, query, cb) -> ruta(root, ruta).in(valores);
     }
 
     /** Busca el texto (sin importar mayusculas) en cualquiera de las rutas indicadas. */

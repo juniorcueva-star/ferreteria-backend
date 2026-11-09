@@ -40,6 +40,8 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class InventarioService {
 
+    private static final int MAXIMO_PRODUCTOS_POR_CONSULTA = 100;
+
     private final StockRepository stockRepository;
     private final MovimientoInventarioRepository movimientoRepository;
     private final MovimientoStockService movimientoStock;
@@ -48,14 +50,20 @@ public class InventarioService {
     private final Calendario calendario;
 
     /**
-     * @param soloBajo true = solo productos con stock menor o igual a su minimo (reporte de stock bajo)
+     * @param productoIds varios productos a la vez (Ej: los de una pagina del catalogo), como maximo 100
+     * @param soloBajo    true = solo productos con stock menor o igual a su minimo (reporte de stock bajo)
      */
     @Transactional(readOnly = true)
-    public PaginaResponse<StockResponse> listarStock(Long ubicacionId, Long productoId, String texto,
-                                                     boolean soloBajo, Pageable pageable) {
+    public PaginaResponse<StockResponse> listarStock(Long ubicacionId, Long productoId, List<Long> productoIds,
+                                                     String texto, boolean soloBajo, Pageable pageable) {
+        if (productoIds != null && productoIds.size() > MAXIMO_PRODUCTOS_POR_CONSULTA) {
+            throw new ReglaNegocioException("Puede consultar como maximo " + MAXIMO_PRODUCTOS_POR_CONSULTA
+                    + " productos a la vez (productoIds)");
+        }
         Specification<Stock> filtro = Specification.allOf(
                 Especificaciones.igual("ubicacion.id", accesoUbicacion.ubicacionParaConsultar(ubicacionId)),
                 Especificaciones.igual("producto.id", productoId),
+                Especificaciones.en("producto.id", productoIds),
                 Especificaciones.contiene(texto, "producto.codigo", "producto.nombre"),
                 Especificaciones.igual("producto.activo", true),
                 soloBajo ? stockBajo() : Specification.unrestricted());

@@ -80,7 +80,7 @@ public class ReporteService {
     /** Productos cuyo stock llego al minimo configurado. */
     @Transactional(readOnly = true)
     public PaginaResponse<StockResponse> stockBajo(Long ubicacionId, Pageable pageable) {
-        return inventarioService.listarStock(ubicacionId, null, null, true, pageable);
+        return inventarioService.listarStock(ubicacionId, null, null, null, true, pageable);
     }
 
     private static Pageable sinOrden(Pageable pageable) {
