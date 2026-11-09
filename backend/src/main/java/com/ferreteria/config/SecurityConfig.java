@@ -103,6 +103,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/clientes/**", "/api/cajas/**", "/api/ventas/**", "/api/fiado/**")
                 .hasAnyRole(ADMIN, VENDEDOR)
                 .requestMatchers(HttpMethod.GET, "/api/metodos-pago/**").authenticated()
+                .requestMatchers(HttpMethod.GET, "/api/unidades-medida/**").authenticated()
                 // Reportes
                 .requestMatchers("/api/reportes/ventas-por-tienda", "/api/reportes/productos-mas-vendidos")
                 .hasAnyRole(ADMIN, VENDEDOR)
