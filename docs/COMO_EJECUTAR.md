@@ -260,6 +260,17 @@ Todos menos EFECTIVO piden `numeroOperacion`.
 - `GET /api/reportes/stock-bajo`
 - Kardex: `GET /api/inventario/kardex?productoId=13`
 
+**i) Segunda fase** (ver tambien la seccion 11 de `docs/api/ferreteria.http`):
+
+- Busqueda por palabras y abreviaturas: `GET /api/productos?texto=per hex zin`
+- Disponibilidad (stock de las tres ubicaciones y total): `GET /api/inventario/resumen?texto=cable`
+- Precio sugerido e historial (solo `admin`): `GET /api/productos/{id}/presentaciones/{presentacionId}/precio-sugerido`
+  y `.../historial-precios`
+- Encargos (`vendedor1`, con la caja abierta para entregar): `POST /api/encargos` y `POST /api/encargos/{id}/entregar`
+- Cotizaciones (`vendedor1`): `POST /api/cotizaciones`, `GET /api/cotizaciones/{id}/pdf`,
+  `GET /api/cotizaciones/{id}/enlace-whatsapp?telefono=987654321`, `POST /api/cotizaciones/{id}/enviar-correo`
+  (responde 422 si no configuraste `MAIL_*`) y `POST /api/cotizaciones/{id}/convertir-venta` (con la caja abierta)
+
 **h) Seguridad** - prueba que:
 
 - sin token cualquier endpoint responde **401**;
@@ -274,7 +285,7 @@ Con la aplicacion recien levantada y la base **recien creada** (ver punto 10):
 
 - **VS Code + REST Client:** abre `docs/api/ferreteria.http` y pulsa *Send Request* en cada peticion, en orden.
 - **Postman:** *Import* -> `docs/api/ferreteria.postman_collection.json` -> clic derecho en la coleccion -> *Run*.
-  Son 35 peticiones y cada una comprueba el codigo HTTP esperado.
+  Son 48 peticiones (las 13 ultimas son de la segunda fase) y cada una comprueba el codigo HTTP esperado.
 
 ---
 

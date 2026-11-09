@@ -260,7 +260,7 @@ trae `contenido`, `pagina`, `tamano`, `totalElementos` y `totalPaginas`. Con 50 
 
 ---
 
-## 15. Pruebas (132 en total, todas contra PostgreSQL real)
+## 15. Pruebas (177 en total, todas contra PostgreSQL real)
 
 | Tipo | Que prueba | Ejemplos |
 |------|------------|----------|
@@ -275,7 +275,48 @@ real, y se verificaron con SQL que stock, kardex, ventas, pagos y cajas cuadran.
 
 ---
 
-## 16. Decisiones importantes (resumen)
+## 16. Segunda fase: lo que pidio el encargado, explicado por rol
+
+El detalle tecnico esta en `docs/DECISIONES.md` (D79 a D96) y el plan en `docs/PLAN_FASE_2.md`.
+
+### Para todos los roles
+- **Busqueda por palabras y abreviaturas:** "per hex zin" encuentra "Perno hexagonal zincado". Cada producto guarda un
+  indice de busqueda normalizado (`termino_busqueda`: sin mayusculas ni acentos) y cada palabra buscada debe aparecer
+  en el; las abreviaturas ("per", "hex", "zin") se traducen con la tabla de sinonimos (`SinonimoBusqueda`).
+- **Disponibilidad** (`GET /api/inventario/resumen`): cualquier usuario ve el stock de las dos tiendas y del almacen
+  en una sola consulta. Es **solo lectura**: ver el stock de otra tienda no permite venderlo ni moverlo; la escritura
+  sigue protegida por `AccesoUbicacionService`.
+
+### ADMIN
+- **Presentaciones con precio propio:** cada presentacion (unidad, docena, ciento, kilo) acepta los decimales de su
+  unidad de medida (`ReglaDecimales`): una docena no se vende en 1.5, un kilo si en 0.250.
+- **Precio sugerido** = `costo de referencia x (1 + ganancia %) + adicional`, redondeado a 2 decimales (HALF_UP).
+  El costo se actualiza con cada compra. El sistema **sugiere**, el ADMIN decide ("Usar sugerido").
+- **Historial de precios:** cada cambio de precio queda guardado con fecha, usuario, precio anterior y nuevo.
+- **Acciones en lote:** activar, desactivar o cambiar la categoria de varios productos a la vez.
+
+### VENDEDOR
+- **Encargos:** si un producto no tiene stock, se registra un encargo con precio acordado (puede llevar recargo).
+  **No toca el stock**. Al entregarlo se crea la nota de venta en la caja abierta y recien ahi se descuenta.
+- **Cotizaciones:** presupuesto con precios editables y validez en dias. Se descarga en PDF (OpenPDF), se imprime,
+  se envia por correo (SMTP propio, `MAIL_*`) o por WhatsApp (enlace con un token publico imposible de adivinar
+  para descargar el PDF). Se **convierte en nota de venta una sola vez**, con los mismos precios y el mismo total.
+- Encargos y cotizaciones crean la venta con `VentaService.registrarConPrecios`: usa el precio del documento (no el
+  de lista) pero pasa por las mismas reglas de una venta normal (caja abierta, pagos, stock con bloqueo y kardex).
+
+### ALMACENERO
+- Ve la disponibilidad de todas las ubicaciones para planificar traslados; sus permisos de escritura no cambian.
+
+### Preguntas que te pueden hacer
+- *¿Por que el encargo no descuenta stock al crearse?* Porque la mercaderia todavia no existe en la tienda; si se
+  descontara, el stock quedaria negativo o se bloquearia la venta de otros clientes.
+- *¿Que pasa si cambio el precio de lista despues de cotizar?* Nada: la cotizacion guarda su propio precio y la
+  venta se crea con ese precio.
+- *¿Se puede convertir dos veces una cotizacion?* No: `venta_id` es UNIQUE y el servicio lo valida antes.
+
+---
+
+## 17. Decisiones importantes (resumen)
 
 El detalle de cada decision esta en `docs/DECISIONES.md`. Las mas importantes:
 

@@ -21,3 +21,14 @@ Marca `[x]` cuando un paso este terminado, verificado y con su commit.
 - [x] Paso 14. Reportes: ventas por tienda, traslados por tienda, compras por proveedor, stock bajo, productos mas vendidos
 - [x] Paso 15. Swagger completo y pruebas con JUnit 5 y Mockito
 - [ ] Paso 16. Dockerfile, GitHub Actions y despliegue en Railway (pospuesto: por ahora el sistema se usa solo en local, ver docs/PENDIENTES.md)
+
+## Segunda fase (rama `catalogo-busqueda`, detalle en `docs/PLAN_FASE_2.md`)
+
+- [x] E0. Preparacion: ramas, pruebas base y plan
+- [x] B1 / F1. Decimales por presentacion, categorias de ferreteria (V9), tipo/acabado/medida, busqueda por palabras y acciones en lote
+- [x] B2 / F2. Costo de referencia, precio sugerido (costo + ganancia + adicional) e historial de precios (V10)
+- [x] B3 / F3. Disponibilidad: stock de las dos tiendas y del almacen en una sola consulta (solo lectura)
+- [x] B4 / F4. Encargos (V11): productos sin stock con precio propio; el stock cambia solo al entregarlos
+- [x] B5 / F5. Cotizaciones (V12): PDF, imprimir, correo, WhatsApp y conversion en nota de venta
+- [x] B6 / F6. Cierre: documentacion, coleccion de peticiones (48), `./mvnw verify` y e2e del frontend (25) en verde
+- [x] Pedido del dueno: tema amarillo, negro y blanco, y lupa para agrandar la letra (frontend)

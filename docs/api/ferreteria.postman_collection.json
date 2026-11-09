@@ -1440,6 +1440,545 @@
           ]
         }
       ]
+    },
+    {
+      "name": "11. Segunda fase: busqueda, precios, disponibilidad, encargos y cotizaciones",
+      "item": [
+        {
+          "name": "Busqueda por palabras y abreviaturas",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_vendedor}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api/productos?texto=per hex zin",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "productos"
+              ],
+              "query": [
+                {
+                  "key": "texto",
+                  "value": "per hex zin"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Disponibilidad: stock por ubicacion y total",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_vendedor}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api/inventario/resumen?texto=cable",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "inventario",
+                "resumen"
+              ],
+              "query": [
+                {
+                  "key": "texto",
+                  "value": "cable"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Precio sugerido (solo ADMIN)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api/productos/{{producto_id}}/presentaciones/{{pres_unidad_id}}/precio-sugerido",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "productos",
+                "{{producto_id}}",
+                "presentaciones",
+                "{{pres_unidad_id}}",
+                "precio-sugerido"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Historial de precios (solo ADMIN)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api/productos/{{producto_id}}/presentaciones/{{pres_unidad_id}}/historial-precios",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "productos",
+                "{{producto_id}}",
+                "presentaciones",
+                "{{pres_unidad_id}}",
+                "historial-precios"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Abrir caja otra vez",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_vendedor}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api/cajas/abrir",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "cajas",
+                "abrir"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"montoApertura\": 50.0\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) pm.collectionVariables.set('caja2_id', pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Encargo (no toca el stock)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_vendedor}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api/encargos",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "encargos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"presentacionId\": 22,\n  \"cantidad\": 5,\n  \"precioUnitario\": 1.5,\n  \"observacion\": \"Lo trae el proveedor\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) pm.collectionVariables.set('encargo_id', pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Entregar encargo (crea la venta y descuenta stock)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_vendedor}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api/encargos/{{encargo_id}}/entregar",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "encargos",
+                "{{encargo_id}}",
+                "entregar"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"condicion\": \"CONTADO\",\n  \"pagos\": [\n    {\n      \"metodoPago\": \"EFECTIVO\",\n      \"monto\": 7.5\n    }\n  ]\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear cotizacion (total 12.00)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_vendedor}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api/cotizaciones",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "cotizaciones"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"diasValidez\": 7,\n  \"observacion\": \"Precio especial por volumen\",\n  \"detalles\": [\n    {\n      \"presentacionId\": 22,\n      \"cantidad\": 10,\n      \"precioUnitario\": 1.2\n    }\n  ]\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) pm.collectionVariables.set('cotizacion_id', pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PDF de la cotizacion",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_vendedor}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api/cotizaciones/{{cotizacion_id}}/pdf?descargar=true",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "cotizaciones",
+                "{{cotizacion_id}}",
+                "pdf"
+              ],
+              "query": [
+                {
+                  "key": "descargar",
+                  "value": "true"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Enlace de WhatsApp",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_vendedor}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api/cotizaciones/{{cotizacion_id}}/enlace-whatsapp?telefono=987654321",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "cotizaciones",
+                "{{cotizacion_id}}",
+                "enlace-whatsapp"
+              ],
+              "query": [
+                {
+                  "key": "telefono",
+                  "value": "987654321"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Correo sin servidor configurado -> 422",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_vendedor}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api/cotizaciones/{{cotizacion_id}}/enviar-correo",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "cotizaciones",
+                "{{cotizacion_id}}",
+                "enviar-correo"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"destinatario\": \"cliente@example.com\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 422', () => pm.response.to.have.status(422));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Convertir cotizacion en nota de venta",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_vendedor}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api/cotizaciones/{{cotizacion_id}}/convertir-venta",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "cotizaciones",
+                "{{cotizacion_id}}",
+                "convertir-venta"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"condicion\": \"CONTADO\",\n  \"pagos\": [\n    {\n      \"metodoPago\": \"EFECTIVO\",\n      \"monto\": 12.0\n    }\n  ]\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cerrar caja (50.00 + 7.50 + 12.00 = 69.50)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_vendedor}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api/cajas/{{caja2_id}}/cerrar",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "cajas",
+                "{{caja2_id}}",
+                "cerrar"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"efectivoContado\": 69.5\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
     }
   ],
   "variable": [

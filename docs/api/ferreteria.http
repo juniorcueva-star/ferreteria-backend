@@ -435,3 +435,144 @@ Authorization: Bearer {{r02.response.body.$.token}}
 GET {{base}}/api/ventas?ubicacionId=3
 Authorization: Bearer {{r02.response.body.$.token}}
 
+
+
+######################################################################
+# 11. Segunda fase: busqueda, precios, disponibilidad, encargos y cotizaciones
+######################################################################
+
+###
+# Busqueda por palabras y abreviaturas (espera 200)
+# @name r36
+GET {{base}}/api/productos?texto=per hex zin
+Authorization: Bearer {{r02.response.body.$.token}}
+
+###
+# Disponibilidad: stock de las tres ubicaciones y total en una sola consulta (espera 200)
+# @name r37
+GET {{base}}/api/inventario/resumen?texto=cable
+Authorization: Bearer {{r02.response.body.$.token}}
+
+###
+# Precio sugerido de una presentacion: costo + ganancia + adicional (solo ADMIN) (espera 200)
+# @name r38
+GET {{base}}/api/productos/{{r08.response.body.$.id}}/presentaciones/{{r08.response.body.$.presentaciones[0].id}}/precio-sugerido
+Authorization: Bearer {{r01.response.body.$.token}}
+
+###
+# Historial de precios de una presentacion (solo ADMIN) (espera 200)
+# @name r39
+GET {{base}}/api/productos/{{r08.response.body.$.id}}/presentaciones/{{r08.response.body.$.presentaciones[0].id}}/historial-precios
+Authorization: Bearer {{r01.response.body.$.token}}
+
+###
+# Abrir caja otra vez para entregar el encargo y convertir la cotizacion (espera 201)
+# @name r40
+POST {{base}}/api/cajas/abrir
+Authorization: Bearer {{r02.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "montoApertura": 50.0
+}
+
+###
+# Encargo: 5 metros de cable a precio acordado; todavia no toca el stock (espera 201)
+# @name r41
+POST {{base}}/api/encargos
+Authorization: Bearer {{r02.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "presentacionId": 22,
+  "cantidad": 5,
+  "precioUnitario": 1.5,
+  "observacion": "Lo trae el proveedor"
+}
+
+###
+# Entregar el encargo: crea la venta (7.50) y recien ahi descuenta el stock (espera 200)
+# @name r42
+POST {{base}}/api/encargos/{{r41.response.body.$.id}}/entregar
+Authorization: Bearer {{r02.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "condicion": "CONTADO",
+  "pagos": [
+    {
+      "metodoPago": "EFECTIVO",
+      "monto": 7.5
+    }
+  ]
+}
+
+###
+# Crear cotizacion: 10 metros de cable a 1.20 (precio propio), total 12.00 (espera 201)
+# @name r43
+POST {{base}}/api/cotizaciones
+Authorization: Bearer {{r02.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "diasValidez": 7,
+  "observacion": "Precio especial por volumen",
+  "detalles": [
+    {
+      "presentacionId": 22,
+      "cantidad": 10,
+      "precioUnitario": 1.2
+    }
+  ]
+}
+
+###
+# PDF de la cotizacion (espera 200)
+# @name r44
+GET {{base}}/api/cotizaciones/{{r43.response.body.$.id}}/pdf?descargar=true
+Authorization: Bearer {{r02.response.body.$.token}}
+
+###
+# Enlace de WhatsApp con el resumen y el enlace publico del PDF (espera 200)
+# @name r45
+GET {{base}}/api/cotizaciones/{{r43.response.body.$.id}}/enlace-whatsapp?telefono=987654321
+Authorization: Bearer {{r02.response.body.$.token}}
+
+###
+# Enviar por correo sin servidor de correo configurado (MAIL_*) (espera 422)
+# @name r46
+POST {{base}}/api/cotizaciones/{{r43.response.body.$.id}}/enviar-correo
+Authorization: Bearer {{r02.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "destinatario": "cliente@example.com"
+}
+
+###
+# Convertir la cotizacion en nota de venta con el mismo total (espera 200)
+# @name r47
+POST {{base}}/api/cotizaciones/{{r43.response.body.$.id}}/convertir-venta
+Authorization: Bearer {{r02.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "condicion": "CONTADO",
+  "pagos": [
+    {
+      "metodoPago": "EFECTIVO",
+      "monto": 12.0
+    }
+  ]
+}
+
+###
+# Cerrar la caja: 50.00 de apertura + 7.50 + 12.00 = 69.50 en efectivo (espera 200)
+# @name r48
+POST {{base}}/api/cajas/{{r40.response.body.$.id}}/cerrar
+Authorization: Bearer {{r02.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "efectivoContado": 69.5
+}
