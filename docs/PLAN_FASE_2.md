@@ -24,7 +24,7 @@ subidos a `origin/catalogo-busqueda` y su checkpoint.
 | B3 | backend | `GET /api/inventario/resumen`: stock por ubicacion y total en una sola consulta | Lectura de otras tiendas permitida; escritura sigue bloqueada | Terminada |
 | F3 | frontend | Pantalla "Disponibilidad" y resumen en el punto de venta | Vitest + Playwright | Terminada |
 | B4 | backend | V11 encargos: crear, listar, entregar (crea la venta) y anular | Stock solo cambia al entregar | Terminada |
-| F4 | frontend | "Hacer encargo" en el punto de venta y pantalla de encargos | Playwright: crear, entregar y ver el stock | Pendiente |
+| F4 | frontend | "Hacer encargo" en el punto de venta y pantalla de encargos | Playwright: crear, entregar y ver el stock | Terminada |
 | B5 | backend | V12 cotizaciones: CRUD, convertir en venta, PDF, correo y WhatsApp | PDF valido, total igual al de la venta, correo 422 sin configuracion | Pendiente |
 | F5 | frontend | Pantallas de cotizaciones con todas sus acciones | Playwright: crear, descargar y convertir | Pendiente |
 | B6 | backend | Cierre: documentacion, coleccion de peticiones y prueba completa | `./mvnw verify` en verde | Pendiente |
