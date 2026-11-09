@@ -78,6 +78,8 @@ public class SecurityConfig {
                 // Publico
                 .requestMatchers(RUTAS_PUBLICAS).permitAll()
                 .requestMatchers(HttpMethod.GET, "/imagenes/**").permitAll()
+                // PDF de cotizacion desde el enlace de WhatsApp (protegido por un token aleatorio)
+                .requestMatchers(HttpMethod.GET, "/api/publico/cotizaciones/*/pdf").permitAll()
                 .requestMatchers("/error").permitAll()
                 // Organizacion
                 .requestMatchers("/api/auth/**").authenticated()
@@ -103,7 +105,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/inventario/**").authenticated()
                 // Punto de venta
                 .requestMatchers("/api/clientes/**", "/api/cajas/**", "/api/ventas/**", "/api/fiado/**",
-                        "/api/encargos/**")
+                        "/api/encargos/**", "/api/cotizaciones/**")
                 .hasAnyRole(ADMIN, VENDEDOR)
                 .requestMatchers(HttpMethod.GET, "/api/metodos-pago/**").authenticated()
                 .requestMatchers(HttpMethod.GET, "/api/unidades-medida/**").authenticated()

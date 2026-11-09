@@ -55,6 +55,8 @@ springdoc:
   default-produces-media-type: application/json
 
 server:
+  # Detras de un proxy en la nube (https) arma los enlaces con el esquema y el dominio publicos
+  forward-headers-strategy: framework
   # Railway asigna el puerto en la variable PORT; en local se usa 8080
   port: ${PORT:8080}
 
@@ -75,6 +77,16 @@ app:
     # Opcional. Si se configura, las fotos se suben a Cloudinary; si no, se guardan en la carpeta local.
     cloudinary-url: ${CLOUDINARY_URL:}
     directorio: ${IMAGENES_DIRECTORIO:./imagenes}
+  # URL publica del backend para los enlaces que se envian al cliente (Ej: https://api.miferreteria.pe).
+  # Si se deja vacia se usa la direccion con la que se llamo a la API.
+  url-publica: ${APP_URL_PUBLICA:}
+  correo:
+    # Opcional. Sin MAIL_HOST el envio de cotizaciones por correo responde 422 y el resto funciona igual.
+    host: ${MAIL_HOST:}
+    puerto: ${MAIL_PORT:587}
+    usuario: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    remitente: ${MAIL_FROM:}
   demo:
     # Contrasena de los usuarios de demostracion (solo perfil dev)
     password: ${DEMO_PASSWORD:}

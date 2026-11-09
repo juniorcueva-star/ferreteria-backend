@@ -310,3 +310,24 @@ Registro de las decisiones de diseno tomadas durante el desarrollo (que se decid
 - **D90. Venta con precio acordado.** `VentaService.registrarConPrecios` permite que un documento ya acordado
   (encargo o cotizacion) fije el precio de sus lineas. El endpoint `POST /api/ventas` sigue usando siempre el precio de
   lista: el vendedor no puede cambiar precios en una venta normal.
+- **D91. Cotizaciones (V12, adaptadas de V5 y V6 de mejoras).** Codigo COT-000001 por secuencia, cliente opcional,
+  fecha de validez (7 dias por defecto, hasta 90) y precio editable por linea (si se omite, el de lista). Una
+  presentacion por cotizacion (se suma la cantidad). Estados: BORRADOR (editable), EMITIDA (al emitirla o al
+  enviarla por correo o WhatsApp) y ANULADA. La venta creada al convertir se guarda en `cotizacion.venta_id` (UNIQUE),
+  sin tocar la tabla venta. Una cotizacion convertida no se anula (CHECK) ni se convierte otra vez.
+- **D92. Convertir en nota de venta (D2).** Usa `registrarConPrecios` con los precios y descuentos de la cotizacion,
+  asi el total es identico; descuenta stock, respeta decimales y exige caja abierta en la tienda de la cotizacion.
+  Sin stock responde 409 `STOCK_INSUFICIENTE`, como cualquier venta. No se bloquea por estar vencida: el precio quedo
+  acordado en el documento.
+- **D93. PDF con OpenPDF 3.0.5** (licencia doble LGPL 2.1 / MPL 2.0, compatible con un proyecto propio que la usa
+  como libreria sin modificarla). `GET /api/cotizaciones/{id}/pdf` se muestra en el navegador para imprimir y con
+  `descargar=true` se descarga. Lleva empresa (RUC y razon social), tienda, cliente, detalle, operacion gravada, IGV
+  y total, con tildes (texto para el cliente).
+- **D94. Enlace publico del PDF para WhatsApp (D3).** Como la demo sera en la nube, el mensaje incluye un enlace de
+  descarga sin login: `/api/publico/cotizaciones/{token}/pdf`. El token son 32 bytes aleatorios (SecureRandom) en
+  Base64 URL, imposible de adivinar; una cotizacion anulada ya no se descarga. La URL base sale de `APP_URL_PUBLICA`
+  o, si falta, de la direccion con la que se llamo a la API (`server.forward-headers-strategy: framework` para que
+  detras del proxy de la nube use https y el dominio publico). Telefono: celular peruano de 9 digitos (con o sin 51).
+- **D95. Correo (D4) con SMTP propio** (`MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM`). El
+  servidor de correo solo se crea si hay `MAIL_HOST`; sin el (o sin `MAIL_FROM`) el envio responde 422 con un
+  mensaje claro. Las pruebas usan un servidor simulado: nunca se envian correos reales.
