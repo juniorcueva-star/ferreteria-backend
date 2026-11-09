@@ -19,8 +19,6 @@ por ahora el sistema solo se usa en la laptop.
 
 ## Pendientes de la segunda fase
 
-- Prueba Playwright de cotizaciones (crear, descargar PDF y convertir en venta): las pantallas estan hechas y probadas
-  con lint, build y Vitest, pero falta el e2e `e2e/07-cotizaciones.spec.ts`.
 - Para enviar cotizaciones por correo hay que configurar `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD` y
   `MAIL_FROM` (con Gmail, una "contrasena de aplicacion"). Sin ellas el envio responde 422.
 - El enlace de WhatsApp usa `APP_URL_PUBLICA` (URL publica del backend) para el PDF.
