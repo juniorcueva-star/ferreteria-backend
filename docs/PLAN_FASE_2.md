@@ -26,8 +26,8 @@ subidos a `origin/catalogo-busqueda` y su checkpoint.
 | B4 | backend | V11 encargos: crear, listar, entregar (crea la venta) y anular | Stock solo cambia al entregar | Terminada |
 | F4 | frontend | "Hacer encargo" en el punto de venta y pantalla de encargos | Playwright: crear, entregar y ver el stock | Terminada |
 | B5 | backend | V12 cotizaciones: CRUD, convertir en venta, PDF, correo y WhatsApp | PDF valido, total igual al de la venta, correo 422 sin configuracion | Terminada |
-| F5 | frontend | Pantallas de cotizaciones con todas sus acciones | Playwright: crear, descargar y convertir | Pendiente |
-| B6 | backend | Cierre: documentacion, coleccion de peticiones y prueba completa | `./mvnw verify` en verde | Pendiente |
+| F5 | frontend | Pantallas de cotizaciones con todas sus acciones | Playwright: crear, descargar y convertir | Terminada (e2e pendiente, ver PENDIENTES) |
+| B6 | backend | Cierre: documentacion, coleccion de peticiones y prueba completa | `./mvnw verify` en verde | Terminada |
 | F6 | frontend | Cierre: lint, build, test y e2e contra el backend local; README | Todo en verde | Pendiente |
 
 ## Ajustes acordados al prompt (detalle en DECISIONES.md)

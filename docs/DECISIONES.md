@@ -331,3 +331,7 @@ Registro de las decisiones de diseno tomadas durante el desarrollo (que se decid
 - **D95. Correo (D4) con SMTP propio** (`MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM`). El
   servidor de correo solo se crea si hay `MAIL_HOST`; sin el (o sin `MAIL_FROM`) el envio responde 422 con un
   mensaje claro. Las pruebas usan un servidor simulado: nunca se envian correos reales.
+- **D96. Pantallas de cotizaciones (F5).** El PDF se pide con el token de sesion, asi que el frontend lo descarga como
+  archivo; "Imprimir" abre una pestana en el clic (para que el navegador no la bloquee) y le pasa el PDF; si se
+  bloquea, se descarga. WhatsApp abre el enlace del backend y ademas lo deja visible por si el navegador bloquea la
+  ventana. Convertir en venta pide caja abierta en la tienda de la cotizacion, como la entrega de encargos.

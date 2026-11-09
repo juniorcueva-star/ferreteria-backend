@@ -17,6 +17,27 @@ por ahora el sistema solo se usa en la laptop.
 | Cuenta de **Railway** y repositorio en GitHub con Actions | Despliegue en la nube (paso 16) | Cuando se quiera publicar | Variables de Railway |
 | **Clave SOL** de SUNAT y **certificado digital** de cada RUC, y un **OSE/PSE** (proveedor de facturacion electronica) | Boletas y facturas electronicas (Fase 2) | Fase 2 | Nuevas variables de entorno |
 
+## Pendientes de la segunda fase
+
+- Prueba Playwright de cotizaciones (crear, descargar PDF y convertir en venta): las pantallas estan hechas y probadas
+  con lint, build y Vitest, pero falta el e2e `e2e/07-cotizaciones.spec.ts`.
+- Para enviar cotizaciones por correo hay que configurar `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD` y
+  `MAIL_FROM` (con Gmail, una "contrasena de aplicacion"). Sin ellas el envio responde 422.
+- El enlace de WhatsApp usa `APP_URL_PUBLICA` (URL publica del backend) para el PDF.
+
+## Despliegue en la nube (guia corta)
+
+| Parte | Herramienta | Configuracion |
+|-------|-------------|---------------|
+| Base de datos | PostgreSQL de Railway (o Neon) | Flyway crea las tablas al arrancar |
+| Backend | Railway | Repositorio `ferreteria-backend`, *Root Directory* `backend`, Java 21 (Maven) |
+| Frontend | Vercel (o Netlify) | `npm run build`, carpeta `dist`, variable `VITE_API_URL` con la URL del backend |
+
+Variables del backend: `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER` y `DB_PASSWORD` (los de la base de Railway), `JWT_SECRET` (32+ caracteres),
+`ADMIN_PASSWORD`, `DEMO_PASSWORD`, `CORS_ORIGENES` (URL del frontend), `APP_URL_PUBLICA` (URL del backend),
+`SPRING_PROFILES_ACTIVE` (`dev` carga datos de demostracion; `prod` para uso real), y opcionales `MAIL_*` y
+`CLOUDINARY_URL` (sin Cloudinary las fotos se pierden al reiniciar el servidor).
+
 ## Funcionalidades pendientes
 
 ### Paso 16 (no realizado por ahora)
