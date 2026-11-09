@@ -115,6 +115,9 @@ public class SecurityConfig {
                 .requestMatchers("/api/reportes/traslados-por-tienda", "/api/reportes/compras-por-proveedor")
                 .hasAnyRole(ADMIN, ALMACENERO)
                 .requestMatchers(HttpMethod.GET, "/api/reportes/stock-bajo").authenticated()
+                .requestMatchers(HttpMethod.GET, "/api/reportes/excel/ventas", "/api/reportes/excel/deudores")
+                .hasAnyRole(ADMIN, VENDEDOR)
+                .requestMatchers(HttpMethod.GET, "/api/reportes/excel/stock").authenticated()
                 // Cualquier otra ruta o metodo no listado arriba queda cerrado
                 .anyRequest().denyAll();
     }

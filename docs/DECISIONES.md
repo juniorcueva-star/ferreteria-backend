@@ -342,3 +342,8 @@ Registro de las decisiones de diseno tomadas durante el desarrollo (que se decid
   (`GET /api/ventas/{id}/pdf`, mismo control de tienda que ver la venta). Colores amarillo, negro y blanco. La nota
   de venta no es boleta electronica (SUNAT queda pendiente). Los datos de demostracion usan los de la tarjeta del
   negocio para la Tienda Centro; el numero de cuenta BBVA se completo con los digitos del C.C.I. (confirmar).
+- **D98. Reportes en Excel con Apache POI** (licencia Apache 2.0): `GET /api/reportes/excel/ventas` (detalle,
+  resumen por tienda y productos mas vendidos; sin fechas usa el mes actual), `/excel/stock` (`soloBajo` opcional) y
+  `/excel/deudores` (deudores y ventas con saldo). Reutilizan los mismos servicios que los reportes en pantalla, asi
+  que respetan la seguridad por rol y por tienda. Maximo 10 000 filas por hoja. Titulos en amarillo, filtros y
+  primera fila fija; montos con formato "S/ 0.00".

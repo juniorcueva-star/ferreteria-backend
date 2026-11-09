@@ -576,3 +576,26 @@ Content-Type: application/json
 {
   "efectivoContado": 69.5
 }
+
+
+######################################################################
+# 12. Reportes en Excel (.xlsx)
+######################################################################
+
+###
+# Ventas del mes en Excel: detalle, resumen por tienda y productos mas vendidos (espera 200)
+# @name r49
+GET {{base}}/api/reportes/excel/ventas?desde={{hoy}}&hasta={{hoy}}
+Authorization: Bearer {{r01.response.body.$.token}}
+
+###
+# Stock por ubicacion en Excel (espera 200)
+# @name r50
+GET {{base}}/api/reportes/excel/stock
+Authorization: Bearer {{r03.response.body.$.token}}
+
+###
+# Deudores en Excel (espera 200)
+# @name r51
+GET {{base}}/api/reportes/excel/deudores
+Authorization: Bearer {{r02.response.body.$.token}}

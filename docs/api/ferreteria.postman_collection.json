@@ -1979,6 +1979,126 @@
           ]
         }
       ]
+    },
+    {
+      "name": "12. Reportes en Excel",
+      "item": [
+        {
+          "name": "Ventas en Excel",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api/reportes/excel/ventas?desde={{hoy}}&hasta={{hoy}}",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "reportes",
+                "excel",
+                "ventas"
+              ],
+              "query": [
+                {
+                  "key": "desde",
+                  "value": "{{hoy}}"
+                },
+                {
+                  "key": "hasta",
+                  "value": "{{hoy}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Stock en Excel",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_almacen}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api/reportes/excel/stock",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "reportes",
+                "excel",
+                "stock"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Deudores en Excel",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_vendedor}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api/reportes/excel/deudores",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "reportes",
+                "excel",
+                "deudores"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
     }
   ],
   "variable": [
