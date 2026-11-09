@@ -52,6 +52,20 @@ public class Presentacion {
     @Column(nullable = false)
     private int decimales;
 
+    // Costo de la ultima compra por unidad base x factor (se actualiza con cada compra)
+    @Column(name = "costo_referencia", precision = 12, scale = 4)
+    private BigDecimal costoReferencia;
+
+    @Column(name = "porcentaje_ganancia", precision = 8, scale = 4)
+    private BigDecimal porcentajeGanancia;
+
+    @Column(name = "monto_adicional", precision = 12, scale = 2)
+    private BigDecimal montoAdicional;
+
+    // Informativo: el precio de venta solo cambia cuando el usuario lo confirma
+    @Column(name = "precio_sugerido", precision = 12, scale = 2)
+    private BigDecimal precioSugerido;
+
     @Column(name = "es_principal", nullable = false)
     private boolean principal;
 

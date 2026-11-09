@@ -277,3 +277,15 @@ Registro de las decisiones de diseno tomadas durante el desarrollo (que se decid
 - **D83. Acciones en lote** (`POST /api/productos/acciones-lote`, solo ADMIN): asignar categoria, activar o
   desactivar de 1 a 200 productos. Todo o nada: si algun id no existe responde 422 con los ids faltantes y no cambia
   ninguno. Los ids repetidos cuentan una sola vez.
+- **D84. Precio sugerido (V10, reglas D9 y D10).** Cada presentacion guarda costo de referencia, porcentaje de
+  ganancia, monto adicional y precio sugerido. Al registrar una compra, el costo de todas las presentaciones del
+  producto pasa a ser el costo por unidad base de esa compra x el factor (si el producto viene en varias lineas, vale
+  la ultima) y se recalcula el sugerido. Anular la compra no restaura el costo anterior. El precio de venta nunca
+  cambia solo. La migracion completa el costo inicial con la ultima compra registrada de cada producto.
+- **D85. Costo e historial solo para el ADMIN.** `GET .../precio-sugerido` e `.../historial-precios` estan
+  restringidos al ADMIN en la tabla de permisos: el vendedor no debe ver el margen. Por eso el costo no se agrega a
+  `PresentacionResponse`, que ven todos. `precio-sugerido` acepta `porcentajeGanancia` y `montoAdicional` opcionales
+  para una vista previa sin guardar.
+- **D86. Historial de precios** (`historial_precio_presentacion`, adaptada de la V4 de mejoras sin sus cambios en
+  `venta_detalle`): una fila por cada cambio real del precio final (precio anterior, nuevo, usuario y fecha). Guardar
+  el mismo precio no agrega fila. Si cambia el factor de una presentacion, su costo de referencia se escala.

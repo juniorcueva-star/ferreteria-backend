@@ -1,5 +1,6 @@
 package com.ferreteria.dto.catalogo;
 
+import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.Max;
@@ -18,6 +19,8 @@ import java.math.BigDecimal;
  * @param principal   la que se muestra por defecto; solo una por producto
  * @param decimales   decimales que acepta al vender o comprar (0 = solo enteros); si se omite: 0 para productos
  *                    por UNIDAD y 3 para KILO o METRO
+ * @param porcentajeGanancia ganancia sobre el costo para el precio sugerido (Ej: 30 = 30 %); al editar, null no cambia
+ * @param montoAdicional     monto fijo que se suma al precio sugerido; al editar, null no cambia
  */
 public record PresentacionRequest(
         @NotBlank @Size(max = 50) String nombre,
@@ -26,5 +29,7 @@ public record PresentacionRequest(
         @Size(max = 50) String codigoBarras,
         Boolean principal,
         Boolean activo,
-        @Min(0) @Max(3) Integer decimales) {
+        @Min(0) @Max(3) Integer decimales,
+        @DecimalMin("0") @DecimalMax("1000") @Digits(integer = 4, fraction = 4) BigDecimal porcentajeGanancia,
+        @DecimalMin("0") @Digits(integer = 10, fraction = 2) BigDecimal montoAdicional) {
 }

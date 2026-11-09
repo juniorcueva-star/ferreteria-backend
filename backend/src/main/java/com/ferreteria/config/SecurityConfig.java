@@ -84,7 +84,9 @@ public class SecurityConfig {
                 .requestMatchers("/api/empresas/**", "/api/usuarios/**").hasRole(ADMIN)
                 .requestMatchers(HttpMethod.GET, "/api/ubicaciones/**").authenticated()
                 .requestMatchers("/api/ubicaciones/**").hasRole(ADMIN)
-                // Catalogo: todos consultan, solo el ADMIN modifica
+                // Catalogo: todos consultan, solo el ADMIN modifica. Costos e historial de precios: solo ADMIN
+                .requestMatchers(HttpMethod.GET, "/api/productos/*/presentaciones/*/precio-sugerido",
+                        "/api/productos/*/presentaciones/*/historial-precios").hasRole(ADMIN)
                 .requestMatchers(HttpMethod.GET, "/api/categorias/**", "/api/productos/**").authenticated()
                 .requestMatchers("/api/categorias/**", "/api/productos/**").hasRole(ADMIN)
                 // Compras

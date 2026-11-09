@@ -2,12 +2,15 @@ package com.ferreteria.service;
 
 import com.ferreteria.dto.catalogo.AccionLoteRequest;
 import com.ferreteria.dto.catalogo.AccionLoteResponse;
+import com.ferreteria.dto.catalogo.HistorialPrecioResponse;
+import com.ferreteria.dto.catalogo.PrecioSugeridoResponse;
 import com.ferreteria.dto.catalogo.PresentacionRequest;
 import com.ferreteria.dto.catalogo.ProductoActualizarRequest;
 import com.ferreteria.dto.catalogo.ProductoCrearRequest;
 import com.ferreteria.dto.catalogo.ProductoResponse;
 import com.ferreteria.dto.comun.PaginaResponse;
 import com.ferreteria.entity.Categoria;
+import com.ferreteria.entity.HistorialPrecioPresentacion;
 import com.ferreteria.entity.Presentacion;
 import com.ferreteria.entity.Producto;
 import com.ferreteria.entity.SinonimoBusqueda;
@@ -19,6 +22,7 @@ import com.ferreteria.exception.RecursoNoEncontradoException;
 import com.ferreteria.exception.ReglaNegocioException;
 import com.ferreteria.repository.CategoriaRepository;
 import com.ferreteria.repository.Especificaciones;
+import com.ferreteria.repository.HistorialPrecioPresentacionRepository;
 import com.ferreteria.repository.PresentacionRepository;
 import com.ferreteria.repository.ProductoRepository;
 import com.ferreteria.repository.SinonimoBusquedaRepository;
@@ -39,6 +43,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -60,6 +65,8 @@ public class ProductoService {
     private final PresentacionRepository presentacionRepository;
     private final CategoriaRepository categoriaRepository;
     private final AlmacenImagenes almacenImagenes;
+    private final HistorialPrecioPresentacionRepository historialPrecioRepository;
+    private final Buscador buscador;
     private final SinonimoBusquedaRepository sinonimoBusquedaRepository;
 
     @Transactional(readOnly = true)
@@ -142,6 +149,30 @@ public class ProductoService {
     }
 
     /**
+     * Costo, ganancia, adicional y precio sugerido de una presentacion. Si se envian porcentaje o adicional, calcula
+     * una vista previa con esos valores sin guardar nada.
+     */
+    @Transactional(readOnly = true)
+    public PrecioSugeridoResponse obtenerPrecioSugerido(Long productoId, Long presentacionId,
+                                                        BigDecimal porcentajeGanancia, BigDecimal montoAdicional) {
+        Presentacion presentacion = buscarPresentacion(buscar(productoId), presentacionId);
+        BigDecimal porcentaje = porcentajeGanancia != null ? porcentajeGanancia : presentacion.getPorcentajeGanancia();
+        BigDecimal adicional = montoAdicional != null ? montoAdicional : presentacion.getMontoAdicional();
+        return new PrecioSugeridoResponse(presentacion.getId(), presentacion.getNombre(),
+                presentacion.getCostoReferencia(), porcentaje, adicional,
+                PrecioSugerido.calcular(presentacion.getCostoReferencia(), porcentaje, adicional),
+                presentacion.getPrecioVenta());
+    }
+
+    @Transactional(readOnly = true)
+    public PaginaResponse<HistorialPrecioResponse> listarHistorialPrecios(Long productoId, Long presentacionId,
+                                                                         Pageable pageable) {
+        buscarPresentacion(buscar(productoId), presentacionId);
+        return PaginaResponse.de(historialPrecioRepository.findByPresentacionId(presentacionId,
+                Ordenamiento.validar(pageable, "fecha", "id")), HistorialPrecioResponse::desde);
+    }
+
+    /**
      * Aplica la misma accion a varios productos (asignar categoria, activar o desactivar). Es todo o nada: si
      * algun producto no existe, no se cambia ninguno.
      */
@@ -179,6 +210,11 @@ public class ProductoService {
         Presentacion presentacion = new Presentacion();
         copiarPresentacion(request, presentacion);
         presentacion.setDecimales(decimales(request, producto.getUnidadBase()));
+        BigDecimal costoBase = costoPorUnidadBase(producto);
+        if (costoBase != null) {
+            presentacion.setCostoReferencia(Montos.costo(costoBase.multiply(presentacion.getFactor())));
+        }
+        PrecioSugerido.actualizar(presentacion);
         if (presentacion.isPrincipal()) {
             if (!presentacion.isActivo()) {
                 throw new ReglaNegocioException("La presentacion principal debe estar activa");
@@ -193,10 +229,7 @@ public class ProductoService {
     @Transactional
     public ProductoResponse actualizarPresentacion(Long productoId, Long presentacionId, PresentacionRequest request) {
         Producto producto = buscar(productoId);
-        Presentacion presentacion = producto.getPresentaciones().stream()
-                .filter(p -> p.getId().equals(presentacionId))
-                .findFirst()
-                .orElseThrow(() -> new RecursoNoEncontradoException("Presentacion", presentacionId));
+        Presentacion presentacion = buscarPresentacion(producto, presentacionId);
         validarNombreLibre(producto, request.nombre(), presentacionId);
         validarCodigoBarrasLibre(request.codigoBarras(), presentacionId);
         validarFactor(request.factor(), producto.getUnidadBase());
@@ -214,11 +247,22 @@ public class ProductoService {
         if (seraPrincipal && !eraPrincipal) {
             quitarPrincipalActual(producto);
         }
+        BigDecimal precioAnterior = presentacion.getPrecioVenta();
+        BigDecimal factorAnterior = presentacion.getFactor();
         copiarPresentacion(request, presentacion);
         presentacion.setPrincipal(seraPrincipal);
         presentacion.setActivo(seraActiva);
         if (request.decimales() != null) {
             presentacion.setDecimales(request.decimales());
+        }
+        // Si cambia el factor, el costo de referencia se escala (el costo por unidad base no cambia)
+        if (presentacion.getCostoReferencia() != null && factorAnterior.compareTo(presentacion.getFactor()) != 0) {
+            presentacion.setCostoReferencia(Montos.costo(presentacion.getCostoReferencia()
+                    .multiply(presentacion.getFactor()).divide(factorAnterior, 8, RoundingMode.HALF_UP)));
+        }
+        PrecioSugerido.actualizar(presentacion);
+        if (precioAnterior.compareTo(presentacion.getPrecioVenta()) != 0) {
+            registrarCambioPrecio(producto, presentacion, precioAnterior);
         }
         return ProductoResponse.desde(producto);
     }
@@ -327,6 +371,12 @@ public class ProductoService {
         presentacion.setCodigoBarras(normalizarCodigoBarras(request.codigoBarras()));
         presentacion.setPrincipal(Boolean.TRUE.equals(request.principal()));
         presentacion.setActivo(request.activo() == null || request.activo());
+        if (request.porcentajeGanancia() != null) {
+            presentacion.setPorcentajeGanancia(request.porcentajeGanancia());
+        }
+        if (request.montoAdicional() != null) {
+            presentacion.setMontoAdicional(Montos.dinero(request.montoAdicional()));
+        }
     }
 
     private static String normalizarCodigoBarras(String codigoBarras) {
@@ -379,6 +429,32 @@ public class ProductoService {
     private static void actualizarTerminoBusqueda(Producto producto) {
         producto.setTerminoBusqueda(BusquedaTexto.indice(producto.getCodigo(), producto.getNombre(),
                 producto.getMarca(), producto.getTipo(), producto.getAcabado(), producto.getMedida()));
+    }
+
+    private void registrarCambioPrecio(Producto producto, Presentacion presentacion, BigDecimal precioAnterior) {
+        HistorialPrecioPresentacion historial = new HistorialPrecioPresentacion();
+        historial.setProducto(producto);
+        historial.setPresentacion(presentacion);
+        historial.setPrecioAnterior(precioAnterior);
+        historial.setPrecioNuevo(presentacion.getPrecioVenta());
+        historial.setUsuario(buscador.usuarioActual());
+        historialPrecioRepository.save(historial);
+    }
+
+    /** Costo por unidad base segun alguna presentacion que ya tenga costo de referencia (null si no hay). */
+    private static BigDecimal costoPorUnidadBase(Producto producto) {
+        return producto.getPresentaciones().stream()
+                .filter(p -> p.getCostoReferencia() != null)
+                .findFirst()
+                .map(p -> p.getCostoReferencia().divide(p.getFactor(), 8, RoundingMode.HALF_UP))
+                .orElse(null);
+    }
+
+    private static Presentacion buscarPresentacion(Producto producto, Long presentacionId) {
+        return producto.getPresentaciones().stream()
+                .filter(p -> p.getId().equals(presentacionId))
+                .findFirst()
+                .orElseThrow(() -> new RecursoNoEncontradoException("Presentacion", presentacionId));
     }
 
     /** Si no se indica marca, el producto queda como VARIADO (igual que en el sistema actual del cliente). */

@@ -2,6 +2,8 @@ package com.ferreteria.controller;
 
 import com.ferreteria.dto.catalogo.AccionLoteRequest;
 import com.ferreteria.dto.catalogo.AccionLoteResponse;
+import com.ferreteria.dto.catalogo.HistorialPrecioResponse;
+import com.ferreteria.dto.catalogo.PrecioSugeridoResponse;
 import com.ferreteria.dto.catalogo.PresentacionRequest;
 import com.ferreteria.dto.catalogo.ProductoActualizarRequest;
 import com.ferreteria.dto.catalogo.ProductoCrearRequest;
@@ -15,6 +17,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -30,6 +33,8 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.math.BigDecimal;
 
 @Tag(name = "06. Productos", description = "Catalogo con presentaciones y foto. Consultar: todos; modificar: ADMIN")
 @RestController
@@ -94,6 +99,26 @@ public class ProductoController {
     public ProductoResponse actualizarPresentacion(@PathVariable Long id, @PathVariable Long presentacionId,
                                                    @Valid @RequestBody PresentacionRequest request) {
         return productoService.actualizarPresentacion(id, presentacionId, request);
+    }
+
+    @Operation(summary = "Precio sugerido de una presentacion", description = "Costo de referencia (ultima compra), "
+            + "ganancia, adicional y precio sugerido = redondear_2(costo x (1 + ganancia/100) + adicional). Con "
+            + "porcentajeGanancia o montoAdicional calcula una vista previa sin guardar. Solo ADMIN")
+    @GetMapping("/{id}/presentaciones/{presentacionId}/precio-sugerido")
+    public PrecioSugeridoResponse obtenerPrecioSugerido(@PathVariable Long id, @PathVariable Long presentacionId,
+                                                        @RequestParam(required = false) BigDecimal porcentajeGanancia,
+                                                        @RequestParam(required = false) BigDecimal montoAdicional) {
+        return productoService.obtenerPrecioSugerido(id, presentacionId, porcentajeGanancia, montoAdicional);
+    }
+
+    @Operation(summary = "Historial de precios de una presentacion", description = "Cada cambio del precio final "
+            + "con precio anterior, nuevo, usuario y fecha (mas reciente primero). Solo ADMIN")
+    @GetMapping("/{id}/presentaciones/{presentacionId}/historial-precios")
+    public PaginaResponse<HistorialPrecioResponse> listarHistorialPrecios(
+            @PathVariable Long id, @PathVariable Long presentacionId,
+            @ParameterObject @PageableDefault(size = 20, sort = "fecha", direction = Sort.Direction.DESC)
+            Pageable pageable) {
+        return productoService.listarHistorialPrecios(id, presentacionId, pageable);
     }
 
     @Operation(summary = "Subir o reemplazar la foto", description = "JPG, PNG o WEBP de hasta 2 MB. Se guarda en "

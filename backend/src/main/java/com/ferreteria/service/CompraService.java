@@ -8,6 +8,7 @@ import com.ferreteria.dto.compras.CompraResponse;
 import com.ferreteria.entity.Compra;
 import com.ferreteria.entity.CompraDetalle;
 import com.ferreteria.entity.Empresa;
+import com.ferreteria.entity.Presentacion;
 import com.ferreteria.entity.Proveedor;
 import com.ferreteria.entity.Ubicacion;
 import com.ferreteria.entity.Usuario;
@@ -114,6 +115,7 @@ public class CompraService {
                 .toList();
         movimientoStock.aplicar(compra.getUbicacion(), TipoMovimiento.COMPRA, lineas,
                 OrigenMovimiento.compra(compra, usuario, null));
+        actualizarCostosDeReferencia(compra);
         return CompraResponse.completa(compra);
     }
 
@@ -158,6 +160,20 @@ public class CompraService {
         detalle.setSubtotal(Montos.dinero(request.cantidad().multiply(request.precioUnitario())));
         detalle.setCostoUnitario(request.precioUnitario().divide(factor, 4, RoundingMode.HALF_UP));
         return detalle;
+    }
+
+    /**
+     * Regla D9: el costo de referencia de cada presentacion del producto comprado pasa a ser el costo por unidad base
+     * de esta compra x el factor de la presentacion, y se recalcula su precio sugerido. El precio de venta no cambia.
+     * Si el producto viene en varias lineas, vale la ultima. Anular la compra no restaura el costo anterior.
+     */
+    private static void actualizarCostosDeReferencia(Compra compra) {
+        for (CompraDetalle detalle : compra.getDetalles()) {
+            for (Presentacion presentacion : detalle.getProducto().getPresentaciones()) {
+                presentacion.setCostoReferencia(Montos.costo(detalle.getCostoUnitario().multiply(presentacion.getFactor())));
+                PrecioSugerido.actualizar(presentacion);
+            }
+        }
     }
 
     /**

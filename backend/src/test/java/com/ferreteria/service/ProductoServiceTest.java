@@ -82,6 +82,6 @@ class ProductoServiceTest {
 
     private static PresentacionRequest presentacion(String nombre, String factor, boolean principal) {
         return new PresentacionRequest(nombre, new BigDecimal(factor), new BigDecimal("1.00"), null, principal, null,
-                null);
+                null, null, null);
     }
 }
