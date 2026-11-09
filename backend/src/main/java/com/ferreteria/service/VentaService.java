@@ -21,6 +21,7 @@ import com.ferreteria.entity.enums.EstadoVenta;
 import com.ferreteria.entity.enums.TipoDocumentoVenta;
 import com.ferreteria.entity.enums.TipoMovimiento;
 import com.ferreteria.entity.enums.TipoPago;
+import com.ferreteria.entity.enums.EntidadAuditada;
 import com.ferreteria.exception.RecursoNoEncontradoException;
 import com.ferreteria.exception.ReglaNegocioException;
 import com.ferreteria.repository.CajaSesionRepository;
@@ -61,6 +62,7 @@ public class VentaService {
     private static final TipoDocumentoVenta DOCUMENTO_FASE_1 = TipoDocumentoVenta.NOTA_VENTA;
     private static final int MAX_DESCRIPCION = 200;
 
+    private final AuditoriaService auditoria;
     private final VentaPdf ventaPdf;
     private final VentaRepository ventaRepository;
     private final PresentacionRepository presentacionRepository;
@@ -189,6 +191,10 @@ public class VentaService {
                 .toList();
         movimientoStock.aplicar(venta.getUbicacion(), TipoMovimiento.ANULACION_VENTA, lineas,
                 OrigenMovimiento.venta(venta, buscador.usuarioActual(), venta.getMotivoAnulacion()));
+        auditoria.registrar(EntidadAuditada.VENTA, venta.getId(), "ANULAR", "Anuló la venta "
+                + venta.getNumeroDocumento() + " de " + venta.getUbicacion().getNombre() + " por "
+                + AuditoriaService.soles(venta.getTotal()) + " (el stock volvió a la tienda) · Motivo: "
+                + venta.getMotivoAnulacion());
         return VentaResponse.completa(venta);
     }
 

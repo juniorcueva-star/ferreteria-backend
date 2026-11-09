@@ -14,6 +14,7 @@ import com.ferreteria.entity.HistorialPrecioPresentacion;
 import com.ferreteria.entity.Presentacion;
 import com.ferreteria.entity.Producto;
 import com.ferreteria.entity.enums.UnidadBase;
+import com.ferreteria.entity.enums.EntidadAuditada;
 import com.ferreteria.exception.ApiException;
 import com.ferreteria.exception.CodigoError;
 import com.ferreteria.exception.DuplicadoException;
@@ -56,6 +57,7 @@ public class ProductoService {
 
     private static final String MARCA_POR_DEFECTO = "VARIADO";
 
+    private final AuditoriaService auditoria;
     private final ProductoRepository productoRepository;
     private final PresentacionRepository presentacionRepository;
     private final CategoriaRepository categoriaRepository;
@@ -120,7 +122,11 @@ public class ProductoService {
             throw new ReglaNegocioException("La presentacion principal debe estar activa");
         }
         actualizarTerminoBusqueda(producto);
-        return ProductoResponse.desde(productoRepository.save(producto));
+        Producto guardado = productoRepository.save(producto);
+        auditoria.registrar(EntidadAuditada.PRODUCTO, guardado.getId(), "CREAR", "Creó " + etiqueta(guardado)
+                + " con las presentaciones " + String.join(", ", guardado.getPresentaciones().stream()
+                .map(pr -> pr.getNombre() + " " + AuditoriaService.soles(pr.getPrecioVenta())).toList()));
+        return ProductoResponse.desde(guardado);
     }
 
     @Transactional
@@ -130,16 +136,30 @@ public class ProductoService {
         if (productoRepository.existsByCodigoAndIdNot(codigo, id)) {
             throw new DuplicadoException("Ya existe un producto con el codigo " + codigo);
         }
+        Categoria categoria = buscarCategoria(request.categoriaId());
+        AuditoriaService.Cambios cambios = new AuditoriaService.Cambios()
+                .campo("Código", producto.getCodigo(), codigo)
+                .campo("Nombre", producto.getNombre(), request.nombre().trim())
+                .campo("Descripción", producto.getDescripcion(), request.descripcion())
+                .campo("Marca", producto.getMarca(), marca(request.marca()))
+                .campo("Categoría", producto.getCategoria().getNombre(), categoria.getNombre())
+                .campo("Activo", producto.isActivo(), request.activo())
+                .campo("Tipo", producto.getTipo(), request.tipo())
+                .campo("Acabado", producto.getAcabado(), request.acabado())
+                .campo("Medida", producto.getMedida(), request.medida());
         producto.setCodigo(codigo);
         producto.setNombre(request.nombre().trim());
         producto.setDescripcion(request.descripcion());
         producto.setMarca(marca(request.marca()));
-        producto.setCategoria(buscarCategoria(request.categoriaId()));
+        producto.setCategoria(categoria);
         producto.setActivo(request.activo());
         producto.setTipo(request.tipo());
         producto.setAcabado(request.acabado());
         producto.setMedida(request.medida());
         actualizarTerminoBusqueda(producto);
+        if (cambios.hay()) {
+            auditoria.registrar(EntidadAuditada.PRODUCTO, producto.getId(), "EDITAR", etiqueta(producto) + ": " + cambios);
+        }
         return ProductoResponse.desde(producto);
     }
 
@@ -181,6 +201,12 @@ public class ProductoService {
             List<Long> faltantes = ids.stream().filter(id -> !encontrados.contains(id)).toList();
             throw new ReglaNegocioException("No existen los productos " + faltantes + ": no se cambio ninguno");
         }
+        java.util.Map<Long, String> categoriaAntes = new java.util.HashMap<>();
+        java.util.Map<Long, Boolean> activoAntes = new java.util.HashMap<>();
+        productos.forEach(p -> {
+            categoriaAntes.put(p.getId(), p.getCategoria().getNombre());
+            activoAntes.put(p.getId(), p.isActivo());
+        });
         switch (request.accion()) {
             case ASIGNAR_CATEGORIA -> {
                 if (request.categoriaId() == null) {
@@ -191,6 +217,14 @@ public class ProductoService {
             }
             case ACTIVAR -> productos.forEach(p -> p.setActivo(true));
             case DESACTIVAR -> productos.forEach(p -> p.setActivo(false));
+        }
+        for (Producto p : productos) {
+            AuditoriaService.Cambios cambios = new AuditoriaService.Cambios()
+                    .campo("Categoría", categoriaAntes.get(p.getId()), p.getCategoria().getNombre())
+                    .campo("Activo", activoAntes.get(p.getId()), p.isActivo());
+            if (cambios.hay()) {
+                auditoria.registrar(EntidadAuditada.PRODUCTO, p.getId(), "LOTE", etiqueta(p) + " (en lote): " + cambios);
+            }
         }
         return new AccionLoteResponse(request.accion(), productos.size());
     }
@@ -218,6 +252,10 @@ public class ProductoService {
         }
         producto.agregarPresentacion(presentacion);
         productoRepository.flush();
+        auditoria.registrar(EntidadAuditada.PRODUCTO, producto.getId(), "EDITAR", etiqueta(producto)
+                + ": agregó la presentación " + presentacion.getNombre() + " (factor "
+                + presentacion.getFactor().stripTrailingZeros().toPlainString() + ", "
+                + AuditoriaService.soles(presentacion.getPrecioVenta()) + ")");
         return ProductoResponse.desde(producto);
     }
 
@@ -244,6 +282,9 @@ public class ProductoService {
         }
         BigDecimal precioAnterior = presentacion.getPrecioVenta();
         BigDecimal factorAnterior = presentacion.getFactor();
+        String nombreAnterior = presentacion.getNombre();
+        String codigoBarrasAnterior = presentacion.getCodigoBarras();
+        boolean activaAnterior = presentacion.isActivo();
         copiarPresentacion(request, presentacion);
         presentacion.setPrincipal(seraPrincipal);
         presentacion.setActivo(seraActiva);
@@ -258,6 +299,16 @@ public class ProductoService {
         PrecioSugerido.actualizar(presentacion);
         if (precioAnterior.compareTo(presentacion.getPrecioVenta()) != 0) {
             registrarCambioPrecio(producto, presentacion, precioAnterior);
+        }
+        AuditoriaService.Cambios cambios = new AuditoriaService.Cambios()
+                .campo("Nombre", nombreAnterior, presentacion.getNombre())
+                .campo("Factor", factorAnterior, presentacion.getFactor())
+                .campo("Código de barras", codigoBarrasAnterior, presentacion.getCodigoBarras())
+                .campo("Activa", activaAnterior, presentacion.isActivo())
+                .campo("Principal", eraPrincipal, seraPrincipal);
+        if (cambios.hay()) {
+            auditoria.registrar(EntidadAuditada.PRODUCTO, producto.getId(), "EDITAR", etiqueta(producto)
+                    + ", presentación " + presentacion.getNombre() + ": " + cambios);
         }
         return ProductoResponse.desde(producto);
     }
@@ -278,6 +329,8 @@ public class ProductoService {
         producto.setImagenUrl(imagen.url());
         producto.setImagenPublicId(imagen.publicId());
         alTerminar(anterior, imagen.publicId());
+        auditoria.registrar(EntidadAuditada.PRODUCTO, producto.getId(), "FOTO", etiqueta(producto)
+                + (anterior == null ? ": agregó la foto" : ": cambió la foto"));
         return ProductoResponse.desde(producto);
     }
 
@@ -287,6 +340,7 @@ public class ProductoService {
         alTerminar(producto.getImagenPublicId(), null);
         producto.setImagenUrl(null);
         producto.setImagenPublicId(null);
+        auditoria.registrar(EntidadAuditada.PRODUCTO, producto.getId(), "FOTO", etiqueta(producto) + ": quitó la foto");
         return ProductoResponse.desde(producto);
     }
 
@@ -415,6 +469,9 @@ public class ProductoService {
         historial.setPrecioNuevo(presentacion.getPrecioVenta());
         historial.setUsuario(buscador.usuarioActual());
         historialPrecioRepository.save(historial);
+        auditoria.registrar(EntidadAuditada.PRECIO, producto.getId(), "CAMBIAR", etiqueta(producto) + ", "
+                + presentacion.getNombre() + ": " + AuditoriaService.soles(precioAnterior) + " → "
+                + AuditoriaService.soles(presentacion.getPrecioVenta()));
     }
 
     /** Costo por unidad base segun alguna presentacion que ya tenga costo de referencia (null si no hay). */
@@ -440,5 +497,9 @@ public class ProductoService {
 
     private static int decimales(PresentacionRequest request, UnidadBase unidadBase) {
         return request.decimales() != null ? request.decimales() : ReglaDecimales.porUnidadBase(unidadBase);
+    }
+
+    private static String etiqueta(Producto producto) {
+        return producto.getCodigo() + " " + producto.getNombre();
     }
 }

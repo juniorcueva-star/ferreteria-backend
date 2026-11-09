@@ -27,6 +27,7 @@ class UsuarioServiceTest {
     @Mock private UbicacionRepository ubicacionRepository;
     @Mock private PasswordEncoder passwordEncoder;
     @Mock private AccesoUbicacionService accesoUbicacion;
+    @Mock private AuditoriaService auditoria;
     @InjectMocks private UsuarioService usuarioService;
 
     @Test

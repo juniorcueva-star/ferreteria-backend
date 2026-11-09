@@ -64,6 +64,7 @@ class VentaServiceTest {
     @Mock private Buscador buscador;
     @Mock private Cobros cobros;
     @Mock private Calendario calendario;
+    @Mock private AuditoriaService auditoria;
     @InjectMocks private VentaService ventaService;
 
     private final Usuario vendedor = Fabrica.usuario(2L, Rol.VENDEDOR);

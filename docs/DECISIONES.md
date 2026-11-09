@@ -347,3 +347,11 @@ Registro de las decisiones de diseno tomadas durante el desarrollo (que se decid
   `/excel/deudores` (deudores y ventas con saldo). Reutilizan los mismos servicios que los reportes en pantalla, asi
   que respetan la seguridad por rol y por tienda. Maximo 10 000 filas por hoja. Titulos en amarillo, filtros y
   primera fila fija; montos con formato "S/ 0.00".
+- **D99. Auditoria (pedido del dueno).** V14 crea la tabla `auditoria` (solo se insertan filas): fecha, usuario,
+  entidad (PRODUCTO, PRECIO, STOCK, VENTA, COMPRA, USUARIO, EMPRESA), id y una descripcion legible con lo que cambio
+  ("Precio de Unidad: S/ 1.50 → S/ 1.80", "Stock minimo ... 0 → 5"). `AuditoriaService.registrar` exige estar dentro
+  de la transaccion del cambio (`Propagation.MANDATORY`): si el cambio falla, no queda registro. Guardar sin cambios
+  no registra nada. Se registran: crear/editar productos y presentaciones, fotos, acciones en lote, cambios de
+  precio, stock minimo, ajustes, inventario inicial, ventas y compras anuladas, usuarios (crear, editar, contrasena)
+  y empresas. Solo el ADMIN la consulta (`GET /api/auditoria`, pantalla "Auditoria"). Las ventas, compras, traslados
+  y el kardex ya guardaban su usuario; la auditoria cubre lo que no tenia rastro.

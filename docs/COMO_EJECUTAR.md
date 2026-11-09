@@ -285,7 +285,7 @@ Con la aplicacion recien levantada y la base **recien creada** (ver punto 10):
 
 - **VS Code + REST Client:** abre `docs/api/ferreteria.http` y pulsa *Send Request* en cada peticion, en orden.
 - **Postman:** *Import* -> `docs/api/ferreteria.postman_collection.json` -> clic derecho en la coleccion -> *Run*.
-  Son 51 peticiones (las 16 ultimas son de la segunda fase y de las mejoras) y cada una comprueba el codigo HTTP esperado.
+  Son 52 peticiones (las 17 ultimas son de la segunda fase y de las mejoras) y cada una comprueba el codigo HTTP esperado.
 
 ---
 

@@ -15,6 +15,7 @@ import com.ferreteria.entity.Usuario;
 import com.ferreteria.entity.enums.EstadoCompra;
 import com.ferreteria.entity.enums.TipoComprobanteCompra;
 import com.ferreteria.entity.enums.TipoMovimiento;
+import com.ferreteria.entity.enums.EntidadAuditada;
 import com.ferreteria.exception.DuplicadoException;
 import com.ferreteria.exception.RecursoNoEncontradoException;
 import com.ferreteria.exception.ReglaNegocioException;
@@ -46,6 +47,7 @@ public class CompraService {
 
     private static final int MAX_OBSERVACION = 300;
 
+    private final AuditoriaService auditoria;
     private final CompraRepository compraRepository;
     private final ProveedorRepository proveedorRepository;
     private final MovimientoStockService movimientoStock;
@@ -140,6 +142,9 @@ public class CompraService {
                 .toList();
         movimientoStock.aplicar(compra.getUbicacion(), TipoMovimiento.ANULACION_COMPRA, lineas,
                 OrigenMovimiento.compra(compra, usuario, motivo));
+        auditoria.registrar(EntidadAuditada.COMPRA, compra.getId(), "ANULAR", "Anuló la compra N.° " + compra.getId()
+                + " de " + compra.getProveedor().getRazonSocial() + " por " + AuditoriaService.soles(compra.getTotal())
+                + " (salió el stock de " + compra.getUbicacion().getNombre() + ") · Motivo: " + motivo);
         return CompraResponse.completa(compra);
     }
 

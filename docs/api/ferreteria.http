@@ -599,3 +599,9 @@ Authorization: Bearer {{r03.response.body.$.token}}
 # @name r51
 GET {{base}}/api/reportes/excel/deudores
 Authorization: Bearer {{r02.response.body.$.token}}
+
+###
+# Auditoria: quien cambio precios, stock o productos (solo ADMIN) (espera 200)
+# @name r52
+GET {{base}}/api/auditoria?entidad=PRECIO
+Authorization: Bearer {{r01.response.body.$.token}}

@@ -36,6 +36,7 @@ class ProductoServiceTest {
     @Mock private CategoriaRepository categoriaRepository;
     @Mock private AlmacenImagenes almacenImagenes;
     @Mock private BusquedaProductos busquedaProductos;
+    @Mock private AuditoriaService auditoria;
     @InjectMocks private ProductoService productoService;
 
     @Test

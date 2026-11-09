@@ -14,6 +14,7 @@ import com.ferreteria.entity.Producto;
 import com.ferreteria.entity.Stock;
 import com.ferreteria.entity.Ubicacion;
 import com.ferreteria.entity.enums.TipoMovimiento;
+import com.ferreteria.entity.enums.EntidadAuditada;
 import com.ferreteria.exception.ReglaNegocioException;
 import com.ferreteria.repository.Especificaciones;
 import com.ferreteria.repository.MovimientoInventarioRepository;
@@ -49,6 +50,7 @@ public class InventarioService {
 
     private static final int MAXIMO_PRODUCTOS_POR_CONSULTA = 100;
 
+    private final AuditoriaService auditoria;
     private final StockRepository stockRepository;
     private final MovimientoInventarioRepository movimientoRepository;
     private final MovimientoStockService movimientoStock;
@@ -126,7 +128,13 @@ public class InventarioService {
         Ubicacion ubicacion = buscador.ubicacionActiva(request.ubicacionId());
         stockRepository.crearSiNoExiste(producto.getId(), ubicacion.getId());
         Stock stock = stockRepository.bloquear(producto.getId(), ubicacion.getId()).orElseThrow();
+        BigDecimal anterior = stock.getStockMinimo();
         stock.setStockMinimo(Montos.cantidad(request.stockMinimo()));
+        if (anterior == null || anterior.compareTo(stock.getStockMinimo()) != 0) {
+            auditoria.registrar(EntidadAuditada.STOCK, producto.getId(), "MINIMO", "Stock mínimo de "
+                    + producto.getCodigo() + " " + producto.getNombre() + " en " + ubicacion.getNombre() + ": "
+                    + new AuditoriaService.Cambios().campo("", anterior, stock.getStockMinimo()).toString().substring(2));
+        }
         return StockResponse.desde(stock);
     }
 
@@ -137,6 +145,8 @@ public class InventarioService {
                 ? TipoMovimiento.AJUSTE_ENTRADA : TipoMovimiento.AJUSTE_SALIDA;
         List<MovimientoInventario> movimientos = movimientoStock.aplicar(ubicacion, tipo, lineas(request.detalles()),
                 OrigenMovimiento.ajuste(buscador.usuarioActual(), request.motivo().trim()));
+        registrarMovimientos(movimientos, tipo == TipoMovimiento.AJUSTE_ENTRADA ? "Ajuste de entrada"
+                : "Ajuste de salida", "AJUSTE", " · Motivo: " + request.motivo().trim());
         return movimientos.stream().map(KardexResponse::desde).toList();
     }
 
@@ -156,6 +166,7 @@ public class InventarioService {
         }
         List<MovimientoInventario> movimientos = movimientoStock.aplicar(ubicacion, TipoMovimiento.INVENTARIO_INICIAL,
                 lineas(request.detalles()), OrigenMovimiento.ajuste(buscador.usuarioActual(), "Inventario inicial"));
+        registrarMovimientos(movimientos, "Inventario inicial", "INICIAL", "");
         return movimientos.stream().map(KardexResponse::desde).toList();
     }
 
@@ -190,5 +201,15 @@ public class InventarioService {
         return (root, query, cb) -> cb.and(
                 cb.greaterThan(root.get("stockMinimo"), BigDecimal.ZERO),
                 cb.lessThanOrEqualTo(root.get("cantidad"), root.get("stockMinimo")));
+    }
+
+    private void registrarMovimientos(List<MovimientoInventario> movimientos, String titulo, String accion,
+                                      String detalle) {
+        for (MovimientoInventario m : movimientos) {
+            auditoria.registrar(EntidadAuditada.STOCK, m.getProducto().getId(), accion, titulo + " en "
+                    + m.getUbicacion().getNombre() + ": " + m.getProducto().getCodigo() + " "
+                    + m.getProducto().getNombre() + " " + m.getCantidad().stripTrailingZeros().toPlainString()
+                    + " (queda " + m.getSaldoResultante().stripTrailingZeros().toPlainString() + ")" + detalle);
+        }
     }
 }

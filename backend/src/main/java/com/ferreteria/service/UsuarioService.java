@@ -9,6 +9,7 @@ import com.ferreteria.entity.Ubicacion;
 import com.ferreteria.entity.Usuario;
 import com.ferreteria.entity.enums.Rol;
 import com.ferreteria.entity.enums.TipoUbicacion;
+import com.ferreteria.entity.enums.EntidadAuditada;
 import com.ferreteria.exception.DuplicadoException;
 import com.ferreteria.exception.RecursoNoEncontradoException;
 import com.ferreteria.exception.ReglaNegocioException;
@@ -32,6 +33,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class UsuarioService {
 
+    private final AuditoriaService auditoria;
     private final UsuarioRepository usuarioRepository;
     private final UbicacionRepository ubicacionRepository;
     private final PasswordEncoder passwordEncoder;
@@ -64,7 +66,11 @@ public class UsuarioService {
         usuario.setRol(request.rol());
         usuario.setUbicacion(resolverUbicacion(request.rol(), request.ubicacionId()));
         usuario.setPasswordHash(passwordEncoder.encode(request.password()));
-        return UsuarioResponse.desde(usuarioRepository.save(usuario));
+        Usuario guardado = usuarioRepository.save(usuario);
+        auditoria.registrar(EntidadAuditada.USUARIO, guardado.getId(), "CREAR", "Creó el usuario "
+                + guardado.getUsername() + " (" + guardado.getRol() + (guardado.getUbicacion() == null ? ""
+                : ", " + guardado.getUbicacion().getNombre()) + ")");
+        return UsuarioResponse.desde(guardado);
     }
 
     @Transactional
@@ -80,16 +86,30 @@ public class UsuarioService {
                 throw new ReglaNegocioException("Debe quedar al menos un ADMIN activo");
             }
         }
+        Ubicacion ubicacion = resolverUbicacion(request.rol(), request.ubicacionId());
+        AuditoriaService.Cambios cambios = new AuditoriaService.Cambios()
+                .campo("Nombres", usuario.getNombres(), request.nombres().trim())
+                .campo("Rol", usuario.getRol(), request.rol())
+                .campo("Ubicación", usuario.getUbicacion() == null ? null : usuario.getUbicacion().getNombre(),
+                        ubicacion == null ? null : ubicacion.getNombre())
+                .campo("Activo", usuario.isActivo(), request.activo());
         usuario.setNombres(request.nombres().trim());
         usuario.setRol(request.rol());
-        usuario.setUbicacion(resolverUbicacion(request.rol(), request.ubicacionId()));
+        usuario.setUbicacion(ubicacion);
         usuario.setActivo(request.activo());
+        if (cambios.hay()) {
+            auditoria.registrar(EntidadAuditada.USUARIO, usuario.getId(), "EDITAR", "Usuario "
+                    + usuario.getUsername() + ": " + cambios);
+        }
         return UsuarioResponse.desde(usuario);
     }
 
     @Transactional
     public void restablecerPassword(Long id, RestablecerPasswordRequest request) {
-        buscar(id).setPasswordHash(passwordEncoder.encode(request.passwordNueva()));
+        Usuario usuario = buscar(id);
+        usuario.setPasswordHash(passwordEncoder.encode(request.passwordNueva()));
+        auditoria.registrar(EntidadAuditada.USUARIO, usuario.getId(), "CONTRASENA", "Restableció la contraseña de "
+                + usuario.getUsername());
     }
 
     /**

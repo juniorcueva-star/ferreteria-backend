@@ -83,7 +83,7 @@ public class SecurityConfig {
                 .requestMatchers("/error").permitAll()
                 // Organizacion
                 .requestMatchers("/api/auth/**").authenticated()
-                .requestMatchers("/api/empresas/**", "/api/usuarios/**").hasRole(ADMIN)
+                .requestMatchers("/api/empresas/**", "/api/usuarios/**", "/api/auditoria/**").hasRole(ADMIN)
                 .requestMatchers(HttpMethod.GET, "/api/ubicaciones/**").authenticated()
                 .requestMatchers("/api/ubicaciones/**").hasRole(ADMIN)
                 // Catalogo: todos consultan, solo el ADMIN modifica. Costos e historial de precios: solo ADMIN
