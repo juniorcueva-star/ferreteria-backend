@@ -2,6 +2,7 @@ package com.ferreteria.service;
 
 import com.ferreteria.dto.catalogo.AccionLoteRequest;
 import com.ferreteria.dto.catalogo.AccionLoteResponse;
+import com.ferreteria.dto.catalogo.EscalasPrecioRequest;
 import com.ferreteria.dto.catalogo.HistorialPrecioResponse;
 import com.ferreteria.dto.catalogo.PrecioSugeridoResponse;
 import com.ferreteria.dto.catalogo.PresentacionRequest;
@@ -11,6 +12,7 @@ import com.ferreteria.dto.catalogo.ProductoResponse;
 import com.ferreteria.dto.comun.PaginaResponse;
 import com.ferreteria.dto.reportes.ProductoVendidoResponse;
 import com.ferreteria.entity.Categoria;
+import com.ferreteria.entity.EscalaPrecio;
 import com.ferreteria.entity.HistorialPrecioPresentacion;
 import com.ferreteria.entity.Presentacion;
 import com.ferreteria.entity.Producto;
@@ -48,6 +50,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -288,6 +291,64 @@ public class ProductoService {
                 + presentacion.getFactor().stripTrailingZeros().toPlainString() + ", "
                 + AuditoriaService.soles(presentacion.getPrecioVenta()) + ")");
         return ProductoResponse.desde(producto);
+    }
+
+    /**
+     * Precio por mayor de una presentacion: reemplaza sus escalas. Cada escala debe costar menos que la de lista y
+     * menos que la escala anterior (a mas cantidad, menor precio); la cantidad respeta los decimales de la
+     * presentacion. Maximo 5 escalas.
+     */
+    @Transactional
+    public ProductoResponse actualizarEscalas(Long productoId, Long presentacionId, EscalasPrecioRequest request) {
+        Producto producto = buscar(productoId);
+        Presentacion presentacion = buscarPresentacion(producto, presentacionId);
+        List<EscalasPrecioRequest.Escala> escalas = request.escalas().stream()
+                .sorted(Comparator.comparing(EscalasPrecioRequest.Escala::cantidadMinima)).toList();
+        BigDecimal anterior = presentacion.getPrecioVenta();
+        BigDecimal cantidadAnterior = null;
+        for (EscalasPrecioRequest.Escala e : escalas) {
+            ReglaDecimales.validar(e.cantidadMinima(), presentacion, producto);
+            if (cantidadAnterior != null && cantidadAnterior.compareTo(e.cantidadMinima()) == 0) {
+                throw new ReglaNegocioException("La cantidad " + e.cantidadMinima().stripTrailingZeros().toPlainString()
+                        + " esta repetida en el precio por mayor");
+            }
+            if (Montos.dinero(e.precio()).compareTo(anterior) >= 0) {
+                throw new ReglaNegocioException("El precio por mayor desde " + e.cantidadMinima().stripTrailingZeros()
+                        .toPlainString() + " (" + AuditoriaService.soles(e.precio()) + ") debe ser menor que "
+                        + AuditoriaService.soles(anterior) + ": a mas cantidad, menor precio");
+            }
+            anterior = Montos.dinero(e.precio());
+            cantidadAnterior = e.cantidadMinima();
+        }
+        String antes = describirEscalas(presentacion);
+        // Primero se borran las anteriores: la misma cantidad no puede estar dos veces (uq_escala_precio)
+        presentacion.getEscalas().clear();
+        productoRepository.flush();
+        for (EscalasPrecioRequest.Escala e : escalas) {
+            EscalaPrecio escala = new EscalaPrecio();
+            escala.setPresentacion(presentacion);
+            escala.setCantidadMinima(Montos.cantidad(e.cantidadMinima()));
+            escala.setPrecio(Montos.dinero(e.precio()));
+            presentacion.getEscalas().add(escala);
+        }
+        productoRepository.flush();
+        String despues = describirEscalas(presentacion);
+        if (!antes.equals(despues)) {
+            auditoria.registrar(EntidadAuditada.PRODUCTO, producto.getId(), "EDITAR", etiqueta(producto)
+                    + ", presentación " + presentacion.getNombre() + ": precio por mayor «" + antes + "» → «"
+                    + despues + "»");
+        }
+        return ProductoResponse.desde(producto);
+    }
+
+    private static String describirEscalas(Presentacion presentacion) {
+        if (presentacion.getEscalas().isEmpty()) {
+            return "sin precio por mayor";
+        }
+        return presentacion.getEscalas().stream()
+                .map(e -> "desde " + e.getCantidadMinima().stripTrailingZeros().toPlainString() + " a "
+                        + AuditoriaService.soles(e.getPrecio()))
+                .collect(Collectors.joining("; "));
     }
 
     @Transactional

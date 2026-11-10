@@ -5,6 +5,7 @@ import com.ferreteria.entity.VentaDetalle;
 import com.ferreteria.entity.enums.CondicionVenta;
 import com.ferreteria.entity.enums.EstadoVenta;
 import com.ferreteria.entity.enums.TipoDocumentoVenta;
+import com.ferreteria.entity.enums.TipoPrecio;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -32,13 +33,14 @@ public record VentaResponse(Long id, TipoDocumentoVenta tipoDocumento, String nu
      */
     public record Detalle(Long productoId, Long presentacionId, String descripcion, BigDecimal cantidad,
                           BigDecimal factor, BigDecimal cantidadBase, BigDecimal precioUnitario,
-                          BigDecimal descuento, BigDecimal subtotal, Long completoId, String composicion) {
+                          BigDecimal descuento, BigDecimal subtotal, Long completoId, String composicion,
+                          TipoPrecio tipoPrecio) {
 
         static Detalle desde(VentaDetalle d) {
             return new Detalle(d.getProducto().getId(), d.getPresentacion() == null ? null : d.getPresentacion().getId(),
                     d.getDescripcion(), d.getCantidad(), d.getFactor(), d.getCantidadBase(), d.getPrecioUnitario(),
                     d.getDescuento(), d.getSubtotal(), d.getCompleto() == null ? null : d.getCompleto().getId(),
-                    d.getComposicion());
+                    d.getComposicion(), d.getTipoPrecio());
         }
     }
 

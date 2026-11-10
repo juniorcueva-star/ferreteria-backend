@@ -59,7 +59,8 @@ public class VentaTicketPdf {
 
     public byte[] generar(Venta venta) {
         List<Pago> pagos = venta.getPagos().stream().filter(p -> p.getEstado() == EstadoPago.VALIDO).toList();
-        float alto = 330 + venta.getDetalles().size() * 30f + pagos.size() * 12f
+        long conMarca = venta.getDetalles().stream().filter(d -> MembretePdf.marcaPrecio(d.getTipoPrecio()) != null).count();
+        float alto = 330 + venta.getDetalles().size() * 30f + conMarca * 10f + pagos.size() * 12f
                 + (venta.getEmpresa().getDatosBancarios() == null ? 0
                 : venta.getEmpresa().getDatosBancarios().split("\\R").length * 10f + 14);
         ByteArrayOutputStream salida = new ByteArrayOutputStream();
@@ -142,6 +143,9 @@ public class VentaTicketPdf {
                     + (d.getDescuento().signum() > 0 ? "  desc. " + soles(d.getDescuento()) : ""), pequena));
             if (d.getComposicion() != null) {
                 descripcion.add(new Phrase("\nIncluye: " + d.getComposicion(), pequena));
+            }
+            if (MembretePdf.marcaPrecio(d.getTipoPrecio()) != null) {
+                descripcion.add(new Phrase("\n" + MembretePdf.marcaPrecio(d.getTipoPrecio()), negrita));
             }
             tabla.addCell(celda(descripcion, Element.ALIGN_LEFT));
             tabla.addCell(celda(new Phrase(soles(d.getSubtotal()), normal), Element.ALIGN_RIGHT));

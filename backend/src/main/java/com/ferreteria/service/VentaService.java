@@ -309,6 +309,7 @@ public class VentaService {
             // Igual que el CHECK ck_venta_det_base: ROUND(cantidad * factor, 3)
             detalle.setCantidadBase(linea.cantidadBase());
             detalle.setPrecioUnitario(precio);
+            detalle.setTipoPrecio(linea.tipoPara(precio));
             detalle.setDescuento(descuento);
             detalle.setSubtotal(importe.subtract(descuento));
             venta.agregarDetalle(detalle);

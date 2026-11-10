@@ -1,5 +1,6 @@
 package com.ferreteria.entity;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -8,12 +9,17 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.BatchSize;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Forma de vender un producto con su propio precio. El factor indica cuantas unidades base contiene
@@ -71,4 +77,24 @@ public class Presentacion {
 
     @Column(nullable = false)
     private boolean activo = true;
+
+    // Precio por mayor, de menor a mayor cantidad. BatchSize: al listar productos se cargan en una sola consulta
+    @OneToMany(mappedBy = "presentacion", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("cantidadMinima")
+    @BatchSize(size = 100)
+    private List<EscalaPrecio> escalas = new ArrayList<>();
+
+    /**
+     * Precio de cada presentacion al llevar esta cantidad: el de la escala mas alta que se alcanza, si es menor
+     * que el de lista. Ej: con "desde 100 a S/ 0.40", 120 unidades cuestan S/ 0.40 cada una.
+     */
+    public BigDecimal precioPara(BigDecimal cantidad) {
+        BigDecimal precio = precioVenta;
+        for (EscalaPrecio escala : escalas) {
+            if (cantidad.compareTo(escala.getCantidadMinima()) >= 0 && escala.getPrecio().compareTo(precio) < 0) {
+                precio = escala.getPrecio();
+            }
+        }
+        return precio;
+    }
 }

@@ -87,7 +87,7 @@ public class CotizacionPdf {
         }
         for (CotizacionDetalle d : c.getDetalles()) {
             tabla.addCell(membrete.celda(d.getCantidad().stripTrailingZeros().toPlainString(), Element.ALIGN_RIGHT));
-            tabla.addCell(membrete.celdaDescripcion(d.getDescripcion(), d.getComposicion()));
+            tabla.addCell(membrete.celdaDescripcion(d.getDescripcion(), d.getComposicion(), d.getTipoPrecio()));
             tabla.addCell(membrete.celda(soles(d.getPrecioUnitario()), Element.ALIGN_RIGHT));
             tabla.addCell(membrete.celda(d.getDescuento().signum() == 0 ? "" : soles(d.getDescuento()),
                     Element.ALIGN_RIGHT));

@@ -4,6 +4,7 @@ import com.ferreteria.dto.catalogo.AccionLoteRequest;
 import com.ferreteria.dto.catalogo.AccionLoteResponse;
 import com.ferreteria.dto.catalogo.CompletoRequest;
 import com.ferreteria.dto.catalogo.CompletoResponse;
+import com.ferreteria.dto.catalogo.EscalasPrecioRequest;
 import com.ferreteria.dto.catalogo.HistorialPrecioResponse;
 import com.ferreteria.dto.catalogo.PrecioSugeridoResponse;
 import com.ferreteria.dto.catalogo.PresentacionRequest;
@@ -112,6 +113,15 @@ public class ProductoController {
     public ProductoResponse actualizarPresentacion(@PathVariable Long id, @PathVariable Long presentacionId,
                                                    @Valid @RequestBody PresentacionRequest request) {
         return productoService.actualizarPresentacion(id, presentacionId, request);
+    }
+
+    @Operation(summary = "Precio por mayor de una presentacion", description = "Reemplaza las escalas: desde "
+            + "cierta cantidad cada una cuesta menos (Ej: desde 100 a S/ 0.40). Lista vacia = sin precio por mayor. "
+            + "A mas cantidad, menor precio. Solo ADMIN")
+    @PutMapping("/{id}/presentaciones/{presentacionId}/escalas")
+    public ProductoResponse actualizarEscalas(@PathVariable Long id, @PathVariable Long presentacionId,
+                                              @Valid @RequestBody EscalasPrecioRequest request) {
+        return productoService.actualizarEscalas(id, presentacionId, request);
     }
 
     @Operation(summary = "Crear un completo", description = "El producto junto con otras piezas (Ej: perno + tuerca "

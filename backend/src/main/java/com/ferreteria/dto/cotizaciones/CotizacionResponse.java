@@ -4,6 +4,7 @@ import com.ferreteria.entity.Cliente;
 import com.ferreteria.entity.Cotizacion;
 import com.ferreteria.entity.CotizacionDetalle;
 import com.ferreteria.entity.enums.EstadoCotizacion;
+import com.ferreteria.entity.enums.TipoPrecio;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -24,14 +25,15 @@ public record CotizacionResponse(Long id, String codigo, Long ubicacionId, Strin
 
     public record Detalle(Long productoId, Long presentacionId, String descripcion, BigDecimal cantidad,
                           BigDecimal factor, BigDecimal cantidadBase, BigDecimal precioUnitario, BigDecimal descuento,
-                          BigDecimal subtotal, int decimales, Long completoId, String composicion) {
+                          BigDecimal subtotal, int decimales, Long completoId, String composicion,
+                          TipoPrecio tipoPrecio) {
 
         static Detalle desde(CotizacionDetalle d) {
             boolean completo = d.getCompleto() != null;
             return new Detalle(d.getProducto().getId(), completo ? null : d.getPresentacion().getId(),
                     d.getDescripcion(), d.getCantidad(), d.getFactor(), d.getCantidadBase(), d.getPrecioUnitario(),
                     d.getDescuento(), d.getSubtotal(), completo ? 0 : d.getPresentacion().getDecimales(),
-                    completo ? d.getCompleto().getId() : null, d.getComposicion());
+                    completo ? d.getCompleto().getId() : null, d.getComposicion(), d.getTipoPrecio());
         }
     }
 

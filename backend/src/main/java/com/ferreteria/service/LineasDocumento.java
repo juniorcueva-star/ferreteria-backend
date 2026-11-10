@@ -4,6 +4,7 @@ import com.ferreteria.entity.Completo;
 import com.ferreteria.entity.CompletoComponente;
 import com.ferreteria.entity.Presentacion;
 import com.ferreteria.entity.Producto;
+import com.ferreteria.entity.enums.TipoPrecio;
 import com.ferreteria.exception.RecursoNoEncontradoException;
 import com.ferreteria.exception.ReglaNegocioException;
 import com.ferreteria.repository.CompletoRepository;
@@ -50,11 +51,17 @@ public class LineasDocumento {
     /**
      * Linea validada. En un completo: presentacion null, factor 1 y cantidadBase = cantidad de completos.
      *
-     * @param precioLista precio de la presentacion o del completo
+     * @param precioLista precio de la presentacion (por mayor si la cantidad alcanza una escala) o del completo
+     * @param tipoPrecio  de donde sale precioLista
      */
     public record Linea(Clave clave, Producto producto, Presentacion presentacion, Completo completo,
                         String descripcion, String composicion, BigDecimal cantidad, BigDecimal factor,
-                        BigDecimal cantidadBase, BigDecimal precioLista) {
+                        BigDecimal cantidadBase, BigDecimal precioLista, TipoPrecio tipoPrecio) {
+
+        /** Tipo de precio de la linea si se cobra este precio (un precio acordado a mano no es lista ni mayor). */
+        public TipoPrecio tipoPara(BigDecimal precio) {
+            return precio.compareTo(precioLista) == 0 ? tipoPrecio : TipoPrecio.LISTA;
+        }
     }
 
     private final PresentacionRepository presentacionRepository;
@@ -111,8 +118,10 @@ public class LineasDocumento {
         if (cantidadBase.signum() <= 0) {
             throw new ReglaNegocioException("La cantidad de " + descripcion + " es demasiado pequena");
         }
+        BigDecimal precio = presentacion.precioPara(cantidad);
+        TipoPrecio tipo = precio.compareTo(presentacion.getPrecioVenta()) < 0 ? TipoPrecio.MAYOR : TipoPrecio.LISTA;
         return new Linea(Clave.presentacion(presentacion.getId()), producto, presentacion, null, descripcion, null,
-                cantidad, presentacion.getFactor(), cantidadBase, presentacion.getPrecioVenta());
+                cantidad, presentacion.getFactor(), cantidadBase, precio, tipo);
     }
 
     private static Linea deCompleto(Completo completo, Pedido p) {
@@ -135,7 +144,8 @@ public class LineasDocumento {
         }
         BigDecimal cantidad = Montos.cantidad(p.cantidad());
         return new Linea(Clave.completo(completo.getId()), producto, null, completo, descripcion,
-                completo.composicion(), cantidad, BigDecimal.ONE.setScale(3), cantidad, completo.getPrecioVenta());
+                completo.composicion(), cantidad, BigDecimal.ONE.setScale(3), cantidad, completo.getPrecioVenta(),
+                TipoPrecio.LISTA);
     }
 
     private static String recortar(String texto) {

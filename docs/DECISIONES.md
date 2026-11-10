@@ -420,3 +420,16 @@ Registro de las decisiones de diseno tomadas durante el desarrollo (que se decid
   `GET /api/publico/ventas/{token}/pdf` entrega solo ese PDF sin autenticacion; la URL base sale de `APP_URL_PUBLICA`.
   `GET /api/fiado/clientes/{id}/recordatorio-whatsapp`: lista las ventas a credito con saldo y su vencimiento, el
   total y las cuentas para deposito; 422 si no debe nada. En ambos, si no se indica celular se usa el del cliente.
+- **D109. Caja con fotos (solo frontend).** En el punto de venta, "Lista / Fotos": en fotos los productos salen en
+  cuadritos con foto, precio ("desde" si tiene varias presentaciones) y stock; con un toque se agrega la unica
+  presentacion y, si hay varias o completos, se elige en una ventanita. En pantallas de menos de 1024 px (tablet)
+  arranca en fotos; la eleccion se recuerda en el navegador. Botones de categoria filtran sin escribir (hasta 48).
+- **D110. Precio por mayor.** V19 crea `escala_precio` (presentacion, cantidad minima > 1, precio > 0): desde esa
+  cantidad cada presentacion cuesta menos (Ej: Unidad S/ 0.50; desde 100 a S/ 0.40). `PUT /api/productos/{id}/
+  presentaciones/{pid}/escalas` (solo ADMIN) reemplaza las escalas: maximo 5, cada una mas barata que la lista y que la
+  anterior, la cantidad con los decimales de la presentacion; queda en la auditoria. `LineasDocumento` cobra la escala
+  mas alta que alcanza la cantidad, asi aplica igual en la venta y la cotizacion sin que el frontend envie precios.
+  V19 agrega `tipo_precio` (LISTA, MAYOR, OFERTA) a `venta_detalle` y `cotizacion_detalle`: un precio escrito a mano
+  en la cotizacion queda como LISTA. La nota A4, el ticket y la cotizacion imprimen "Precio por mayor" bajo la linea.
+  En la caja el carrito recalcula al cambiar la cantidad, tacha el precio de lista y avisa la siguiente escala
+  ("Desde 100: S/ 0.40 c/u"); en la cotizacion el precio sigue a la cantidad salvo que el vendedor lo haya cambiado.

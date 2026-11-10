@@ -285,6 +285,7 @@ public class CotizacionService {
             detalle.setFactor(linea.factor());
             detalle.setCantidadBase(linea.cantidadBase());
             detalle.setPrecioUnitario(precio);
+            detalle.setTipoPrecio(linea.tipoPara(precio));
             detalle.setDescuento(descuento);
             detalle.setSubtotal(importe.subtract(descuento));
             cotizacion.agregarDetalle(detalle);

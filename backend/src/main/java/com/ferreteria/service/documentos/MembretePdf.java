@@ -2,6 +2,7 @@ package com.ferreteria.service.documentos;
 
 import com.ferreteria.entity.Empresa;
 import com.ferreteria.entity.Ubicacion;
+import com.ferreteria.entity.enums.TipoPrecio;
 import lombok.extern.slf4j.Slf4j;
 import org.openpdf.text.Document;
 import org.openpdf.text.DocumentException;
@@ -147,13 +148,22 @@ public class MembretePdf {
         return celda;
     }
 
-    /** Descripcion de una linea; en un completo, debajo y en letra pequena, sus piezas. */
-    public PdfPCell celdaDescripcion(String descripcion, String composicion) {
-        if (composicion == null) {
+    /**
+     * Descripcion de una linea; en un completo, debajo y en letra pequena, sus piezas; si el precio es por mayor o
+     * de oferta, lo dice (el cliente ve el beneficio).
+     */
+    public PdfPCell celdaDescripcion(String descripcion, String composicion, TipoPrecio tipoPrecio) {
+        String marca = marcaPrecio(tipoPrecio);
+        if (composicion == null && marca == null) {
             return celda(descripcion, Element.ALIGN_LEFT);
         }
         Phrase texto = new Phrase(descripcion, normal);
-        texto.add(new Phrase("\nIncluye: " + composicion, pequena));
+        if (composicion != null) {
+            texto.add(new Phrase("\nIncluye: " + composicion, pequena));
+        }
+        if (marca != null) {
+            texto.add(new Phrase("\n" + marca, lema));
+        }
         PdfPCell celda = new PdfPCell(texto);
         celda.setBorderColor(new Color(212, 212, 212));
         celda.setPadding(4);
@@ -211,6 +221,15 @@ public class MembretePdf {
             }
         }
         documento.add(tabla);
+    }
+
+    /** Texto que acompana a una linea con precio especial; null si es el precio de lista. */
+    public static String marcaPrecio(TipoPrecio tipoPrecio) {
+        return switch (tipoPrecio == null ? TipoPrecio.LISTA : tipoPrecio) {
+            case LISTA -> null;
+            case MAYOR -> "Precio por mayor";
+            case OFERTA -> "OFERTA";
+        };
     }
 
     public static String soles(BigDecimal monto) {

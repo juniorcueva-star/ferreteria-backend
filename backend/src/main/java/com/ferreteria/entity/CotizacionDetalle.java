@@ -1,7 +1,10 @@
 package com.ferreteria.entity;
 
+import com.ferreteria.entity.enums.TipoPrecio;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -67,6 +70,11 @@ public class CotizacionDetalle {
     // Precio por presentacion con IGV (editable al cotizar)
     @Column(name = "precio_unitario", nullable = false, precision = 12, scale = 2)
     private BigDecimal precioUnitario;
+
+    // Lista, por mayor u oferta: se imprime en el documento
+    @Enumerated(EnumType.STRING)
+    @Column(name = "tipo_precio", nullable = false, length = 10)
+    private TipoPrecio tipoPrecio = TipoPrecio.LISTA;
 
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal descuento = BigDecimal.ZERO;
