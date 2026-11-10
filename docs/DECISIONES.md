@@ -406,3 +406,7 @@ Registro de las decisiones de diseno tomadas durante el desarrollo (que se decid
   traslado o el ADMIN. `GET /api/ventas/{id}/ticket`: nota de venta de 80 mm de ancho para tiquetera termica, con el
   largo segun la cantidad de lineas (logo, empresa, productos, totales, pagos y cuentas). En el frontend: "Imprimir
   guia" en el detalle del traslado y "Ticket" (ademas de A4) en el detalle de la venta y al registrarla.
+- **D107. Ventas en espera y conteo de caja (solo frontend).** El vendedor pausa un carrito ("Poner en espera") y lo
+  retoma luego; se guardan en el navegador por usuario (maximo 5) porque no son ventas todavia: no reservan stock ni
+  tocan la caja. Al cerrar la caja, "Contar billetes y monedas" suma las denominaciones del sol (S/ 200 a S/ 0.10) y
+  llena el efectivo contado; el backend sigue recibiendo solo el total.
