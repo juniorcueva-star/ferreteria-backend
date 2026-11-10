@@ -80,4 +80,6 @@ public interface VentaRepository extends JpaRepository<Venta, Long>, JpaSpecific
     @Override
     @EntityGraph(attributePaths = {"ubicacion", "empresa", "usuario", "cajaSesion", "cliente"})
     Page<Venta> findAll(Specification<Venta> spec, Pageable pageable);
+
+    Optional<Venta> findByTokenPublico(String tokenPublico);
 }

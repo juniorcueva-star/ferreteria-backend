@@ -410,3 +410,13 @@ Registro de las decisiones de diseno tomadas durante el desarrollo (que se decid
   retoma luego; se guardan en el navegador por usuario (maximo 5) porque no son ventas todavia: no reservan stock ni
   tocan la caja. Al cerrar la caja, "Contar billetes y monedas" suma las denominaciones del sol (S/ 200 a S/ 0.10) y
   llena el efectivo contado; el backend sigue recibiendo solo el total.
+- **D108. Inventario fisico y WhatsApp.** `POST /api/inventario/conteo` (ADMIN y ALMACENERO; este en su ubicacion):
+  recibe solo los productos contados con su cantidad (>= 0), bloquea las filas de stock y por cada diferencia crea un
+  AJUSTE_ENTRADA (sobrante) o AJUSTE_SALIDA (faltante) con motivo "Inventario fisico dd/MM/yyyy" (mas la observacion)
+  y deja una auditoria CONTEO; responde cuantos se contaron y cuantos tenian diferencia. WhatsApp sin API de pago: el
+  backend arma un enlace `https://wa.me/51<celular>?text=...` que el navegador abre (el vendedor envia el mensaje desde
+  su WhatsApp). `GET /api/ventas/{id}/enlace-whatsapp`: mensaje con el total, el saldo y un enlace al PDF de la nota;
+  como el cliente no inicia sesion, V18 agrega `venta.token_publico` (aleatorio de 32 bytes, se crea la primera vez) y
+  `GET /api/publico/ventas/{token}/pdf` entrega solo ese PDF sin autenticacion; la URL base sale de `APP_URL_PUBLICA`.
+  `GET /api/fiado/clientes/{id}/recordatorio-whatsapp`: lista las ventas a credito con saldo y su vencimiento, el
+  total y las cuentas para deposito; 422 si no debe nada. En ambos, si no se indica celular se usa el del cliente.

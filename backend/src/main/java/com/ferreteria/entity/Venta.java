@@ -115,6 +115,10 @@ public class Venta {
     @Column(name = "motivo_anulacion", length = 300)
     private String motivoAnulacion;
 
+    /** Token del enlace publico del PDF (WhatsApp); se crea la primera vez que se pide el enlace */
+    @Column(name = "token_publico", unique = true, length = 64)
+    private String tokenPublico;
+
     @OneToMany(mappedBy = "venta", cascade = CascadeType.ALL)
     @OrderBy("id")
     private List<VentaDetalle> detalles = new ArrayList<>();

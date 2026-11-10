@@ -1,5 +1,11 @@
 package com.ferreteria.service;
 
+import java.time.format.DateTimeFormatter;
+import org.springframework.data.domain.Sort;
+import com.ferreteria.repository.ClienteRepository;
+import com.ferreteria.entity.Empresa;
+import com.ferreteria.entity.Cliente;
+import com.ferreteria.dto.cotizaciones.EnlaceWhatsappResponse;
 import com.ferreteria.dto.comun.PaginaResponse;
 import com.ferreteria.dto.fiado.DeudorResponse;
 import com.ferreteria.dto.ventas.AbonoRequest;
@@ -33,6 +39,10 @@ import java.util.List;
 @RequiredArgsConstructor
 public class FiadoService {
 
+    private static final DateTimeFormatter FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
+    private final ClienteRepository clienteRepository;
+    private final Whatsapp whatsapp;
     private final VentaRepository ventaRepository;
     private final AccesoUbicacionService accesoUbicacion;
     private final Buscador buscador;
@@ -98,5 +108,45 @@ public class FiadoService {
         Long ubicacion = accesoUbicacion.ubicacionParaConsultar(ubicacionId);
         Pageable sinOrden = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize()); // el orden lo fija la consulta
         return PaginaResponse.de(ventaRepository.deudores(ubicacion, sinOrden));
+    }
+
+    /**
+     * Recordatorio de deuda por WhatsApp: lista las ventas al credito con saldo del cliente (las de su tienda si es
+     * VENDEDOR), con su vencimiento y el total. Sin telefono usa el celular del cliente.
+     */
+    @Transactional(readOnly = true)
+    public EnlaceWhatsappResponse recordatorioWhatsapp(Long clienteId, String telefono) {
+        Cliente cliente = clienteRepository.findById(clienteId)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Cliente", clienteId));
+        List<VentaResponse> deudas = listarDeudas(null, clienteId, false,
+                PageRequest.of(0, 50, Sort.by(Sort.Direction.ASC, "fecha"))).contenido();
+        if (deudas.isEmpty()) {
+            throw new ReglaNegocioException(cliente.getNombre() + " no tiene deudas pendientes");
+        }
+        String celular = telefono != null && !telefono.isBlank() ? telefono : cliente.getTelefono();
+        if (celular == null || celular.isBlank()) {
+            throw new ReglaNegocioException("Indique el celular del cliente");
+        }
+        Empresa empresa = ventaRepository.getReferenceById(deudas.getFirst().id()).getEmpresa();
+        StringBuilder mensaje = new StringBuilder("Hola ").append(cliente.getNombre()).append(", le saludamos de ")
+                .append(empresa.getNombreComercial() == null ? empresa.getRazonSocial() : empresa.getNombreComercial())
+                .append(". Le recordamos su saldo pendiente:\n");
+        BigDecimal total = BigDecimal.ZERO;
+        for (VentaResponse v : deudas) {
+            mensaje.append("- ").append(v.numeroDocumento()).append(" del ").append(FECHA.format(v.fecha()
+                    .atZoneSameInstant(calendario.zona()))).append(": ").append(Whatsapp.soles(v.saldoPendiente()));
+            if (v.fechaVencimiento() != null) {
+                mensaje.append(v.fechaVencimiento().isBefore(calendario.hoy()) ? " (venció el " : " (vence el ")
+                        .append(FECHA.format(v.fechaVencimiento())).append(')');
+            }
+            mensaje.append('\n');
+            total = total.add(v.saldoPendiente());
+        }
+        mensaje.append("Total: ").append(Whatsapp.soles(total));
+        if (empresa.getDatosBancarios() != null) {
+            mensaje.append("\nPuede depositar en:\n").append(empresa.getDatosBancarios());
+        }
+        mensaje.append("\n¡Gracias por su preferencia!");
+        return whatsapp.enlace(celular, mensaje.toString());
     }
 }

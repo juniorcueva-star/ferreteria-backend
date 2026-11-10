@@ -1,6 +1,7 @@
 package com.ferreteria.controller;
 
 import com.ferreteria.dto.comun.PaginaResponse;
+import com.ferreteria.dto.cotizaciones.EnlaceWhatsappResponse;
 import com.ferreteria.dto.fiado.DeudorResponse;
 import com.ferreteria.dto.ventas.AbonoRequest;
 import com.ferreteria.dto.ventas.VentaResponse;
@@ -55,5 +56,13 @@ public class FiadoController {
     public PaginaResponse<DeudorResponse> listarDeudores(@RequestParam(required = false) Long ubicacionId,
                                                          @ParameterObject Pageable pageable) {
         return fiadoService.listarDeudores(ubicacionId, pageable);
+    }
+
+    @Operation(summary = "Recordatorio de deuda por WhatsApp", description = "Enlace https://wa.me/... con las ventas "
+            + "al credito pendientes del cliente, sus vencimientos y el total. Sin telefono usa el celular del cliente")
+    @GetMapping("/clientes/{clienteId}/recordatorio-whatsapp")
+    public EnlaceWhatsappResponse recordatorioWhatsapp(@PathVariable Long clienteId,
+                                                       @RequestParam(required = false) String telefono) {
+        return fiadoService.recordatorioWhatsapp(clienteId, telefono);
     }
 }

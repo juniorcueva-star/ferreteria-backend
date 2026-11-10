@@ -21,6 +21,10 @@ public class Calendario {
         this.zona = ZoneId.of(zona);
     }
 
+    public ZoneId zona() {
+        return zona;
+    }
+
     public LocalDate hoy() {
         return LocalDate.now(zona);
     }

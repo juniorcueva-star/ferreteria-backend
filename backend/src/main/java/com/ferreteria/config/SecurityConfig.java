@@ -79,7 +79,7 @@ public class SecurityConfig {
                 .requestMatchers(RUTAS_PUBLICAS).permitAll()
                 .requestMatchers(HttpMethod.GET, "/imagenes/**").permitAll()
                 // PDF de cotizacion desde el enlace de WhatsApp (protegido por un token aleatorio)
-                .requestMatchers(HttpMethod.GET, "/api/publico/cotizaciones/*/pdf").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/publico/cotizaciones/*/pdf", "/api/publico/ventas/*/pdf").permitAll()
                 .requestMatchers("/error").permitAll()
                 // Organizacion
                 .requestMatchers("/api/auth/**").authenticated()
@@ -105,7 +105,8 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/traslados", "/api/traslados/*/anular")
                 .hasAnyRole(ADMIN, ALMACENERO)
                 .requestMatchers(HttpMethod.GET, "/api/traslados/**").authenticated()
-                .requestMatchers(HttpMethod.POST, "/api/inventario/ajustes").hasAnyRole(ADMIN, ALMACENERO)
+                .requestMatchers(HttpMethod.POST, "/api/inventario/ajustes", "/api/inventario/conteo")
+                .hasAnyRole(ADMIN, ALMACENERO)
                 .requestMatchers(HttpMethod.POST, "/api/inventario/inicial").hasRole(ADMIN)
                 .requestMatchers(HttpMethod.PUT, "/api/inventario/stock/minimo").hasRole(ADMIN)
                 .requestMatchers(HttpMethod.PUT, "/api/inventario/stock/ubicacion-fisica").hasAnyRole(ADMIN, ALMACENERO)

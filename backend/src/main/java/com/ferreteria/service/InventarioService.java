@@ -3,6 +3,8 @@ package com.ferreteria.service;
 import com.ferreteria.dto.comun.PaginaResponse;
 import com.ferreteria.dto.inventario.AjusteRequest;
 import com.ferreteria.dto.inventario.CantidadEnUbicacion;
+import com.ferreteria.dto.inventario.ConteoRequest;
+import com.ferreteria.dto.inventario.ConteoResponse;
 import com.ferreteria.dto.inventario.InventarioInicialRequest;
 import com.ferreteria.dto.inventario.KardexResponse;
 import com.ferreteria.dto.inventario.LineaProductoRequest;
@@ -14,8 +16,9 @@ import com.ferreteria.entity.MovimientoInventario;
 import com.ferreteria.entity.Producto;
 import com.ferreteria.entity.Stock;
 import com.ferreteria.entity.Ubicacion;
-import com.ferreteria.entity.enums.TipoMovimiento;
+import com.ferreteria.entity.Usuario;
 import com.ferreteria.entity.enums.EntidadAuditada;
+import com.ferreteria.entity.enums.TipoMovimiento;
 import com.ferreteria.exception.ReglaNegocioException;
 import com.ferreteria.repository.Especificaciones;
 import com.ferreteria.repository.MovimientoInventarioRepository;
@@ -36,6 +39,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -162,6 +168,56 @@ public class InventarioService {
         registrarMovimientos(movimientos, tipo == TipoMovimiento.AJUSTE_ENTRADA ? "Ajuste de entrada"
                 : "Ajuste de salida", "AJUSTE", " · Motivo: " + request.motivo().trim());
         return movimientos.stream().map(KardexResponse::desde).toList();
+    }
+
+    /**
+     * Inventario fisico: compara lo contado con el stock del sistema y crea un ajuste de entrada (sobrante) o de
+     * salida (faltante) por cada diferencia, todo en una sola transaccion. Los productos que coinciden no se tocan.
+     */
+    @Transactional
+    public ConteoResponse registrarConteo(ConteoRequest request) {
+        Ubicacion ubicacion = buscador.ubicacionActiva(accesoUbicacion.ubicacionParaOperar(request.ubicacionId()));
+        Set<Long> vistos = new HashSet<>();
+        List<ConteoRequest.Linea> ordenadas = request.detalles().stream()
+                .sorted(Comparator.comparing(ConteoRequest.Linea::productoId)).toList();
+        List<ConteoResponse.Linea> resultado = new ArrayList<>();
+        List<LineaMovimiento> entradas = new ArrayList<>();
+        List<LineaMovimiento> salidas = new ArrayList<>();
+        for (ConteoRequest.Linea linea : ordenadas) {
+            if (!vistos.add(linea.productoId())) {
+                throw new ReglaNegocioException("El producto " + linea.productoId() + " esta repetido en el conteo");
+            }
+            Producto producto = buscador.productoActivo(linea.productoId());
+            if (ReglaDecimales.porUnidadBase(producto.getUnidadBase()) == 0
+                    && linea.cantidadContada().stripTrailingZeros().scale() > 0) {
+                throw new ReglaNegocioException(producto.getNombre() + " se cuenta en unidades enteras");
+            }
+            // Bloquea la fila de stock para que nadie la cambie entre el conteo y el ajuste
+            stockRepository.crearSiNoExiste(producto.getId(), ubicacion.getId());
+            BigDecimal sistema = stockRepository.bloquear(producto.getId(), ubicacion.getId()).orElseThrow().getCantidad();
+            BigDecimal contado = Montos.cantidad(linea.cantidadContada());
+            BigDecimal diferencia = contado.subtract(sistema);
+            if (diferencia.signum() > 0) {
+                entradas.add(LineaMovimiento.de(producto, diferencia));
+            } else if (diferencia.signum() < 0) {
+                salidas.add(LineaMovimiento.de(producto, diferencia.negate()));
+            }
+            resultado.add(new ConteoResponse.Linea(producto.getId(), producto.getCodigo(), producto.getNombre(),
+                    producto.getUnidadBase(), sistema, contado, diferencia));
+        }
+        String motivo = "Inventario fisico " + calendario.hoy().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+                + (request.observacion() == null || request.observacion().isBlank() ? "" : " · " + request.observacion().trim());
+        Usuario usuario = buscador.usuarioActual();
+        if (!entradas.isEmpty()) {
+            registrarMovimientos(movimientoStock.aplicar(ubicacion, TipoMovimiento.AJUSTE_ENTRADA, entradas,
+                    OrigenMovimiento.ajuste(usuario, motivo)), "Inventario fisico (sobrante)", "CONTEO", "");
+        }
+        if (!salidas.isEmpty()) {
+            registrarMovimientos(movimientoStock.aplicar(ubicacion, TipoMovimiento.AJUSTE_SALIDA, salidas,
+                    OrigenMovimiento.ajuste(usuario, motivo)), "Inventario fisico (faltante)", "CONTEO", "");
+        }
+        return new ConteoResponse(ubicacion.getId(), ubicacion.getNombre(), resultado.size(),
+                (int) resultado.stream().filter(l -> l.diferencia().signum() != 0).count(), resultado);
     }
 
     /** Solo para productos sin ningun movimiento previo en la ubicacion: despues se usan compras o ajustes. */

@@ -5,6 +5,8 @@ import com.ferreteria.dto.inventario.AjusteRequest;
 import com.ferreteria.dto.inventario.InventarioInicialRequest;
 import com.ferreteria.dto.inventario.KardexResponse;
 import com.ferreteria.dto.inventario.ResumenStockResponse;
+import com.ferreteria.dto.inventario.ConteoRequest;
+import com.ferreteria.dto.inventario.ConteoResponse;
 import com.ferreteria.dto.inventario.StockMinimoRequest;
 import com.ferreteria.dto.inventario.UbicacionFisicaRequest;
 import com.ferreteria.dto.inventario.StockResponse;
@@ -73,6 +75,14 @@ public class InventarioController {
     @PutMapping("/stock/ubicacion-fisica")
     public StockResponse definirUbicacionFisica(@Valid @RequestBody UbicacionFisicaRequest request) {
         return inventarioService.definirUbicacionFisica(request);
+    }
+
+    @Operation(summary = "Inventario fisico", description = "Lo contado de cada producto (unidad base): el sistema "
+            + "crea un ajuste de entrada o salida por cada diferencia, con motivo \"Inventario fisico <fecha>\". "
+            + "ALMACENERO (su almacen) o ADMIN (indica ubicacionId)")
+    @PostMapping("/conteo")
+    public ConteoResponse registrarConteo(@Valid @RequestBody ConteoRequest request) {
+        return inventarioService.registrarConteo(request);
     }
 
     @Operation(summary = "Definir stock minimo de un producto en una ubicacion")

@@ -1,5 +1,7 @@
 package com.ferreteria.service;
 
+import com.ferreteria.entity.Empresa;
+import com.ferreteria.dto.cotizaciones.EnlaceWhatsappResponse;
 import com.ferreteria.dto.comun.AnulacionRequest;
 import com.ferreteria.dto.comun.PaginaResponse;
 import com.ferreteria.dto.ventas.VentaDetalleRequest;
@@ -63,6 +65,7 @@ public class VentaService {
     private final MovimientoInventarioRepository movimientoRepository;
     private final AuditoriaService auditoria;
     private final VentaTicketPdf ventaTicketPdf;
+    private final Whatsapp whatsapp;
     private final VentaPdf ventaPdf;
     private final VentaRepository ventaRepository;
     private final ClienteRepository clienteRepository;
@@ -130,6 +133,47 @@ public class VentaService {
     public byte[] generarPdf(Long id) {
         Venta venta = ventaRepository.findById(id).orElseThrow(() -> new RecursoNoEncontradoException("Venta", id));
         accesoUbicacion.validarAcceso(venta.getUbicacion().getId());
+        return ventaPdf.generar(venta);
+    }
+
+    /**
+     * Enlace de WhatsApp con el resumen de la venta y el enlace publico del PDF. Sin celular se usa el del cliente.
+     */
+    @Transactional
+    public EnlaceWhatsappResponse generarEnlaceWhatsapp(Long id, String telefono) {
+        Venta venta = ventaRepository.findById(id).orElseThrow(() -> new RecursoNoEncontradoException("Venta", id));
+        accesoUbicacion.validarAcceso(venta.getUbicacion().getId());
+        String celular = telefono != null && !telefono.isBlank() ? telefono
+                : venta.getCliente() == null ? null : venta.getCliente().getTelefono();
+        if (celular == null || celular.isBlank()) {
+            throw new ReglaNegocioException("Indique el celular del cliente");
+        }
+        if (venta.getTokenPublico() == null) {
+            venta.setTokenPublico(Whatsapp.token());
+        }
+        Empresa empresa = venta.getEmpresa();
+        StringBuilder mensaje = new StringBuilder("Hola")
+                .append(venta.getCliente() == null ? "" : " " + venta.getCliente().getNombre())
+                .append(", gracias por su compra en ")
+                .append(empresa.getNombreComercial() == null ? empresa.getRazonSocial() : empresa.getNombreComercial())
+                .append(".\nNota de venta ").append(venta.getNumeroDocumento()).append(": ")
+                .append(Whatsapp.soles(venta.getTotal())).append(" (incluye IGV)");
+        if (venta.getCondicion() == CondicionVenta.CREDITO && venta.getSaldoPendiente().signum() > 0) {
+            mensaje.append("\nSaldo pendiente: ").append(Whatsapp.soles(venta.getSaldoPendiente()));
+        }
+        if (venta.getEstado() == EstadoVenta.ANULADA) {
+            mensaje.append("\n(Venta anulada)");
+        }
+        mensaje.append("\nDescargue su comprobante: ").append(whatsapp.baseUrl()).append("/api/publico/ventas/")
+                .append(venta.getTokenPublico()).append("/pdf");
+        return whatsapp.enlace(celular, mensaje.toString());
+    }
+
+    /** PDF para el enlace publico (WhatsApp): basta con el token, que no se puede adivinar. */
+    @Transactional(readOnly = true)
+    public byte[] generarPdfPublico(String token) {
+        Venta venta = ventaRepository.findByTokenPublico(token)
+                .orElseThrow(() -> new RecursoNoEncontradoException("La nota de venta no existe"));
         return ventaPdf.generar(venta);
     }
 

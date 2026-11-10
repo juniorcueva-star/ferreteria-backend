@@ -2,6 +2,7 @@ package com.ferreteria.controller;
 
 import com.ferreteria.dto.comun.AnulacionRequest;
 import com.ferreteria.dto.comun.PaginaResponse;
+import com.ferreteria.dto.cotizaciones.EnlaceWhatsappResponse;
 import com.ferreteria.dto.ventas.VentaRequest;
 import com.ferreteria.dto.ventas.VentaResponse;
 import com.ferreteria.entity.enums.CondicionVenta;
@@ -59,6 +60,13 @@ public class VentaController {
     public ResponseEntity<byte[]> descargarPdf(@PathVariable Long id,
                                                @RequestParam(defaultValue = "false") boolean descargar) {
         return RespuestaPdf.de(ventaService.generarPdf(id), "nota-venta-" + id + ".pdf", descargar);
+    }
+
+    @Operation(summary = "Enlace de WhatsApp de la nota de venta", description = "Devuelve https://wa.me/51XXXXXXXXX"
+            + "?text=... con el resumen y el enlace publico del PDF. Sin telefono usa el celular del cliente")
+    @GetMapping("/{id}/enlace-whatsapp")
+    public EnlaceWhatsappResponse enlaceWhatsapp(@PathVariable Long id, @RequestParam(required = false) String telefono) {
+        return ventaService.generarEnlaceWhatsapp(id, telefono);
     }
 
     @Operation(summary = "Ticket de 80 mm", description = "Nota de venta para tiquetera termica (80 mm de ancho). "
