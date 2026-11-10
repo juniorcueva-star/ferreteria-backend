@@ -199,6 +199,19 @@ guarda con **Ctrl + S**:
 - **Anota tus contraseñas**: las usarás para entrar.
 - El archivo `.env` es solo de tu laptop: **nunca** se sube a GitHub ni se comparte.
 
+### 4.1 (Opcional) Activar el asistente de IA
+El sistema trae un **asistente de IA** (botón amarillo **Asistente**, abajo a la derecha). Funciona sin esto, pero
+para que responda necesita una **clave de Claude**. Si no la tienes todavía, salta este paso: el resto del sistema
+funciona igual y el asistente solo avisará que no está activado.
+
+Si ya tienes la clave (se consigue siguiendo `docs/GUIA_CLAVE_IA.md`), en el mismo `.env` busca la línea
+`ANTHROPIC_API_KEY=` y pega tu clave después del `=`, sin espacios ni comillas:
+```
+ANTHROPIC_API_KEY=sk-ant-...tu clave completa...
+```
+> La clave es como la contraseña de una tarjeta: **no la mandes por WhatsApp ni la subas a GitHub**. Cada persona
+> usa la suya, o el dueño la pone solo en la laptop o servidor del negocio.
+
 Revisa que se guardó con el nombre correcto:
 ```
 dir .env
@@ -277,6 +290,10 @@ La base nueva ya trae productos, tiendas y clientes de ejemplo para probar.
    la etiqueta **OFERTA** y el precio de lista tachado.
 4. **Lista de precios**: en **Productos**, botón **Lista de precios** (o el de descarga para mandarla por WhatsApp).
 5. **Etiquetas** (`admin` o `almacen1`): en **Productos** marca varios productos y presiona **Imprimir etiquetas**.
+6. **Asistente de IA** (cualquier usuario): presiona el botón amarillo **Asistente** con la cara del perno.
+   - Sin clave: dice "El asistente todavía no está activado" (es normal).
+   - Con clave: arriba dice "Te quedan 50 de 50 preguntas hoy". Prueba las preguntas sugeridas, por ejemplo con
+     `vendedor1` "¿Cuánto cuestan 100 pernos 3/8?" o con `admin` "¿Cómo me fue hoy?".
 
 ---
 
@@ -331,6 +348,9 @@ Luego enciende como arriba. Los cambios en la base de datos se aplican solos al 
 | No puedo entrar con `admin` | Revisa `ADMIN_PASSWORD` en `.env`. El admin se crea con la clave que había **la primera vez** que arrancó el backend; si la cambiaste después, usa `docker compose down -v` y vuelve a empezar desde el paso 5 |
 | La página dice "Error de conexión" | El backend (paso 6) no está corriendo o todavía no dice `Started` |
 | `npm install` falla con `EBADENGINE` o pide otra versión de Node | Tu Node es menor que 22.12: instala la LTS (paso 2.3) |
+| El asistente dice "no está activado" | Falta la clave en `ANTHROPIC_API_KEY` (paso 4.1) o no reiniciaste el backend |
+| El asistente dice "La clave de la IA no es válida" | La clave está mal copiada o vencida: crea otra (ver `docs/GUIA_CLAVE_IA.md`) |
 | El frontend está muy lento | El proyecto quedó dentro de OneDrive (Escritorio o Documentos): bórralo y descárgalo en `C:\ferreteria` (paso 3) |
 
-Más detalles técnicos: `docs/COMO_EJECUTAR.md`. Respaldos: `docs/RESPALDOS.md`.
+Más detalles técnicos: `docs/COMO_EJECUTAR.md`. Respaldos: `docs/RESPALDOS.md`. Clave de la IA:
+`docs/GUIA_CLAVE_IA.md`.
