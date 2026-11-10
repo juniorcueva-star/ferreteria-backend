@@ -433,3 +433,11 @@ Registro de las decisiones de diseno tomadas durante el desarrollo (que se decid
   en la cotizacion queda como LISTA. La nota A4, el ticket y la cotizacion imprimen "Precio por mayor" bajo la linea.
   En la caja el carrito recalcula al cambiar la cantidad, tacha el precio de lista y avisa la siguiente escala
   ("Desde 100: S/ 0.40 c/u"); en la cotizacion el precio sigue a la cantidad salvo que el vendedor lo haya cambiado.
+- **D111. Ofertas.** V20 agrega a `presentacion` `precio_oferta`, `oferta_desde` y `oferta_hasta` (los tres o
+  ninguno; fechas inclusive en hora de Lima). `PUT/DELETE /api/productos/{id}/presentaciones/{pid}/oferta` (solo
+  ADMIN): mas barata que la lista, de 1 a 366 dias y sin terminar antes de hoy; queda en la auditoria. Mientras esta
+  vigente, `Presentacion.precioPara(cantidad, hoy)` cobra el menor entre la lista, la oferta y la escala por mayor
+  que se alcanza, y marca la linea como OFERTA o MAYOR (el que dio el precio). `GET /api/productos?enOferta=true`
+  lista los que tienen una oferta vigente. En la caja: boton "Ofertas" junto a las categorias, etiqueta amarilla en
+  los cuadritos y en las presentaciones, precio de lista tachado en el carrito; la cotizacion arranca con el precio de
+  oferta. La nota, el ticket y la cotizacion imprimen "OFERTA" bajo la linea.

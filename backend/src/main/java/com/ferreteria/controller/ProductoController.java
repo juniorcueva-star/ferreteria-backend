@@ -5,6 +5,7 @@ import com.ferreteria.dto.catalogo.AccionLoteResponse;
 import com.ferreteria.dto.catalogo.CompletoRequest;
 import com.ferreteria.dto.catalogo.CompletoResponse;
 import com.ferreteria.dto.catalogo.EscalasPrecioRequest;
+import com.ferreteria.dto.catalogo.OfertaRequest;
 import com.ferreteria.dto.catalogo.HistorialPrecioResponse;
 import com.ferreteria.dto.catalogo.PrecioSugeridoResponse;
 import com.ferreteria.dto.catalogo.PresentacionRequest;
@@ -51,14 +52,15 @@ public class ProductoController {
     private final ProductoService productoService;
 
     @Operation(summary = "Listar productos", description = "Filtros: texto (palabras del codigo, nombre, marca, tipo o medida; acepta abreviaturas como per o hex), categoriaId, "
-            + "unidadBase y activo. Incluye las presentaciones con sus precios")
+            + "unidadBase, activo y enOferta (con una oferta vigente hoy). Incluye las presentaciones con sus precios")
     @GetMapping
     public PaginaResponse<ProductoResponse> listar(@RequestParam(required = false) String texto,
                                                    @RequestParam(required = false) Long categoriaId,
                                                    @RequestParam(required = false) UnidadBase unidadBase,
                                                    @RequestParam(required = false) Boolean activo,
+                                                   @RequestParam(required = false) Boolean enOferta,
                                                    @ParameterObject @PageableDefault(size = 20, sort = "nombre") Pageable pageable) {
-        return productoService.listar(texto, categoriaId, unidadBase, activo, pageable);
+        return productoService.listar(texto, categoriaId, unidadBase, activo, enOferta, pageable);
     }
 
     @Operation(summary = "Productos frecuentes", description = "Los que se venden en mas ventas de los ultimos 30 dias "
@@ -122,6 +124,21 @@ public class ProductoController {
     public ProductoResponse actualizarEscalas(@PathVariable Long id, @PathVariable Long presentacionId,
                                               @Valid @RequestBody EscalasPrecioRequest request) {
         return productoService.actualizarEscalas(id, presentacionId, request);
+    }
+
+    @Operation(summary = "Oferta de una presentacion", description = "Precio de oferta entre dos fechas (inclusive, "
+            + "hora de Lima): mientras esta vigente la caja y la cotizacion la cobran y la marcan como OFERTA. Debe "
+            + "ser menor que el de lista. Solo ADMIN")
+    @PutMapping("/{id}/presentaciones/{presentacionId}/oferta")
+    public ProductoResponse actualizarOferta(@PathVariable Long id, @PathVariable Long presentacionId,
+                                             @Valid @RequestBody OfertaRequest request) {
+        return productoService.actualizarOferta(id, presentacionId, request);
+    }
+
+    @Operation(summary = "Quitar la oferta de una presentacion", description = "Solo ADMIN")
+    @DeleteMapping("/{id}/presentaciones/{presentacionId}/oferta")
+    public ProductoResponse quitarOferta(@PathVariable Long id, @PathVariable Long presentacionId) {
+        return productoService.quitarOferta(id, presentacionId);
     }
 
     @Operation(summary = "Crear un completo", description = "El producto junto con otras piezas (Ej: perno + tuerca "

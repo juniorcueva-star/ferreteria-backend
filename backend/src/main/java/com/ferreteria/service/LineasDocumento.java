@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -51,7 +52,7 @@ public class LineasDocumento {
     /**
      * Linea validada. En un completo: presentacion null, factor 1 y cantidadBase = cantidad de completos.
      *
-     * @param precioLista precio de la presentacion (por mayor si la cantidad alcanza una escala) o del completo
+     * @param precioLista precio de la presentacion (oferta vigente o por mayor si corresponde) o del completo
      * @param tipoPrecio  de donde sale precioLista
      */
     public record Linea(Clave clave, Producto producto, Presentacion presentacion, Completo completo,
@@ -66,6 +67,7 @@ public class LineasDocumento {
 
     private final PresentacionRepository presentacionRepository;
     private final CompletoRepository completoRepository;
+    private final Calendario calendario;
 
     public List<Linea> resolver(List<Pedido> pedidos) {
         for (Pedido p : pedidos) {
@@ -82,7 +84,7 @@ public class LineasDocumento {
         List<Linea> lineas = new ArrayList<>();
         for (Pedido p : pedidos) {
             lineas.add(p.presentacionId() != null
-                    ? dePresentacion(presentaciones.get(p.presentacionId()), p)
+                    ? dePresentacion(presentaciones.get(p.presentacionId()), p, calendario.hoy())
                     : deCompleto(completos.get(p.completoId()), p));
         }
         return lineas;
@@ -102,7 +104,7 @@ public class LineasDocumento {
                 .toList();
     }
 
-    private static Linea dePresentacion(Presentacion presentacion, Pedido p) {
+    private static Linea dePresentacion(Presentacion presentacion, Pedido p, LocalDate hoy) {
         if (presentacion == null) {
             throw new RecursoNoEncontradoException("Presentacion", p.presentacionId());
         }
@@ -118,10 +120,9 @@ public class LineasDocumento {
         if (cantidadBase.signum() <= 0) {
             throw new ReglaNegocioException("La cantidad de " + descripcion + " es demasiado pequena");
         }
-        BigDecimal precio = presentacion.precioPara(cantidad);
-        TipoPrecio tipo = precio.compareTo(presentacion.getPrecioVenta()) < 0 ? TipoPrecio.MAYOR : TipoPrecio.LISTA;
+        Presentacion.PrecioCobrado precio = presentacion.precioPara(cantidad, hoy);
         return new Linea(Clave.presentacion(presentacion.getId()), producto, presentacion, null, descripcion, null,
-                cantidad, presentacion.getFactor(), cantidadBase, precio, tipo);
+                cantidad, presentacion.getFactor(), cantidadBase, precio.precio(), precio.tipo());
     }
 
     private static Linea deCompleto(Completo completo, Pedido p) {

@@ -4,6 +4,7 @@ import com.ferreteria.dto.catalogo.AccionLoteRequest;
 import com.ferreteria.dto.catalogo.AccionLoteResponse;
 import com.ferreteria.dto.catalogo.EscalasPrecioRequest;
 import com.ferreteria.dto.catalogo.HistorialPrecioResponse;
+import com.ferreteria.dto.catalogo.OfertaRequest;
 import com.ferreteria.dto.catalogo.PrecioSugeridoResponse;
 import com.ferreteria.dto.catalogo.PresentacionRequest;
 import com.ferreteria.dto.catalogo.ProductoActualizarRequest;
@@ -85,13 +86,30 @@ public class ProductoService {
 
     @Transactional(readOnly = true)
     public PaginaResponse<ProductoResponse> listar(String texto, Long categoriaId, UnidadBase unidadBase,
-                                                   Boolean activo, Pageable pageable) {
+                                                   Boolean activo, Boolean enOferta, Pageable pageable) {
         Specification<Producto> filtro = Specification.allOf(
                 busquedaProductos.coincidenPalabras(texto),
                 Especificaciones.igual("categoria.id", categoriaId),
                 Especificaciones.igual("unidadBase", unidadBase),
-                Especificaciones.igual("activo", activo));
+                Especificaciones.igual("activo", activo),
+                Boolean.TRUE.equals(enOferta) ? conOfertaVigente(calendario.hoy()) : Specification.unrestricted());
         return PaginaResponse.de(productoRepository.findAll(filtro, Ordenamiento.validar(pageable, "id", "codigo", "nombre", "marca", "createdAt")), ProductoResponse::desde);
+    }
+
+    /** Productos con al menos una presentacion activa en oferta hoy. */
+    private static Specification<Producto> conOfertaVigente(LocalDate hoy) {
+        return (raiz, consulta, cb) -> {
+            var sub = consulta.subquery(Long.class);
+            var p = sub.from(Presentacion.class);
+            sub.select(p.get("id")).where(
+                    cb.equal(p.get("producto"), raiz),
+                    cb.isTrue(p.get("activo")),
+                    cb.isNotNull(p.get("precioOferta")),
+                    cb.lessThan(p.get("precioOferta"), p.get("precioVenta")),
+                    cb.lessThanOrEqualTo(p.get("ofertaDesde"), hoy),
+                    cb.greaterThanOrEqualTo(p.get("ofertaHasta"), hoy));
+            return cb.exists(sub);
+        };
     }
 
     @Transactional(readOnly = true)
@@ -339,6 +357,63 @@ public class ProductoService {
                     + despues + "»");
         }
         return ProductoResponse.desde(producto);
+    }
+
+    /**
+     * Oferta de una presentacion entre dos fechas (inclusive): mas barata que la lista, de 1 a 366 dias y que no
+     * termine antes de hoy. Reemplaza la oferta que tenia.
+     */
+    @Transactional
+    public ProductoResponse actualizarOferta(Long productoId, Long presentacionId, OfertaRequest request) {
+        Producto producto = buscar(productoId);
+        Presentacion presentacion = buscarPresentacion(producto, presentacionId);
+        BigDecimal precio = Montos.dinero(request.precio());
+        if (precio.compareTo(presentacion.getPrecioVenta()) >= 0) {
+            throw new ReglaNegocioException("El precio de oferta (" + AuditoriaService.soles(precio)
+                    + ") debe ser menor que el de lista (" + AuditoriaService.soles(presentacion.getPrecioVenta()) + ")");
+        }
+        if (request.hasta().isBefore(request.desde())) {
+            throw new ReglaNegocioException("La oferta no puede terminar antes de empezar");
+        }
+        if (request.hasta().isBefore(calendario.hoy())) {
+            throw new ReglaNegocioException("La oferta ya habria terminado: el ultimo dia no puede ser anterior a hoy");
+        }
+        if (request.desde().plusDays(365).isBefore(request.hasta())) {
+            throw new ReglaNegocioException("La oferta puede durar como maximo un año");
+        }
+        String antes = describirOferta(presentacion);
+        presentacion.setPrecioOferta(precio);
+        presentacion.setOfertaDesde(request.desde());
+        presentacion.setOfertaHasta(request.hasta());
+        productoRepository.flush();
+        auditoria.registrar(EntidadAuditada.PRODUCTO, producto.getId(), "EDITAR", etiqueta(producto)
+                + ", presentación " + presentacion.getNombre() + ": oferta «" + antes + "» → «"
+                + describirOferta(presentacion) + "»");
+        return ProductoResponse.desde(producto);
+    }
+
+    @Transactional
+    public ProductoResponse quitarOferta(Long productoId, Long presentacionId) {
+        Producto producto = buscar(productoId);
+        Presentacion presentacion = buscarPresentacion(producto, presentacionId);
+        if (presentacion.getPrecioOferta() != null) {
+            String antes = describirOferta(presentacion);
+            presentacion.setPrecioOferta(null);
+            presentacion.setOfertaDesde(null);
+            presentacion.setOfertaHasta(null);
+            productoRepository.flush();
+            auditoria.registrar(EntidadAuditada.PRODUCTO, producto.getId(), "EDITAR", etiqueta(producto)
+                    + ", presentación " + presentacion.getNombre() + ": quitó la oferta «" + antes + "»");
+        }
+        return ProductoResponse.desde(producto);
+    }
+
+    private static String describirOferta(Presentacion presentacion) {
+        if (presentacion.getPrecioOferta() == null) {
+            return "sin oferta";
+        }
+        return AuditoriaService.soles(presentacion.getPrecioOferta()) + " del " + presentacion.getOfertaDesde()
+                + " al " + presentacion.getOfertaHasta();
     }
 
     private static String describirEscalas(Presentacion presentacion) {

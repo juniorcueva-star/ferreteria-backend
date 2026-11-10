@@ -81,7 +81,7 @@ class VentaServiceTest {
     void configurar() {
         // Las lineas se resuelven con el componente real (usa los repositorios simulados)
         ReflectionTestUtils.setField(ventaService, "lineasDocumento",
-                new LineasDocumento(presentacionRepository, completoRepository));
+                new LineasDocumento(presentacionRepository, completoRepository, calendario));
         when(cobros.cajaAbiertaDelUsuario()).thenReturn(caja);
         when(buscador.usuarioActual()).thenReturn(vendedor);
         when(presentacionRepository.findByIdIn(anyList())).thenReturn(List.of(ciento));
