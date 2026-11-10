@@ -26,6 +26,7 @@ import com.ferreteria.exception.ReglaNegocioException;
 import com.ferreteria.repository.CajaSesionRepository;
 import com.ferreteria.repository.MovimientoInventarioRepository;
 import com.ferreteria.service.documentos.VentaPdf;
+import com.ferreteria.service.documentos.VentaTicketPdf;
 import com.ferreteria.repository.ClienteRepository;
 import com.ferreteria.repository.Especificaciones;
 import com.ferreteria.repository.SerieCorrelativoRepository;
@@ -61,6 +62,7 @@ public class VentaService {
     private final LineasDocumento lineasDocumento;
     private final MovimientoInventarioRepository movimientoRepository;
     private final AuditoriaService auditoria;
+    private final VentaTicketPdf ventaTicketPdf;
     private final VentaPdf ventaPdf;
     private final VentaRepository ventaRepository;
     private final ClienteRepository clienteRepository;
@@ -129,6 +131,14 @@ public class VentaService {
         Venta venta = ventaRepository.findById(id).orElseThrow(() -> new RecursoNoEncontradoException("Venta", id));
         accesoUbicacion.validarAcceso(venta.getUbicacion().getId());
         return ventaPdf.generar(venta);
+    }
+
+    /** Ticket de 80 mm para tiquetera, con el mismo control de tienda que obtener. */
+    @Transactional(readOnly = true)
+    public byte[] generarTicket(Long id) {
+        Venta venta = ventaRepository.findById(id).orElseThrow(() -> new RecursoNoEncontradoException("Venta", id));
+        accesoUbicacion.validarAcceso(venta.getUbicacion().getId());
+        return ventaTicketPdf.generar(venta);
     }
 
     @Transactional(readOnly = true)

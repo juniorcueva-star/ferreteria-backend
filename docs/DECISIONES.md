@@ -400,3 +400,9 @@ Registro de las decisiones de diseno tomadas durante el desarrollo (que se decid
   campo `Entrada` filtra lo que se escribe segun `inputMode` (numeric: solo digitos; decimal: digitos y un separador;
   tel: digitos y espacios), asi no se pueden escribir letras ni el signo menos, y los formularios validan con zod
   las mismas reglas antes de enviar. Datos de demostracion ajustados (celulares y nombres validos).
+- **D106. Guia de traslado y ticket de 80 mm.** `GET /api/traslados/{id}/guia`: PDF A4 con el membrete (empresa de
+  la tienda destino, o del origen, o la primera activa), origen, destino, estado, productos con su ubicacion fisica en
+  el origen (para alistarlos) y espacio para las firmas de quien entrega y quien recibe; lo ve quien participa en el
+  traslado o el ADMIN. `GET /api/ventas/{id}/ticket`: nota de venta de 80 mm de ancho para tiquetera termica, con el
+  largo segun la cantidad de lineas (logo, empresa, productos, totales, pagos y cuentas). En el frontend: "Imprimir
+  guia" en el detalle del traslado y "Ticket" (ademas de A4) en el detalle de la venta y al registrarla.

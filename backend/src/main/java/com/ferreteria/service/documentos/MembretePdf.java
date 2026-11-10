@@ -125,6 +125,7 @@ public class MembretePdf {
             tabla.addCell(etiqueta);
             tabla.addCell(valor);
         }
+        tabla.getDefaultCell().setBorder(Rectangle.NO_BORDER);
         tabla.completeRow();
         documento.add(tabla);
     }

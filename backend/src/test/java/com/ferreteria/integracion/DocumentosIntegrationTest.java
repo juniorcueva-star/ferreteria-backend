@@ -99,6 +99,45 @@ class DocumentosIntegrationTest extends IntegracionTestBase {
         assertThat(texto(pdf)).contains("Bonifaz & Cia", "COTIZACIÓN", "COT-", "Cuentas para depósito", "S/ 2.00");
     }
 
+    @Test
+    @DisplayName("Ticket de 80 mm: ancho de tiquetera, membrete, productos, total y pago")
+    void ticket() throws Exception {
+        cargarStock(perno, datos.tienda1, 50);
+        postCon(vendedor, "/api/cajas/abrir", Map.of("montoApertura", 0)).andExpect(status().isCreated());
+        Long ventaId = leerId(postCon(vendedor, "/api/ventas", Map.of("condicion", "CONTADO",
+                        "detalles", List.of(Map.of("presentacionId", datos.presentacionId(perno, 0), "cantidad", 6)),
+                        "pagos", List.of(Map.of("metodoPago", "EFECTIVO", "monto", 3))))
+                .andExpect(status().isCreated()).andReturn(), "$.id");
+        byte[] pdf = getCon(vendedor, "/api/ventas/{id}/ticket", ventaId)
+                .andExpect(status().isOk())
+                .andExpect(header().string(HttpHeaders.CONTENT_TYPE, "application/pdf"))
+                .andReturn().getResponse().getContentAsByteArray();
+        try (PdfReader lector = new PdfReader(pdf)) {
+            assertThat(lector.getPageSize(1).getWidth()).isBetween(226f, 227f); // 80 mm
+            assertThat(new PdfTextExtractor(lector).getTextFromPage(1))
+                    .contains("Bonifaz & Cia", "R.U.C. 20111111111", "NOTA DE VENTA", "6 x S/ 0.50", "S/ 3.00", "Efectivo");
+        }
+        getCon(datos.token(datos.vendedor2), "/api/ventas/{id}/ticket", ventaId).andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("Guia de traslado: origen, destino, productos con su ubicacion en el almacen y firmas")
+    void guiaDeTraslado() throws Exception {
+        String almacenero = datos.token(datos.almacenero);
+        cargarStock(perno, datos.almacen, 100);
+        putCon(almacenero, "/api/inventario/stock/ubicacion-fisica", Map.of("productoId", perno.getId(),
+                "ubicacionFisica", "Pasillo 3 - Estante B")).andExpect(status().isOk());
+        Long trasladoId = leerId(postCon(almacenero, "/api/traslados", Map.of("destinoId", datos.tienda1.getId(),
+                        "detalles", List.of(Map.of("productoId", perno.getId(), "cantidad", 40))))
+                .andExpect(status().isCreated()).andReturn(), "$.id");
+        byte[] pdf = getCon(almacenero, "/api/traslados/{id}/guia", trasladoId).andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsByteArray();
+        assertThat(texto(pdf)).contains("GUÍA DE TRASLADO", "TR-", "Almacen Central", "Tienda 1", "PER-1",
+                "40", "Pasillo 3 - Estante B", "Entregué conforme", "Recibí conforme");
+        getCon(vendedor, "/api/traslados/{id}/guia", trasladoId).andExpect(status().isOk());
+        getCon(datos.token(datos.vendedor2), "/api/traslados/{id}/guia", trasladoId).andExpect(status().isForbidden());
+    }
+
     private static String texto(byte[] pdf) throws IOException {
         try (PdfReader lector = new PdfReader(pdf)) {
             return new PdfTextExtractor(lector).getTextFromPage(1);

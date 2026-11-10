@@ -5,6 +5,8 @@ import com.ferreteria.dto.comun.PaginaResponse;
 import com.ferreteria.dto.inventario.LineaProductoRequest;
 import com.ferreteria.dto.inventario.TrasladoRequest;
 import com.ferreteria.dto.inventario.TrasladoResponse;
+import com.ferreteria.entity.Empresa;
+import com.ferreteria.entity.Stock;
 import com.ferreteria.entity.Traslado;
 import com.ferreteria.entity.TrasladoDetalle;
 import com.ferreteria.entity.Ubicacion;
@@ -13,22 +15,28 @@ import com.ferreteria.entity.enums.EstadoTraslado;
 import com.ferreteria.entity.enums.TipoMovimiento;
 import com.ferreteria.exception.RecursoNoEncontradoException;
 import com.ferreteria.exception.ReglaNegocioException;
+import com.ferreteria.repository.EmpresaRepository;
 import com.ferreteria.repository.Especificaciones;
+import com.ferreteria.repository.StockRepository;
 import com.ferreteria.repository.TrasladoRepository;
 import com.ferreteria.security.AccesoUbicacionService;
 import com.ferreteria.security.UsuarioActual;
+import com.ferreteria.service.documentos.TrasladoPdf;
 import com.ferreteria.service.stock.LineaMovimiento;
 import com.ferreteria.service.stock.MovimientoStockService;
 import com.ferreteria.service.stock.OrigenMovimiento;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Traslados entre ubicaciones en dos pasos:
@@ -41,6 +49,9 @@ public class TrasladoService {
 
     private static final int MAX_OBSERVACION = 300;
 
+    private final EmpresaRepository empresaRepository;
+    private final StockRepository stockRepository;
+    private final TrasladoPdf trasladoPdf;
     private final TrasladoRepository trasladoRepository;
     private final MovimientoStockService movimientoStock;
     private final AccesoUbicacionService accesoUbicacion;
@@ -74,6 +85,29 @@ public class TrasladoService {
                 .orElseThrow(() -> new RecursoNoEncontradoException("Traslado", id));
         validarParticipa(traslado);
         return TrasladoResponse.completo(traslado);
+    }
+
+    /**
+     * Guia de traslado en PDF (mismo control de acceso que ver el traslado). El membrete usa la empresa de la tienda
+     * destino (o del origen; si ninguna tiene, la primera empresa activa) y cada producto lleva su ubicacion fisica en
+     * el origen para alistarlo.
+     */
+    @Transactional(readOnly = true)
+    public byte[] generarGuia(Long id) {
+        Traslado traslado = trasladoRepository.findById(id)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Traslado", id));
+        validarParticipa(traslado);
+        Empresa empresa = traslado.getDestino().getEmpresa() != null ? traslado.getDestino().getEmpresa()
+                : traslado.getOrigen().getEmpresa() != null ? traslado.getOrigen().getEmpresa()
+                : empresaRepository.findAll(Sort.by("id")).stream().filter(Empresa::isActivo).findFirst()
+                .orElseThrow(() -> new ReglaNegocioException("Registre una empresa para imprimir la guia"));
+        Map<Long, String> ubicaciones = new HashMap<>();
+        for (TrasladoDetalle d : traslado.getDetalles()) {
+            stockRepository.findByProductoIdAndUbicacionId(d.getProducto().getId(), traslado.getOrigen().getId())
+                    .map(Stock::getUbicacionFisica)
+                    .ifPresent(u -> ubicaciones.put(d.getProducto().getId(), u));
+        }
+        return trasladoPdf.generar(traslado, empresa, ubicaciones);
     }
 
     @Transactional

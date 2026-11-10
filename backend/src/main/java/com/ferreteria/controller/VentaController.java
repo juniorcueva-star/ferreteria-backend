@@ -61,6 +61,13 @@ public class VentaController {
         return RespuestaPdf.de(ventaService.generarPdf(id), "nota-venta-" + id + ".pdf", descargar);
     }
 
+    @Operation(summary = "Ticket de 80 mm", description = "Nota de venta para tiquetera termica (80 mm de ancho). "
+            + "Se muestra para imprimir")
+    @GetMapping(value = "/{id}/ticket", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<byte[]> ticket(@PathVariable Long id) {
+        return RespuestaPdf.de(ventaService.generarTicket(id), "ticket-" + id + ".pdf", false);
+    }
+
     @Operation(summary = "Listar ventas", description = "Filtros: ubicacionId, usuarioId (vendedor), clienteId, "
             + "cajaId, condicion, estado, conSaldo (true = con deuda pendiente), desde, hasta")
     @GetMapping

@@ -16,6 +16,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -54,6 +56,15 @@ public class TrasladoController {
     @GetMapping("/{id}")
     public TrasladoResponse obtener(@PathVariable Long id) {
         return trasladoService.obtener(id);
+    }
+
+    @Operation(summary = "Guia de traslado en PDF", description = "Acompana la mercaderia: membrete, origen, destino, "
+            + "productos con su ubicacion fisica en el origen y firmas. descargar=true lo descarga; si no, se muestra "
+            + "para imprimir. Quien participa en el traslado o el ADMIN")
+    @GetMapping(value = "/{id}/guia", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<byte[]> descargarGuia(@PathVariable Long id,
+                                                @RequestParam(defaultValue = "false") boolean descargar) {
+        return RespuestaPdf.de(trasladoService.generarGuia(id), "guia-traslado-" + id + ".pdf", descargar);
     }
 
     @Operation(summary = "Enviar traslado", description = "Resta el stock del origen. Queda ENVIADO hasta que el "
