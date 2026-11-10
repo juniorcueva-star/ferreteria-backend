@@ -94,6 +94,12 @@ public class SecurityConfig {
                 // Compras
                 .requestMatchers(HttpMethod.POST, "/api/compras/*/anular").hasRole(ADMIN)
                 .requestMatchers("/api/compras/**", "/api/proveedores/**").hasAnyRole(ADMIN, ALMACENERO)
+                // Pedidos de reposicion: la tienda pide, el almacen atiende o rechaza
+                .requestMatchers(HttpMethod.POST, "/api/solicitudes-reposicion/*/atender",
+                        "/api/solicitudes-reposicion/*/rechazar").hasAnyRole(ADMIN, ALMACENERO)
+                .requestMatchers(HttpMethod.POST, "/api/solicitudes-reposicion", "/api/solicitudes-reposicion/*/anular")
+                .hasAnyRole(ADMIN, VENDEDOR)
+                .requestMatchers(HttpMethod.GET, "/api/solicitudes-reposicion/**").authenticated()
                 // Inventario y traslados
                 .requestMatchers(HttpMethod.POST, "/api/traslados/*/recibir").authenticated()
                 .requestMatchers(HttpMethod.POST, "/api/traslados", "/api/traslados/*/anular")

@@ -377,3 +377,10 @@ Registro de las decisiones de diseno tomadas durante el desarrollo (que se decid
   los ultimos 30 dias (el VENDEDOR, su tienda; solo activos); el punto de venta los muestra cuando el buscador esta
   vacio. En el frontend: billetes rapidos ("Paga con: Exacto, S/ 10, 20, 50...", el siguiente multiplo de 10, 20,
   50, 100 y 200 que alcanza el total) y atajos de teclado F2 (buscar) y F9 (cobrar).
+- **D103. Pedidos de reposicion (tienda -> almacen).** V16 crea `solicitud_reposicion` (SR-000001) y su detalle en
+  unidad base. La tienda (VENDEDOR o ADMIN) pide; el almacen (ALMACENERO o ADMIN) lo atiende y se crea un traslado
+  normal con `TrasladoService.enviar` (puede enviar menos; 0 = no se envia), o lo rechaza con motivo; la tienda lo
+  anula mientras esta pendiente. El pedido no mueve stock: lo mueve el traslado, que la tienda recibe como siempre.
+  El VENDEDOR solo ve los de su tienda; el ALMACENERO ve todos. `GET /sugerencias`: productos de una tienda en su
+  stock minimo con cantidad sugerida = 2 x minimo - stock (enteros por unidad), sin pasar de lo que hay en los
+  almacenes; se usa para pedir ("Agregar lo que esta en su stock minimo") y para el "Traslado sugerido" del almacen.

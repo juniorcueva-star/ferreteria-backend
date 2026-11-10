@@ -14,6 +14,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -53,4 +54,28 @@ public interface StockRepository extends JpaRepository<Stock, Long>, JpaSpecific
     @Override
     @EntityGraph(attributePaths = {"producto", "ubicacion"})
     Page<Stock> findAll(Specification<Stock> spec, Pageable pageable);
+
+    /** Productos activos de una ubicacion que llegaron a su stock minimo (minimo mayor que 0). */
+    @Query("""
+            select s from Stock s join fetch s.producto p
+            where s.ubicacion.id = :ubicacionId and s.stockMinimo > 0 and s.cantidad <= s.stockMinimo
+              and p.activo = true
+            order by p.nombre
+            """)
+    List<Stock> enMinimo(@Param("ubicacionId") Long ubicacionId);
+
+    /** Stock de cada producto sumando los almacenes. */
+    @Query("""
+            select s.producto.id as productoId, sum(s.cantidad) as cantidad from Stock s
+            where s.ubicacion.tipo = com.ferreteria.entity.enums.TipoUbicacion.ALMACEN
+              and s.producto.id in :productoIds
+            group by s.producto.id
+            """)
+    List<StockAlmacen> enAlmacenes(@Param("productoIds") Collection<Long> productoIds);
+
+    interface StockAlmacen {
+        Long getProductoId();
+
+        BigDecimal getCantidad();
+    }
 }

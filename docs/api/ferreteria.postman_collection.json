@@ -2267,6 +2267,130 @@
           ]
         }
       ]
+    },
+    {
+      "name": "15. Pedidos de reposicion",
+      "item": [
+        {
+          "name": "Sugerencias de la tienda",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_vendedor}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api/solicitudes-reposicion/sugerencias",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "solicitudes-reposicion",
+                "sugerencias"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "La tienda pide 20 tuercas",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_vendedor}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api/solicitudes-reposicion",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "solicitudes-reposicion"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"observacion\": \"Se acaban por los pernos completos\",\n  \"detalles\": [\n    {\n      \"productoId\": 16,\n      \"cantidad\": 20\n    }\n  ]\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) pm.collectionVariables.set('solicitud_id', pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "El almacen atiende enviando 15",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_almacen}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api/solicitudes-reposicion/{{solicitud_id}}/atender",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api",
+                "solicitudes-reposicion",
+                "{{solicitud_id}}",
+                "atender"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"detalles\": [\n    {\n      \"productoId\": 16,\n      \"cantidad\": 15\n    }\n  ]\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
     }
   ],
   "variable": [

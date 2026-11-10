@@ -645,3 +645,37 @@ Content-Type: application/json
     { "completoId": {{r53.response.body.$.id}}, "cantidad": 50 }
   ]
 }
+
+
+######################################################################
+# 15. Pedidos de reposicion (tienda -> almacen)
+######################################################################
+
+###
+# Productos de la Tienda Centro en su stock minimo y cuanto pedir (espera 200)
+# @name r56
+GET {{base}}/api/solicitudes-reposicion/sugerencias
+Authorization: Bearer {{r02.response.body.$.token}}
+
+###
+# La tienda pide 20 tuercas al almacen (espera 201)
+# @name r57
+POST {{base}}/api/solicitudes-reposicion
+Authorization: Bearer {{r02.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "observacion": "Se acaban por los pernos completos",
+  "detalles": [ { "productoId": 16, "cantidad": 20 } ]
+}
+
+###
+# El almacen lo atiende enviando 15 (crea el traslado) (espera 200)
+# @name r58
+POST {{base}}/api/solicitudes-reposicion/{{r57.response.body.$.id}}/atender
+Authorization: Bearer {{r03.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "detalles": [ { "productoId": 16, "cantidad": 15 } ]
+}
