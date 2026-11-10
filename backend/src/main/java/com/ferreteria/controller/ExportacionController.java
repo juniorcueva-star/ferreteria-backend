@@ -55,6 +55,21 @@ public class ExportacionController {
         return excel(exportacionService.deudores(ubicacionId), "deudores.xlsx");
     }
 
+    @Operation(summary = "Pedido sugerido en Excel", description = "Lo que conviene comprar, con ultimo proveedor y "
+            + "costo. ADMIN (indica ubicacionId) y ALMACENERO (su almacen)")
+    @GetMapping("/pedido-sugerido")
+    public ResponseEntity<byte[]> pedidoSugerido(@RequestParam(required = false) Long ubicacionId) {
+        return excel(exportacionService.pedidoSugerido(ubicacionId), "pedido-sugerido.xlsx");
+    }
+
+    @Operation(summary = "Valor del inventario en Excel", description = "Con diasSinSalida, solo los productos que no "
+            + "salen hace al menos esos dias. ADMIN y ALMACENERO")
+    @GetMapping("/valor-inventario")
+    public ResponseEntity<byte[]> valorInventario(@RequestParam(required = false) Long ubicacionId,
+                                                  @RequestParam(required = false) Integer diasSinSalida) {
+        return excel(exportacionService.valorInventario(ubicacionId, diasSinSalida), "valor-inventario.xlsx");
+    }
+
     private static ResponseEntity<byte[]> excel(byte[] contenido, String nombre) {
         return ResponseEntity.ok()
                 .contentType(EXCEL)

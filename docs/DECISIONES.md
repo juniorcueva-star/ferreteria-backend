@@ -384,3 +384,10 @@ Registro de las decisiones de diseno tomadas durante el desarrollo (que se decid
   El VENDEDOR solo ve los de su tienda; el ALMACENERO ve todos. `GET /sugerencias`: productos de una tienda en su
   stock minimo con cantidad sugerida = 2 x minimo - stock (enteros por unidad), sin pasar de lo que hay en los
   almacenes; se usa para pedir ("Agregar lo que esta en su stock minimo") y para el "Traslado sugerido" del almacen.
+- **D104. Reportes del almacen y ubicacion fisica.** `GET /api/reportes/pedido-sugerido`: productos de una ubicacion
+  (normalmente el almacen) en su stock minimo, cuanto comprar (2 x minimo - stock), ultimo proveedor, ultimo costo
+  por unidad base (de la ultima compra REGISTRADA) y monto estimado. `GET /api/reportes/valor-inventario`: cantidad x
+  costo de la ultima compra por producto y ubicacion, con la ultima salida (movimiento con cantidad negativa: venta,
+  traslado o ajuste) y `diasSinSalida` para ver lo que no se mueve; los productos sin compras no suman al valor y se
+  cuentan aparte. Ambos con Excel; solo ADMIN y ALMACENERO. V17 agrega `stock.ubicacion_fisica` ("Pasillo 3 -
+  Estante B"), que el ALMACENERO edita en su almacen (`PUT /api/inventario/stock/ubicacion-fisica`).

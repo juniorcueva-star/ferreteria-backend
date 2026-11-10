@@ -48,6 +48,10 @@ public class Stock {
     @Column(name = "stock_minimo", nullable = false, precision = 14, scale = 3)
     private BigDecimal stockMinimo = BigDecimal.ZERO;
 
+    /** Donde esta el producto dentro de la ubicacion, Ej: "Pasillo 3 - Estante B" */
+    @Column(name = "ubicacion_fisica", length = 40)
+    private String ubicacionFisica;
+
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private OffsetDateTime updatedAt;

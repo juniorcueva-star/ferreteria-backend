@@ -3,9 +3,12 @@ package com.ferreteria.controller;
 import com.ferreteria.dto.comun.PaginaResponse;
 import com.ferreteria.dto.inventario.StockResponse;
 import com.ferreteria.dto.reportes.ComprasPorProveedorResponse;
+import com.ferreteria.dto.reportes.PedidoSugeridoResponse;
 import com.ferreteria.dto.reportes.ProductoVendidoResponse;
 import com.ferreteria.dto.reportes.TrasladosPorTiendaResponse;
+import com.ferreteria.dto.reportes.ValorInventarioResponse;
 import com.ferreteria.dto.reportes.VentasPorTiendaResponse;
+import com.ferreteria.service.ReporteAlmacenService;
 import com.ferreteria.service.ReporteService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -20,6 +23,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Tag(name = "16. Reportes", description = "Reportes por rango de fechas (AAAA-MM-DD, dias de Lima). Quien no es "
         + "ADMIN solo ve su ubicacion")
@@ -28,6 +32,7 @@ import java.time.LocalDate;
 @RequiredArgsConstructor
 public class ReporteController {
 
+    private final ReporteAlmacenService reporteAlmacenService;
     private final ReporteService reporteService;
 
     @Operation(summary = "Ventas por tienda", description = "Cantidad y montos de ventas (contado, credito, saldo "
@@ -80,5 +85,22 @@ public class ReporteController {
     public PaginaResponse<StockResponse> stockBajo(@RequestParam(required = false) Long ubicacionId,
                                                    @ParameterObject @PageableDefault(size = 20, sort = "producto.nombre") Pageable pageable) {
         return reporteService.stockBajo(ubicacionId, pageable);
+    }
+
+    @Operation(summary = "Pedido sugerido al proveedor", description = "Productos de la ubicacion (normalmente el "
+            + "almacen) que llegaron a su minimo: cuanto comprar (hasta el doble del minimo), ultimo proveedor y ultimo "
+            + "costo. ADMIN (indica ubicacionId) y ALMACENERO (su almacen)")
+    @GetMapping("/pedido-sugerido")
+    public List<PedidoSugeridoResponse> pedidoSugerido(@RequestParam(required = false) Long ubicacionId) {
+        return reporteAlmacenService.pedidoSugerido(ubicacionId);
+    }
+
+    @Operation(summary = "Valor del inventario y productos sin salida", description = "Cantidad x costo de la ultima "
+            + "compra por producto y ubicacion, con los dias desde su ultima salida. diasSinSalida filtra los que no "
+            + "salen hace al menos esos dias. ADMIN y ALMACENERO (su almacen)")
+    @GetMapping("/valor-inventario")
+    public ValorInventarioResponse valorInventario(@RequestParam(required = false) Long ubicacionId,
+                                                   @RequestParam(required = false) Integer diasSinSalida) {
+        return reporteAlmacenService.valorInventario(ubicacionId, diasSinSalida);
     }
 }

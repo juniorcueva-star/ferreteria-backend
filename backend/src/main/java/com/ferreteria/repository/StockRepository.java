@@ -78,4 +78,12 @@ public interface StockRepository extends JpaRepository<Stock, Long>, JpaSpecific
 
         BigDecimal getCantidad();
     }
+
+    /** Stock con cantidad mayor que 0 de una ubicacion (o de todas si es null), con su producto. */
+    @Query("""
+            select s from Stock s join fetch s.producto p join fetch s.ubicacion u
+            where s.cantidad > 0 and (:ubicacionId is null or u.id = :ubicacionId)
+            order by p.nombre, u.nombre
+            """)
+    List<Stock> conCantidad(@Param("ubicacionId") Long ubicacionId);
 }

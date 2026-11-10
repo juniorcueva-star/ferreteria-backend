@@ -9,6 +9,7 @@ import com.ferreteria.dto.inventario.LineaProductoRequest;
 import com.ferreteria.dto.inventario.ResumenStockResponse;
 import com.ferreteria.dto.inventario.StockMinimoRequest;
 import com.ferreteria.dto.inventario.StockResponse;
+import com.ferreteria.dto.inventario.UbicacionFisicaRequest;
 import com.ferreteria.entity.MovimientoInventario;
 import com.ferreteria.entity.Producto;
 import com.ferreteria.entity.Stock;
@@ -135,6 +136,19 @@ public class InventarioService {
                     + producto.getCodigo() + " " + producto.getNombre() + " en " + ubicacion.getNombre() + ": "
                     + new AuditoriaService.Cambios().campo("", anterior, stock.getStockMinimo()).toString().substring(2));
         }
+        return StockResponse.desde(stock);
+    }
+
+    /** Donde esta el producto dentro de la ubicacion (Ej: "Pasillo 3 - Estante B"). */
+    @Transactional
+    public StockResponse definirUbicacionFisica(UbicacionFisicaRequest request) {
+        Producto producto = buscador.productoActivo(request.productoId());
+        Ubicacion ubicacion = buscador.ubicacionActiva(accesoUbicacion.ubicacionParaOperar(request.ubicacionId()));
+        stockRepository.crearSiNoExiste(producto.getId(), ubicacion.getId());
+        Stock stock = stockRepository.bloquear(producto.getId(), ubicacion.getId()).orElseThrow();
+        String nueva = request.ubicacionFisica() == null || request.ubicacionFisica().isBlank()
+                ? null : request.ubicacionFisica().trim();
+        stock.setUbicacionFisica(nueva);
         return StockResponse.desde(stock);
     }
 

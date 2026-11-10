@@ -22,6 +22,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Libro de Excel (.xlsx) con el estilo del negocio: titulo, subtitulo, fila de titulos en amarillo, filtros,
@@ -130,6 +131,10 @@ public final class LibroExcel implements AutoCloseable {
         } catch (IOException e) {
             // El libro esta en memoria: no hay recurso externo que cerrar
         }
+    }
+
+    public static String soles(BigDecimal monto) {
+        return String.format(Locale.US, "S/ %,.2f", monto);
     }
 
     private void escribir(Cell celda, Tipo tipo, Object valor) {

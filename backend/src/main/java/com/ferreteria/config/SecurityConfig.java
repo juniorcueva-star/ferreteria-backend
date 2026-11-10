@@ -108,6 +108,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/inventario/ajustes").hasAnyRole(ADMIN, ALMACENERO)
                 .requestMatchers(HttpMethod.POST, "/api/inventario/inicial").hasRole(ADMIN)
                 .requestMatchers(HttpMethod.PUT, "/api/inventario/stock/minimo").hasRole(ADMIN)
+                .requestMatchers(HttpMethod.PUT, "/api/inventario/stock/ubicacion-fisica").hasAnyRole(ADMIN, ALMACENERO)
                 .requestMatchers(HttpMethod.GET, "/api/inventario/**").authenticated()
                 // Punto de venta
                 .requestMatchers("/api/clientes/**", "/api/cajas/**", "/api/ventas/**", "/api/fiado/**",
@@ -124,6 +125,9 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/reportes/excel/ventas", "/api/reportes/excel/deudores")
                 .hasAnyRole(ADMIN, VENDEDOR)
                 .requestMatchers(HttpMethod.GET, "/api/reportes/excel/stock").authenticated()
+                .requestMatchers(HttpMethod.GET, "/api/reportes/pedido-sugerido", "/api/reportes/valor-inventario",
+                        "/api/reportes/excel/pedido-sugerido", "/api/reportes/excel/valor-inventario")
+                .hasAnyRole(ADMIN, ALMACENERO)
                 // Cualquier otra ruta o metodo no listado arriba queda cerrado
                 .anyRequest().denyAll();
     }

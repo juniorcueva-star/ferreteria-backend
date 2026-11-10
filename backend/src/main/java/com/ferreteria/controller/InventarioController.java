@@ -6,6 +6,7 @@ import com.ferreteria.dto.inventario.InventarioInicialRequest;
 import com.ferreteria.dto.inventario.KardexResponse;
 import com.ferreteria.dto.inventario.ResumenStockResponse;
 import com.ferreteria.dto.inventario.StockMinimoRequest;
+import com.ferreteria.dto.inventario.UbicacionFisicaRequest;
 import com.ferreteria.dto.inventario.StockResponse;
 import com.ferreteria.entity.enums.TipoMovimiento;
 import com.ferreteria.service.InventarioService;
@@ -65,6 +66,13 @@ public class InventarioController {
             @RequestParam(required = false) Long categoriaId,
             @ParameterObject @PageableDefault(size = 20, sort = "nombre") Pageable pageable) {
         return inventarioService.resumirStock(productoIds, texto, categoriaId, pageable);
+    }
+
+    @Operation(summary = "Ubicacion fisica de un producto", description = "Donde esta dentro de la ubicacion (Ej: "
+            + "Pasillo 3 - Estante B). El ALMACENERO en su almacen; el ADMIN en cualquiera (indica ubicacionId)")
+    @PutMapping("/stock/ubicacion-fisica")
+    public StockResponse definirUbicacionFisica(@Valid @RequestBody UbicacionFisicaRequest request) {
+        return inventarioService.definirUbicacionFisica(request);
     }
 
     @Operation(summary = "Definir stock minimo de un producto en una ubicacion")

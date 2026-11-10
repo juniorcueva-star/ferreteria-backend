@@ -2,7 +2,9 @@ package com.ferreteria.service;
 
 import com.ferreteria.dto.fiado.DeudorResponse;
 import com.ferreteria.dto.inventario.StockResponse;
+import com.ferreteria.dto.reportes.PedidoSugeridoResponse;
 import com.ferreteria.dto.reportes.ProductoVendidoResponse;
+import com.ferreteria.dto.reportes.ValorInventarioResponse;
 import com.ferreteria.dto.reportes.VentasPorTiendaResponse;
 import com.ferreteria.dto.ventas.VentaResponse;
 import com.ferreteria.entity.enums.CondicionVenta;
@@ -45,6 +47,7 @@ public class ExportacionService {
     private final ReporteService reporteService;
     private final InventarioService inventarioService;
     private final FiadoService fiadoService;
+    private final ReporteAlmacenService reporteAlmacenService;
     private final Calendario calendario;
 
     /** Rango por defecto: desde el inicio del mes hasta hoy (hora de Lima). */
@@ -142,6 +145,44 @@ public class ExportacionService {
                     deudas.stream().map(v -> Arrays.<Object>asList(v.fecha(), v.numeroDocumento(),
                             v.ubicacionNombre(), v.clienteNombre(), v.fechaVencimiento(), v.total(),
                             v.saldoPendiente())).toList());
+            return libro.aBytes();
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public byte[] pedidoSugerido(Long ubicacionId) {
+        List<PedidoSugeridoResponse> filas = reporteAlmacenService.pedidoSugerido(ubicacionId);
+        try (LibroExcel libro = new LibroExcel()) {
+            libro.hoja("Pedido sugerido", "Pedido sugerido al proveedor (productos en su stock minimo)",
+                    "Al " + FECHA_TEXTO.format(calendario.hoy()) + generado(), List.of(
+                            new Columna("Código", TEXTO, 12), new Columna("Producto", TEXTO, 36),
+                            new Columna("Unidad", TEXTO, 10), new Columna("Stock", CANTIDAD, 10),
+                            new Columna("Mínimo", CANTIDAD, 10), new Columna("Comprar", CANTIDAD, 11),
+                            new Columna("Último proveedor", TEXTO, 34), new Columna("Última compra", FECHA, 14),
+                            new Columna("Último costo", SOLES, 13), new Columna("Monto estimado", SOLES, 15)),
+                    filas.stream().map(f -> Arrays.<Object>asList(f.productoCodigo(), f.productoNombre(),
+                            unidad(f.unidadBase().name()), f.stock(), f.stockMinimo(), f.cantidadSugerida(),
+                            f.ultimoProveedor(), f.fechaUltimaCompra(), f.ultimoCosto(), f.montoEstimado())).toList());
+            return libro.aBytes();
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public byte[] valorInventario(Long ubicacionId, Integer diasSinSalida) {
+        ValorInventarioResponse valor = reporteAlmacenService.valorInventario(ubicacionId, diasSinSalida);
+        try (LibroExcel libro = new LibroExcel()) {
+            libro.hoja("Valor del inventario", diasSinSalida == null ? "Valor del inventario"
+                            : "Productos sin salida hace " + diasSinSalida + " dias o mas",
+                    "Total: " + LibroExcel.soles(valor.valorTotal()) + " · " + valor.productosSinCosto()
+                            + " sin costo conocido" + generado(), List.of(
+                            new Columna("Código", TEXTO, 12), new Columna("Producto", TEXTO, 36),
+                            new Columna("Ubicación", TEXTO, 18), new Columna("Cantidad", CANTIDAD, 11),
+                            new Columna("Unidad", TEXTO, 10), new Columna("Costo unitario", SOLES, 14),
+                            new Columna("Valor", SOLES, 14), new Columna("Última salida", FECHA_HORA, 17),
+                            new Columna("Días sin salida", ENTERO, 15)),
+                    valor.filas().stream().map(f -> Arrays.<Object>asList(f.productoCodigo(), f.productoNombre(),
+                            f.ubicacionNombre(), f.cantidad(), unidad(f.unidadBase().name()), f.costoUnitario(),
+                            f.valor(), f.ultimaSalida(), f.diasSinSalida())).toList());
             return libro.aBytes();
         }
     }
