@@ -191,7 +191,7 @@ Todos los errores responden con `{ "codigo", "mensaje", "detalle", "fecha" }`.
 }
 ```
 
-Anota el `id` del producto y los `id` de sus presentaciones (en una base recien creada: producto 16, "Unidad" 27 y "Caja x 12" 28). Para subir una foto: `POST /api/productos/{id}/imagen`
+Anota el `id` del producto y los `id` de sus presentaciones (en una base recien creada: producto 18, "Unidad" 31 y "Caja x 12" 32). Para subir una foto: `POST /api/productos/{id}/imagen`
 (campo `archivo`, JPG/PNG/WEBP de hasta 2 MB).
 
 **b) Compras** (usuario `almacen1`) - `08. Compras` -> `POST /api/compras` (cambia los ids por los tuyos):
@@ -271,6 +271,13 @@ Todos menos EFECTIVO piden `numeroOperacion`.
   `GET /api/cotizaciones/{id}/enlace-whatsapp?telefono=987654321`, `POST /api/cotizaciones/{id}/enviar-correo`
   (responde 422 si no configuraste `MAIL_*`) y `POST /api/cotizaciones/{id}/convertir-venta` (con la caja abierta)
 
+**j) Completos** (usuario `admin`): el perno hexagonal (producto 3) ya trae los completos "Completo" (perno + tuerca
++ arandela) y "Con tuerca"; la bisagra (producto 4) trae "Con tornillos". Para crear otro:
+`POST /api/productos/3/completos` con
+`{ "nombre": "Con 2 arandelas", "componentes": [ { "presentacionId": 6, "cantidad": 1 }, { "presentacionId": 27, "cantidad": 1 }, { "presentacionId": 29, "cantidad": 2 } ] }`
+(sin `precioVenta` usa la suma de las piezas). Para venderlo o cotizarlo, la linea lleva `completoId` en vez de
+`presentacionId`; cada pieza baja de stock al vender.
+
 **h) Seguridad** - prueba que:
 
 - sin token cualquier endpoint responde **401**;
@@ -285,7 +292,7 @@ Con la aplicacion recien levantada y la base **recien creada** (ver punto 10):
 
 - **VS Code + REST Client:** abre `docs/api/ferreteria.http` y pulsa *Send Request* en cada peticion, en orden.
 - **Postman:** *Import* -> `docs/api/ferreteria.postman_collection.json` -> clic derecho en la coleccion -> *Run*.
-  Son 52 peticiones (las 17 ultimas son de la segunda fase y de las mejoras) y cada una comprueba el codigo HTTP esperado.
+  Son 55 peticiones (las 20 ultimas son de la segunda fase y de las mejoras) y cada una comprueba el codigo HTTP esperado.
 
 ---
 

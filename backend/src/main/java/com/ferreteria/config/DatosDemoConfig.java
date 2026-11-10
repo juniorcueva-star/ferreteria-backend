@@ -2,6 +2,8 @@ package com.ferreteria.config;
 
 import com.ferreteria.entity.Categoria;
 import com.ferreteria.entity.Cliente;
+import com.ferreteria.entity.Completo;
+import com.ferreteria.entity.CompletoComponente;
 import com.ferreteria.entity.Empresa;
 import com.ferreteria.entity.Presentacion;
 import com.ferreteria.entity.Producto;
@@ -18,6 +20,7 @@ import com.ferreteria.entity.enums.TipoUbicacion;
 import com.ferreteria.entity.enums.UnidadBase;
 import com.ferreteria.repository.CategoriaRepository;
 import com.ferreteria.repository.ClienteRepository;
+import com.ferreteria.repository.CompletoRepository;
 import com.ferreteria.repository.EmpresaRepository;
 import com.ferreteria.repository.ProductoRepository;
 import com.ferreteria.repository.ProveedorRepository;
@@ -71,6 +74,7 @@ public class DatosDemoConfig implements ApplicationRunner {
             "CLA-0200", new String[]{"Con cabeza", null, "2"});
 
     private final EmpresaRepository empresaRepository;
+    private final CompletoRepository completoRepository;
     private final UbicacionRepository ubicacionRepository;
     private final UsuarioRepository usuarioRepository;
     private final CategoriaRepository categoriaRepository;
@@ -163,13 +167,18 @@ public class DatosDemoConfig implements ApplicationRunner {
                 producto("CAD-0516", "Cadena galvanizada 5/16\"", "Cadenas y cables", categorias, UnidadBase.METRO,
                         p("Metro", "1", "9.00")),
                 producto("MAN-JAR12", "Manguera de jardin 1/2\"", "Otros", categorias, UnidadBase.METRO,
-                        p("Metro", "1", "2.50"), p("Rollo 25 m", "25", "55.00")));
+                        p("Metro", "1", "2.50"), p("Rollo 25 m", "25", "55.00")),
+                producto("TUE-38", "Tuerca hexagonal 3/8\"", "Pernos y tuercas", categorias, UnidadBase.UNIDAD,
+                        p("Unidad", "1", "0.20"), p("Ciento", "100", "15.00")),
+                producto("ARA-38", "Arandela plana 3/8\"", "Pernos y tuercas", categorias, UnidadBase.UNIDAD,
+                        p("Unidad", "1", "0.10"), p("Ciento", "100", "7.00")));
 
         // Stock inicial (unidad base): almacen, Tienda Centro, Tienda Norte
         int[][] cantidades = {
                 {20000, 3000, 2000}, {5000, 800, 600}, {1000, 150, 100}, {300, 40, 30}, {60, 10, 8},
                 {40, 8, 6}, {200, 40, 30}, {150, 30, 25}, {120, 20, 15}, {50, 10, 8},
-                {300, 50, 40}, {200, 30, 25}, {2000, 300, 200}, {300, 50, 40}, {500, 100, 75}};
+                {300, 50, 40}, {200, 30, 25}, {2000, 300, 200}, {300, 50, 40}, {500, 100, 75},
+                {3000, 500, 400}, {3000, 500, 400}};
         List<Ubicacion> ubicaciones = List.of(almacen, centro, norte);
         for (int u = 0; u < ubicaciones.size(); u++) {
             int columna = u;
@@ -183,6 +192,31 @@ public class DatosDemoConfig implements ApplicationRunner {
         stockMinimo(productos.get(4), centro, "12");
         stockMinimo(productos.get(5), norte, "10");
         stockMinimo(productos.get(9), almacen, "60");
+
+        // Completos (pedido del dueno): el perno con tuerca y arandela, y la bisagra con sus tornillos
+        Producto perno = productos.get(2);
+        Producto tuerca = productos.get(15);
+        Producto arandela = productos.get(16);
+        completo(perno, "Completo", "1.00", perno, 1, tuerca, 1, arandela, 1);
+        completo(perno, "Con tuerca", "0.95", perno, 1, tuerca, 1);
+        completo(productos.get(3), "Con tornillos", "4.20", productos.get(3), 1, productos.get(1), 6);
+    }
+
+    /** Completo con sus piezas: pares (producto, cantidad) usando la presentacion principal de cada pieza. */
+    private void completo(Producto producto, String nombre, String precio, Object... piezas) {
+        Completo completo = new Completo();
+        completo.setProducto(producto);
+        completo.setNombre(nombre);
+        completo.setPrecioVenta(new BigDecimal(precio));
+        for (int i = 0; i < piezas.length; i += 2) {
+            Producto pieza = (Producto) piezas[i];
+            CompletoComponente componente = new CompletoComponente();
+            componente.setProducto(pieza);
+            componente.setPresentacion(pieza.getPresentaciones().getFirst());
+            componente.setCantidad(BigDecimal.valueOf((Integer) piezas[i + 1]));
+            completo.agregarComponente(componente);
+        }
+        completoRepository.save(completo);
     }
 
     private Empresa empresa(String ruc, String razonSocial, String nombreComercial) {

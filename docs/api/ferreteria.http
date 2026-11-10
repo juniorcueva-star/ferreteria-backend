@@ -605,3 +605,43 @@ Authorization: Bearer {{r02.response.body.$.token}}
 # @name r52
 GET {{base}}/api/auditoria?entidad=PRECIO
 Authorization: Bearer {{r01.response.body.$.token}}
+
+
+######################################################################
+# 14. Completos (pedido del dueno)
+######################################################################
+
+###
+# Crear un completo del perno hexagonal: perno + tuerca + 2 arandelas; sin precio usa la suma (espera 201)
+# @name r53
+POST {{base}}/api/productos/3/completos
+Authorization: Bearer {{r01.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "nombre": "Con 2 arandelas",
+  "componentes": [
+    { "presentacionId": 6, "cantidad": 1 },
+    { "presentacionId": 27, "cantidad": 1 },
+    { "presentacionId": 29, "cantidad": 2 }
+  ]
+}
+
+###
+# El producto muestra sus completos con precio, suma de piezas y composicion (espera 200)
+# @name r54
+GET {{base}}/api/productos/3
+Authorization: Bearer {{r02.response.body.$.token}}
+
+###
+# Cotizar 50 completos (la linea lleva completoId en vez de presentacionId) (espera 201)
+# @name r55
+POST {{base}}/api/cotizaciones
+Authorization: Bearer {{r02.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "detalles": [
+    { "completoId": {{r53.response.body.$.id}}, "cantidad": 50 }
+  ]
+}

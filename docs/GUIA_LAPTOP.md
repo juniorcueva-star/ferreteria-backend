@@ -190,3 +190,10 @@ momento, restaurar uno o guardarlos en una USB, sigue `docs/RESPALDOS.md`.
 | El backend dice `password authentication failed` | Cambiaste `DB_PASSWORD` después de crear la base: ejecuta `docker compose down -v` (borra la base de prueba) y repite el paso 4 |
 | No puedo entrar con `admin` | Revisa `ADMIN_PASSWORD` en `.env`; el usuario admin se crea con la clave que había la primera vez que arrancó |
 | La página dice "Error de conexión" | El backend (paso 5) no está corriendo o todavía no dice `Started` |
+
+## Completos (perno + tuerca + arandela)
+
+En **Productos → (editar un producto) → Completos** el ADMIN arma los completos: el producto con otras piezas a un
+precio propio. En una base nueva ya vienen de ejemplo: "Perno hexagonal 3/8 x 2" → Completo" (perno + tuerca +
+arandela), "Con tuerca", y "Bisagra capuchina 3" → Con tornillos" (bisagra + 6 tornillos). En **Ventas** aparecen
+como botones amarillos y al venderlos baja el stock de cada pieza.
