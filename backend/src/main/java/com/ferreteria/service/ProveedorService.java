@@ -8,6 +8,7 @@ import com.ferreteria.exception.DuplicadoException;
 import com.ferreteria.exception.RecursoNoEncontradoException;
 import com.ferreteria.repository.Especificaciones;
 import com.ferreteria.repository.ProveedorRepository;
+import com.ferreteria.util.Validar;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -56,10 +57,10 @@ public class ProveedorService {
     }
 
     private void copiarDatos(ProveedorRequest request, Proveedor proveedor) {
-        proveedor.setRuc(vacioANull(request.ruc()));
-        proveedor.setRazonSocial(request.razonSocial().trim());
-        proveedor.setContacto(vacioANull(request.contacto()));
-        proveedor.setTelefono(vacioANull(request.telefono()));
+        proveedor.setRuc(Validar.ruc(request.ruc(), false));
+        proveedor.setRazonSocial(Validar.conLetras(request.razonSocial(), "La razon social"));
+        proveedor.setContacto(Validar.nombrePersona(request.contacto(), "El contacto", false));
+        proveedor.setTelefono(Validar.telefono(request.telefono(), "Telefono"));
         proveedor.setEmail(vacioANull(request.email()));
         proveedor.setDireccion(vacioANull(request.direccion()));
         if (request.activo() != null) {

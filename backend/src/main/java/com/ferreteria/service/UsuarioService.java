@@ -17,6 +17,7 @@ import com.ferreteria.repository.Especificaciones;
 import com.ferreteria.repository.UbicacionRepository;
 import com.ferreteria.repository.UsuarioRepository;
 import com.ferreteria.security.AccesoUbicacionService;
+import com.ferreteria.util.Validar;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
@@ -62,7 +63,7 @@ public class UsuarioService {
         }
         Usuario usuario = new Usuario();
         usuario.setUsername(request.username());
-        usuario.setNombres(request.nombres().trim());
+        usuario.setNombres(Validar.nombrePersona(request.nombres(), "Los nombres", true));
         usuario.setRol(request.rol());
         usuario.setUbicacion(resolverUbicacion(request.rol(), request.ubicacionId()));
         usuario.setPasswordHash(passwordEncoder.encode(request.password()));
@@ -88,12 +89,12 @@ public class UsuarioService {
         }
         Ubicacion ubicacion = resolverUbicacion(request.rol(), request.ubicacionId());
         AuditoriaService.Cambios cambios = new AuditoriaService.Cambios()
-                .campo("Nombres", usuario.getNombres(), request.nombres().trim())
+                .campo("Nombres", usuario.getNombres(), Validar.nombrePersona(request.nombres(), "Los nombres", true))
                 .campo("Rol", usuario.getRol(), request.rol())
                 .campo("Ubicación", usuario.getUbicacion() == null ? null : usuario.getUbicacion().getNombre(),
                         ubicacion == null ? null : ubicacion.getNombre())
                 .campo("Activo", usuario.isActivo(), request.activo());
-        usuario.setNombres(request.nombres().trim());
+        usuario.setNombres(Validar.nombrePersona(request.nombres(), "Los nombres", true));
         usuario.setRol(request.rol());
         usuario.setUbicacion(ubicacion);
         usuario.setActivo(request.activo());

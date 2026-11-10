@@ -33,6 +33,7 @@ import com.ferreteria.service.imagen.ImagenGuardada;
 import com.ferreteria.service.imagen.TipoImagen;
 import com.ferreteria.util.BusquedaTexto;
 import com.ferreteria.util.Montos;
+import com.ferreteria.util.Validar;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -114,7 +115,7 @@ public class ProductoService {
 
         Producto producto = new Producto();
         producto.setCodigo(codigo);
-        producto.setNombre(request.nombre().trim());
+        producto.setNombre(Validar.conLetras(request.nombre(), "El nombre del producto"));
         producto.setDescripcion(request.descripcion());
         producto.setMarca(marca(request.marca()));
         producto.setCategoria(buscarCategoria(request.categoriaId()));
@@ -152,7 +153,7 @@ public class ProductoService {
         Categoria categoria = buscarCategoria(request.categoriaId());
         AuditoriaService.Cambios cambios = new AuditoriaService.Cambios()
                 .campo("Código", producto.getCodigo(), codigo)
-                .campo("Nombre", producto.getNombre(), request.nombre().trim())
+                .campo("Nombre", producto.getNombre(), Validar.conLetras(request.nombre(), "El nombre del producto"))
                 .campo("Descripción", producto.getDescripcion(), request.descripcion())
                 .campo("Marca", producto.getMarca(), marca(request.marca()))
                 .campo("Categoría", producto.getCategoria().getNombre(), categoria.getNombre())
@@ -161,7 +162,7 @@ public class ProductoService {
                 .campo("Acabado", producto.getAcabado(), request.acabado())
                 .campo("Medida", producto.getMedida(), request.medida());
         producto.setCodigo(codigo);
-        producto.setNombre(request.nombre().trim());
+        producto.setNombre(Validar.conLetras(request.nombre(), "El nombre del producto"));
         producto.setDescripcion(request.descripcion());
         producto.setMarca(marca(request.marca()));
         producto.setCategoria(categoria);
@@ -444,7 +445,7 @@ public class ProductoService {
     }
 
     private void copiarPresentacion(PresentacionRequest request, Presentacion presentacion) {
-        presentacion.setNombre(request.nombre().trim());
+        presentacion.setNombre(Validar.conLetras(request.nombre(), "El nombre de la presentacion"));
         presentacion.setFactor(Montos.cantidad(request.factor()));
         presentacion.setPrecioVenta(Montos.dinero(request.precioVenta()));
         presentacion.setCodigoBarras(normalizarCodigoBarras(request.codigoBarras()));

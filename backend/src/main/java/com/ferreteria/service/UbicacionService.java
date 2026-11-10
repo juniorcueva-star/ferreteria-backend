@@ -12,6 +12,7 @@ import com.ferreteria.exception.ReglaNegocioException;
 import com.ferreteria.repository.EmpresaRepository;
 import com.ferreteria.repository.Especificaciones;
 import com.ferreteria.repository.UbicacionRepository;
+import com.ferreteria.util.Validar;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -69,7 +70,7 @@ public class UbicacionService {
     }
 
     private void copiarDatos(UbicacionRequest request, Ubicacion ubicacion) {
-        ubicacion.setNombre(request.nombre().trim());
+        ubicacion.setNombre(Validar.conLetras(request.nombre(), "El nombre"));
         ubicacion.setDireccion(request.direccion());
         ubicacion.setEmpresa(resolverEmpresa(request));
         if (request.activo() != null) {

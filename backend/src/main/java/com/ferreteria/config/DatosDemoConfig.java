@@ -128,11 +128,11 @@ public class DatosDemoConfig implements ApplicationRunner {
         usuario("vendedor2", "Luis Ramos (Tienda Norte)", Rol.VENDEDOR, norte);
         usuario("almacen1", "Pedro Huaman (Almacen)", Rol.ALMACENERO, almacen);
 
-        proveedor("20100070970", "Aceros Arequipa Distribuidora S.A.", "Rosa Vega", "014567890");
+        proveedor("20100070970", "Aceros Arequipa Distribuidora S.A.", "Rosa Vega", "945678901");
         proveedor("20512345671", "Importadora Ferretera del Peru S.A.C.", "Jorge Salas", "987111222");
         cliente("Juan Perez Quispe", TipoDocumentoIdentidad.DNI, "41234567", "987654321");
-        cliente("Constructora Los Andes S.A.C.", TipoDocumentoIdentidad.RUC, "20512345678", "016543210");
-        cliente("Maria Lopez (vecina)", TipoDocumentoIdentidad.NINGUNO, null, "912345678");
+        cliente("Constructora Los Andes S.A.C.", TipoDocumentoIdentidad.RUC, "20512345678", "965432108");
+        cliente("Maria Lopez Rojas", TipoDocumentoIdentidad.NINGUNO, null, "912345678");
 
         Map<String, Categoria> categorias = categoriaRepository.findAll().stream()
                 .collect(Collectors.toMap(Categoria::getNombre, Function.identity()));

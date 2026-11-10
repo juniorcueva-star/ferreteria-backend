@@ -14,6 +14,7 @@ import com.ferreteria.repository.CompletoRepository;
 import com.ferreteria.repository.PresentacionRepository;
 import com.ferreteria.repository.ProductoRepository;
 import com.ferreteria.util.Montos;
+import com.ferreteria.util.Validar;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -93,7 +94,7 @@ public class CompletoService {
         }
         Map<Long, Presentacion> presentaciones = presentacionRepository.findByIdIn(List.copyOf(ids)).stream()
                 .collect(Collectors.toMap(Presentacion::getId, Function.identity()));
-        completo.setNombre(request.nombre().trim());
+        completo.setNombre(Validar.conLetras(request.nombre(), "El nombre del completo"));
         completo.setActivo(request.activo() == null || request.activo());
         for (CompletoRequest.Componente c : request.componentes()) {
             Presentacion presentacion = presentaciones.get(c.presentacionId());

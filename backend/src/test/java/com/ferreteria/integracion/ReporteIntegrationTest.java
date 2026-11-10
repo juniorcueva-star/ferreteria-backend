@@ -31,6 +31,13 @@ class ReporteIntegrationTest extends IntegracionTestBase {
         }
     }
 
+    /** Nombre distinto en cada llamada, solo con letras (los nombres de personas no llevan numeros). */
+    private static String nombreUnico() {
+        return Long.toString(System.nanoTime(), 26).chars()
+                .mapToObj(c -> String.valueOf((char) (Character.isDigit(c) ? 'a' + (c - '0') : c + 10)))
+                .reduce("", String::concat);
+    }
+
     private Long vender(String token, String condicion, Producto producto, int cantidad, Integer pago) throws Exception {
         Map<String, Object> venta = new java.util.HashMap<>(Map.of("condicion", condicion,
                 "detalles", List.of(Map.of("presentacionId", datos.presentacionId(producto, 0), "cantidad", cantidad))));
@@ -39,7 +46,7 @@ class ReporteIntegrationTest extends IntegracionTestBase {
         }
         if (condicion.equals("CREDITO")) {
             venta.put("clienteId", leerId(postCon(token, "/api/clientes",
-                    Map.of("nombre", "Cliente " + System.nanoTime())).andReturn(), "$.id"));
+                    Map.of("nombre", "Cliente " + nombreUnico())).andExpect(status().isCreated()).andReturn(), "$.id"));
         }
         return leerId(postCon(token, "/api/ventas", venta).andExpect(status().isCreated()).andReturn(), "$.id");
     }

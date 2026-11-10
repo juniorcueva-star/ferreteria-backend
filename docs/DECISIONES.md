@@ -391,3 +391,12 @@ Registro de las decisiones de diseno tomadas durante el desarrollo (que se decid
   traslado o ajuste) y `diasSinSalida` para ver lo que no se mueve; los productos sin compras no suman al valor y se
   cuentan aparte. Ambos con Excel; solo ADMIN y ALMACENERO. V17 agrega `stock.ubicacion_fisica` ("Pasillo 3 -
   Estante B"), que el ALMACENERO edita en su almacen (`PUT /api/inventario/stock/ubicacion-fisica`).
+- **D105. Validacion de datos escritos a mano (pedido del dueno).** `util/Validar` aplica en el servidor: celulares
+  de 9 digitos que empiezan con 9 (clientes, proveedores y empresa, que acepta varios separados por "/"; se guardan
+  sin espacios, o con formato en la empresa); nombres de personas solo con letras (clientes sin RUC, contacto del
+  proveedor, usuarios); razones sociales, productos, presentaciones, tiendas, categorias y completos con al menos una
+  letra; RUC de 11 digitos que empieza con 10, 15, 16, 17 o 20; carne de extranjeria de 9 a 12 letras o numeros.
+  Las cantidades, precios, montos y descuentos ya rechazaban negativos (Bean Validation, 400). En el frontend, el
+  campo `Entrada` filtra lo que se escribe segun `inputMode` (numeric: solo digitos; decimal: digitos y un separador;
+  tel: digitos y espacios), asi no se pueden escribir letras ni el signo menos, y los formularios validan con zod
+  las mismas reglas antes de enviar. Datos de demostracion ajustados (celulares y nombres validos).

@@ -8,6 +8,7 @@ import com.ferreteria.exception.DuplicadoException;
 import com.ferreteria.exception.RecursoNoEncontradoException;
 import com.ferreteria.repository.CategoriaRepository;
 import com.ferreteria.repository.Especificaciones;
+import com.ferreteria.util.Validar;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -30,7 +31,7 @@ public class CategoriaService {
 
     @Transactional
     public CategoriaResponse crear(CategoriaRequest request) {
-        String nombre = request.nombre().trim();
+        String nombre = Validar.conLetras(request.nombre(), "El nombre de la categoria");
         if (categoriaRepository.existsByNombreIgnoreCase(nombre)) {
             throw new DuplicadoException("Ya existe la categoria " + nombre);
         }
@@ -46,7 +47,7 @@ public class CategoriaService {
     public CategoriaResponse actualizar(Long id, CategoriaRequest request) {
         Categoria categoria = categoriaRepository.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Categoria", id));
-        String nombre = request.nombre().trim();
+        String nombre = Validar.conLetras(request.nombre(), "El nombre de la categoria");
         if (categoriaRepository.existsByNombreIgnoreCaseAndIdNot(nombre, id)) {
             throw new DuplicadoException("Ya existe la categoria " + nombre);
         }

@@ -9,6 +9,7 @@ import com.ferreteria.exception.DuplicadoException;
 import com.ferreteria.exception.RecursoNoEncontradoException;
 import com.ferreteria.repository.EmpresaRepository;
 import com.ferreteria.repository.Especificaciones;
+import com.ferreteria.util.Validar;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -57,16 +58,25 @@ public class EmpresaService {
         if (empresaRepository.existsByRucAndIdNot(request.ruc(), id)) {
             throw new DuplicadoException("Ya existe una empresa con el RUC " + request.ruc());
         }
-        AuditoriaService.Cambios cambios = new AuditoriaService.Cambios()
-                .campo("RUC", empresa.getRuc(), request.ruc())
-                .campo("Razón social", empresa.getRazonSocial(), request.razonSocial())
-                .campo("Nombre comercial", empresa.getNombreComercial(), request.nombreComercial())
-                .campo("Dirección", empresa.getDireccion(), request.direccion())
-                .campo("Teléfono", empresa.getTelefono(), request.telefono())
-                .campo("Lema", empresa.getLema(), request.lema())
-                .campo("Cuentas bancarias", empresa.getDatosBancarios(), request.datosBancarios())
-                .campo("Activa", empresa.isActivo(), request.activo() == null ? empresa.isActivo() : request.activo());
+        Empresa antes = new Empresa();
+        antes.setRuc(empresa.getRuc());
+        antes.setRazonSocial(empresa.getRazonSocial());
+        antes.setNombreComercial(empresa.getNombreComercial());
+        antes.setDireccion(empresa.getDireccion());
+        antes.setTelefono(empresa.getTelefono());
+        antes.setLema(empresa.getLema());
+        antes.setDatosBancarios(empresa.getDatosBancarios());
+        antes.setActivo(empresa.isActivo());
         copiarDatos(request, empresa);
+        AuditoriaService.Cambios cambios = new AuditoriaService.Cambios()
+                .campo("RUC", antes.getRuc(), empresa.getRuc())
+                .campo("Razón social", antes.getRazonSocial(), empresa.getRazonSocial())
+                .campo("Nombre comercial", antes.getNombreComercial(), empresa.getNombreComercial())
+                .campo("Dirección", antes.getDireccion(), empresa.getDireccion())
+                .campo("Teléfono", antes.getTelefono(), empresa.getTelefono())
+                .campo("Lema", antes.getLema(), empresa.getLema())
+                .campo("Cuentas bancarias", antes.getDatosBancarios(), empresa.getDatosBancarios())
+                .campo("Activa", antes.isActivo(), empresa.isActivo());
         if (cambios.hay()) {
             auditoria.registrar(EntidadAuditada.EMPRESA, empresa.getId(), "EDITAR", empresa.getRazonSocial() + ": "
                     + cambios);
@@ -75,11 +85,11 @@ public class EmpresaService {
     }
 
     private void copiarDatos(EmpresaRequest request, Empresa empresa) {
-        empresa.setRuc(request.ruc());
-        empresa.setRazonSocial(request.razonSocial().trim());
-        empresa.setNombreComercial(request.nombreComercial());
-        empresa.setDireccion(request.direccion());
-        empresa.setTelefono(textoOpcional(request.telefono()));
+        empresa.setRuc(Validar.ruc(request.ruc(), true));
+        empresa.setRazonSocial(Validar.conLetras(request.razonSocial(), "La razon social"));
+        empresa.setNombreComercial(Validar.conLetras(request.nombreComercial(), "El nombre comercial"));
+        empresa.setDireccion(textoOpcional(request.direccion()));
+        empresa.setTelefono(Validar.telefonos(request.telefono(), "Telefono / WhatsApp"));
         empresa.setLema(textoOpcional(request.lema()));
         empresa.setDatosBancarios(textoOpcional(request.datosBancarios()));
         if (request.activo() != null) {

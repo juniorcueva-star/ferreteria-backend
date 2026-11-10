@@ -10,6 +10,7 @@ import com.ferreteria.exception.RecursoNoEncontradoException;
 import com.ferreteria.exception.ReglaNegocioException;
 import com.ferreteria.repository.ClienteRepository;
 import com.ferreteria.repository.Especificaciones;
+import com.ferreteria.util.Validar;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -66,10 +67,13 @@ public class ClienteService {
                 throw new DuplicadoException("Ya existe un cliente con " + tipo + " " + numero);
             }
         }
-        cliente.setNombre(request.nombre().trim());
+        // Con RUC es una empresa (su razon social puede llevar numeros); si no, es una persona: solo letras
+        cliente.setNombre(tipo == TipoDocumentoIdentidad.RUC
+                ? Validar.conLetras(request.nombre(), "La razon social")
+                : Validar.nombrePersona(request.nombre(), "El nombre", true));
         cliente.setTipoDocumento(tipo);
         cliente.setNumeroDocumento(numero);
-        cliente.setTelefono(request.telefono());
+        cliente.setTelefono(Validar.telefono(request.telefono(), "Telefono"));
         cliente.setDireccion(request.direccion());
         if (request.activo() != null) {
             cliente.setActivo(request.activo());
@@ -81,15 +85,15 @@ public class ClienteService {
         boolean valido = switch (tipo) {
             case NINGUNO -> numero == null;
             case DNI -> numero != null && numero.matches("\\d{8}");
-            case RUC -> numero != null && numero.matches("\\d{11}");
-            case CE -> numero != null;
+            case RUC -> numero != null && numero.matches("(10|15|16|17|20)\\d{9}");
+            case CE -> numero != null && numero.matches("[A-Z0-9]{9,12}");
         };
         if (!valido) {
             throw new ReglaNegocioException(switch (tipo) {
                 case NINGUNO -> "Sin tipo de documento no se registra numero (use DNI, RUC o CE)";
                 case DNI -> "El DNI debe tener 8 digitos";
-                case RUC -> "El RUC debe tener 11 digitos";
-                case CE -> "Ingrese el numero de carne de extranjeria";
+                case RUC -> "El RUC debe tener 11 digitos y empezar con 10, 15, 16, 17 o 20";
+                case CE -> "El carne de extranjeria debe tener de 9 a 12 letras o numeros";
             });
         }
     }
