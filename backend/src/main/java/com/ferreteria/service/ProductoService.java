@@ -9,12 +9,13 @@ import com.ferreteria.dto.catalogo.ProductoActualizarRequest;
 import com.ferreteria.dto.catalogo.ProductoCrearRequest;
 import com.ferreteria.dto.catalogo.ProductoResponse;
 import com.ferreteria.dto.comun.PaginaResponse;
+import com.ferreteria.dto.reportes.ProductoVendidoResponse;
 import com.ferreteria.entity.Categoria;
 import com.ferreteria.entity.HistorialPrecioPresentacion;
 import com.ferreteria.entity.Presentacion;
 import com.ferreteria.entity.Producto;
-import com.ferreteria.entity.enums.UnidadBase;
 import com.ferreteria.entity.enums.EntidadAuditada;
+import com.ferreteria.entity.enums.UnidadBase;
 import com.ferreteria.exception.ApiException;
 import com.ferreteria.exception.CodigoError;
 import com.ferreteria.exception.DuplicadoException;
@@ -25,12 +26,15 @@ import com.ferreteria.repository.Especificaciones;
 import com.ferreteria.repository.HistorialPrecioPresentacionRepository;
 import com.ferreteria.repository.PresentacionRepository;
 import com.ferreteria.repository.ProductoRepository;
+import com.ferreteria.repository.VentaDetalleRepository;
+import com.ferreteria.security.AccesoUbicacionService;
 import com.ferreteria.service.imagen.AlmacenImagenes;
 import com.ferreteria.service.imagen.ImagenGuardada;
 import com.ferreteria.service.imagen.TipoImagen;
 import com.ferreteria.util.BusquedaTexto;
 import com.ferreteria.util.Montos;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -42,11 +46,15 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Productos y sus presentaciones (formas de venta con precio propio) y la foto del producto.
@@ -57,6 +65,11 @@ public class ProductoService {
 
     private static final String MARCA_POR_DEFECTO = "VARIADO";
 
+    private static final int DIAS_FRECUENTES = 30;
+
+    private final VentaDetalleRepository ventaDetalleRepository;
+    private final AccesoUbicacionService accesoUbicacion;
+    private final Calendario calendario;
     private final AuditoriaService auditoria;
     private final ProductoRepository productoRepository;
     private final PresentacionRepository presentacionRepository;
@@ -177,6 +190,23 @@ public class ProductoService {
                 presentacion.getCostoReferencia(), porcentaje, adicional,
                 PrecioSugerido.calcular(presentacion.getCostoReferencia(), porcentaje, adicional),
                 presentacion.getPrecioVenta());
+    }
+
+    /**
+     * Productos que mas se venden en la tienda (en mas ventas de los ultimos 30 dias), para tenerlos a un clic en el
+     * punto de venta. El VENDEDOR ve los de su tienda; solo productos activos.
+     */
+    @Transactional(readOnly = true)
+    public List<ProductoResponse> listarFrecuentes(Long ubicacionId, int limite) {
+        Long ubicacion = accesoUbicacion.ubicacionParaConsultar(ubicacionId);
+        LocalDate hoy = calendario.hoy();
+        List<Long> ids = ventaDetalleRepository.masFrecuentes(calendario.inicio(hoy.minusDays(DIAS_FRECUENTES)),
+                        calendario.finExclusivo(hoy), ubicacion, PageRequest.of(0, Math.clamp(limite, 1, 24)))
+                .map(ProductoVendidoResponse::productoId).getContent();
+        Map<Long, Producto> productos = productoRepository.findAllById(ids).stream()
+                .collect(Collectors.toMap(Producto::getId, Function.identity()));
+        return ids.stream().map(productos::get).filter(p -> p != null && p.isActivo())
+                .map(ProductoResponse::desde).toList();
     }
 
     @Transactional(readOnly = true)

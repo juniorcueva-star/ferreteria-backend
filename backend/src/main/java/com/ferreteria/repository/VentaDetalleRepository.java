@@ -40,4 +40,11 @@ public interface VentaDetalleRepository extends JpaRepository<VentaDetalle, Long
     Page<ProductoVendidoResponse> masVendidosPorCantidad(@Param("desde") OffsetDateTime desde,
                                                          @Param("hasta") OffsetDateTime hasta,
                                                          @Param("ubicacionId") Long ubicacionId, Pageable pageable);
+
+    /** Productos vendidos en mas ventas distintas (los "frecuentes" del punto de venta), los primeros primero. */
+    @Query(value = SELECT_PRODUCTOS_VENDIDOS + " order by count(distinct v.id) desc, sum(d.subtotal) desc, p.id",
+            countQuery = COUNT_PRODUCTOS_VENDIDOS)
+    Page<ProductoVendidoResponse> masFrecuentes(@Param("desde") OffsetDateTime desde,
+                                                @Param("hasta") OffsetDateTime hasta,
+                                                @Param("ubicacionId") Long ubicacionId, Pageable pageable);
 }

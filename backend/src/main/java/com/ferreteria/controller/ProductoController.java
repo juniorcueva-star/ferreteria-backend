@@ -38,6 +38,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Tag(name = "06. Productos", description = "Catalogo con presentaciones y foto. Consultar: todos; modificar: ADMIN")
 @RestController
@@ -57,6 +58,14 @@ public class ProductoController {
                                                    @RequestParam(required = false) Boolean activo,
                                                    @ParameterObject @PageableDefault(size = 20, sort = "nombre") Pageable pageable) {
         return productoService.listar(texto, categoriaId, unidadBase, activo, pageable);
+    }
+
+    @Operation(summary = "Productos frecuentes", description = "Los que se venden en mas ventas de los ultimos 30 dias "
+            + "en la tienda (el VENDEDOR, la suya), para el punto de venta. limite: hasta 24 (por defecto 12)")
+    @GetMapping("/frecuentes")
+    public List<ProductoResponse> listarFrecuentes(@RequestParam(required = false) Long ubicacionId,
+                                                   @RequestParam(defaultValue = "12") int limite) {
+        return productoService.listarFrecuentes(ubicacionId, limite);
     }
 
     @Operation(summary = "Obtener un producto con sus presentaciones")

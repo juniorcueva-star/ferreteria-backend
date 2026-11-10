@@ -373,3 +373,7 @@ Registro de las decisiones de diseno tomadas durante el desarrollo (que se decid
   por unidades enteras. Al anular, se devuelve lo que salio segun el kardex de la venta (no la definicion actual
   del completo, que pudo cambiar). No se borran: se desactivan. `LineasDocumento` resuelve las lineas de ventas y
   cotizaciones con las mismas reglas. En "productos mas vendidos" un completo cuenta bajo su producto principal.
+- **D102. Punto de venta mas rapido.** `GET /api/productos/frecuentes`: los productos en mas ventas de la tienda en
+  los ultimos 30 dias (el VENDEDOR, su tienda; solo activos); el punto de venta los muestra cuando el buscador esta
+  vacio. En el frontend: billetes rapidos ("Paga con: Exacto, S/ 10, 20, 50...", el siguiente multiplo de 10, 20,
+  50, 100 y 200 que alcanza el total) y atajos de teclado F2 (buscar) y F9 (cobrar).
