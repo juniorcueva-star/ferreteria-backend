@@ -38,9 +38,19 @@ public class VentaDetalle {
     @JoinColumn(name = "producto_id", nullable = false)
     private Producto producto;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "presentacion_id", nullable = false)
+    /** Null en las lineas de completo */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "presentacion_id")
     private Presentacion presentacion;
+
+    /** Completo vendido (Ej: perno + tuerca + arandela); null en las lineas de presentacion */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "completo_id")
+    private Completo completo;
+
+    /** Piezas del completo al momento del documento, Ej: "1 Perno (Unidad) + 1 Tuerca (Unidad)" */
+    @Column(length = 300)
+    private String composicion;
 
     @Column(nullable = false, length = 200)
     private String descripcion;

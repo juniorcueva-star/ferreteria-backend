@@ -24,12 +24,14 @@ public record CotizacionResponse(Long id, String codigo, Long ubicacionId, Strin
 
     public record Detalle(Long productoId, Long presentacionId, String descripcion, BigDecimal cantidad,
                           BigDecimal factor, BigDecimal cantidadBase, BigDecimal precioUnitario, BigDecimal descuento,
-                          BigDecimal subtotal, int decimales) {
+                          BigDecimal subtotal, int decimales, Long completoId, String composicion) {
 
         static Detalle desde(CotizacionDetalle d) {
-            return new Detalle(d.getProducto().getId(), d.getPresentacion().getId(), d.getDescripcion(),
-                    d.getCantidad(), d.getFactor(), d.getCantidadBase(), d.getPrecioUnitario(), d.getDescuento(),
-                    d.getSubtotal(), d.getPresentacion().getDecimales());
+            boolean completo = d.getCompleto() != null;
+            return new Detalle(d.getProducto().getId(), completo ? null : d.getPresentacion().getId(),
+                    d.getDescripcion(), d.getCantidad(), d.getFactor(), d.getCantidadBase(), d.getPrecioUnitario(),
+                    d.getDescuento(), d.getSubtotal(), completo ? 0 : d.getPresentacion().getDecimales(),
+                    completo ? d.getCompleto().getId() : null, d.getComposicion());
         }
     }
 

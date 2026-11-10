@@ -136,7 +136,8 @@ public class EncargoService {
         VentaResponse registrada;
         try {
             registrada = ventaService.registrarConPrecios(venta,
-                    Map.of(encargo.getPresentacion().getId(), encargo.getPrecioUnitario()));
+                    Map.of(LineasDocumento.Clave.presentacion(encargo.getPresentacion().getId()),
+                            encargo.getPrecioUnitario()));
         } catch (StockInsuficienteException e) {
             throw new ApiException(CodigoError.REGLA_NEGOCIO, "Aun no hay stock suficiente en "
                     + encargo.getUbicacion().getNombre() + " para entregar el encargo " + encargo.getCodigo()

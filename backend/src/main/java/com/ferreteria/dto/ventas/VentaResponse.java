@@ -25,14 +25,20 @@ public record VentaResponse(Long id, TipoDocumentoVenta tipoDocumento, String nu
                             EstadoVenta estado, String motivoAnulacion, BigDecimal vuelto,
                             List<Detalle> detalles, List<PagoResponse> pagos) {
 
+    /**
+     * @param presentacionId null en las lineas de completo
+     * @param completoId     completo vendido (Ej: perno + tuerca + arandela)
+     * @param composicion    piezas del completo al vender
+     */
     public record Detalle(Long productoId, Long presentacionId, String descripcion, BigDecimal cantidad,
                           BigDecimal factor, BigDecimal cantidadBase, BigDecimal precioUnitario,
-                          BigDecimal descuento, BigDecimal subtotal) {
+                          BigDecimal descuento, BigDecimal subtotal, Long completoId, String composicion) {
 
         static Detalle desde(VentaDetalle d) {
-            return new Detalle(d.getProducto().getId(), d.getPresentacion().getId(), d.getDescripcion(),
-                    d.getCantidad(), d.getFactor(), d.getCantidadBase(), d.getPrecioUnitario(), d.getDescuento(),
-                    d.getSubtotal());
+            return new Detalle(d.getProducto().getId(), d.getPresentacion() == null ? null : d.getPresentacion().getId(),
+                    d.getDescripcion(), d.getCantidad(), d.getFactor(), d.getCantidadBase(), d.getPrecioUnitario(),
+                    d.getDescuento(), d.getSubtotal(), d.getCompleto() == null ? null : d.getCompleto().getId(),
+                    d.getComposicion());
         }
     }
 

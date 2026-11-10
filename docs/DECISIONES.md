@@ -364,3 +364,12 @@ Registro de las decisiones de diseno tomadas durante el desarrollo (que se decid
   `.dump` estan en `.gitignore` (contienen datos del negocio) y `.gitattributes` fija LF en los `.sh` para que
   funcionen en contenedores Linux aunque el repositorio se clone en Windows. Probado: respaldo, limpieza de
   respaldos viejos y restauracion en una base aparte con los mismos conteos.
+- **D101. Completos (pedido del dueno).** Un producto puede tener "completos": el producto junto con otras piezas a
+  precio propio (Ej: perno + tuerca + arandela, o bisagra + 6 tornillos). V15 crea `completo` y
+  `completo_componente` (pieza = presentacion + cantidad por completo). Sin precio, se usa la suma de las piezas
+  (precio sugerido); el ADMIN puede poner otro. No tienen stock propio: una linea de venta o cotizacion es de una
+  presentacion **o** de un completo (CHECK), con factor 1 y `cantidad_base` = numero de completos; al vender se
+  descuenta cada pieza (`LineasDocumento.movimientos`) y `composicion` guarda las piezas tal como eran. Se venden
+  por unidades enteras. Al anular, se devuelve lo que salio segun el kardex de la venta (no la definicion actual
+  del completo, que pudo cambiar). No se borran: se desactivan. `LineasDocumento` resuelve las lineas de ventas y
+  cotizaciones con las mismas reglas. En "productos mas vendidos" un completo cuenta bajo su producto principal.

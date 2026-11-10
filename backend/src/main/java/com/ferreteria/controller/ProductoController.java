@@ -2,6 +2,8 @@ package com.ferreteria.controller;
 
 import com.ferreteria.dto.catalogo.AccionLoteRequest;
 import com.ferreteria.dto.catalogo.AccionLoteResponse;
+import com.ferreteria.dto.catalogo.CompletoRequest;
+import com.ferreteria.dto.catalogo.CompletoResponse;
 import com.ferreteria.dto.catalogo.HistorialPrecioResponse;
 import com.ferreteria.dto.catalogo.PrecioSugeridoResponse;
 import com.ferreteria.dto.catalogo.PresentacionRequest;
@@ -10,6 +12,7 @@ import com.ferreteria.dto.catalogo.ProductoCrearRequest;
 import com.ferreteria.dto.catalogo.ProductoResponse;
 import com.ferreteria.dto.comun.PaginaResponse;
 import com.ferreteria.entity.enums.UnidadBase;
+import com.ferreteria.service.CompletoService;
 import com.ferreteria.service.ProductoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -42,6 +45,7 @@ import java.math.BigDecimal;
 @RequiredArgsConstructor
 public class ProductoController {
 
+    private final CompletoService completoService;
     private final ProductoService productoService;
 
     @Operation(summary = "Listar productos", description = "Filtros: texto (palabras del codigo, nombre, marca, tipo o medida; acepta abreviaturas como per o hex), categoriaId, "
@@ -99,6 +103,22 @@ public class ProductoController {
     public ProductoResponse actualizarPresentacion(@PathVariable Long id, @PathVariable Long presentacionId,
                                                    @Valid @RequestBody PresentacionRequest request) {
         return productoService.actualizarPresentacion(id, presentacionId, request);
+    }
+
+    @Operation(summary = "Crear un completo", description = "El producto junto con otras piezas (Ej: perno + tuerca "
+            + "+ arandela) a precio propio. Sin precioVenta se usa la suma de las piezas. Solo ADMIN")
+    @PostMapping("/{id}/completos")
+    @ResponseStatus(HttpStatus.CREATED)
+    public CompletoResponse crearCompleto(@PathVariable Long id, @Valid @RequestBody CompletoRequest request) {
+        return completoService.crear(id, request);
+    }
+
+    @Operation(summary = "Editar un completo", description = "Nombre, precio, piezas o activo. No se borra: se "
+            + "desactiva. Solo ADMIN")
+    @PutMapping("/{id}/completos/{completoId}")
+    public CompletoResponse actualizarCompleto(@PathVariable Long id, @PathVariable Long completoId,
+                                               @Valid @RequestBody CompletoRequest request) {
+        return completoService.actualizar(id, completoId, request);
     }
 
     @Operation(summary = "Precio sugerido de una presentacion", description = "Costo de referencia (ultima compra), "

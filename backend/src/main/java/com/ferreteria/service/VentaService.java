@@ -8,7 +8,6 @@ import com.ferreteria.dto.ventas.VentaResponse;
 import com.ferreteria.entity.CajaSesion;
 import com.ferreteria.entity.Cliente;
 import com.ferreteria.entity.Pago;
-import com.ferreteria.entity.Presentacion;
 import com.ferreteria.entity.SerieCorrelativo;
 import com.ferreteria.entity.Ubicacion;
 import com.ferreteria.entity.Usuario;
@@ -25,10 +24,10 @@ import com.ferreteria.entity.enums.EntidadAuditada;
 import com.ferreteria.exception.RecursoNoEncontradoException;
 import com.ferreteria.exception.ReglaNegocioException;
 import com.ferreteria.repository.CajaSesionRepository;
+import com.ferreteria.repository.MovimientoInventarioRepository;
 import com.ferreteria.service.documentos.VentaPdf;
 import com.ferreteria.repository.ClienteRepository;
 import com.ferreteria.repository.Especificaciones;
-import com.ferreteria.repository.PresentacionRepository;
 import com.ferreteria.repository.SerieCorrelativoRepository;
 import com.ferreteria.repository.VentaRepository;
 import com.ferreteria.security.AccesoUbicacionService;
@@ -48,8 +47,6 @@ import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * Ventas al contado y a credito (fiado) con pago mixto. Todo ocurre en una sola transaccion:
@@ -60,12 +57,12 @@ import java.util.stream.Collectors;
 public class VentaService {
 
     private static final TipoDocumentoVenta DOCUMENTO_FASE_1 = TipoDocumentoVenta.NOTA_VENTA;
-    private static final int MAX_DESCRIPCION = 200;
 
+    private final LineasDocumento lineasDocumento;
+    private final MovimientoInventarioRepository movimientoRepository;
     private final AuditoriaService auditoria;
     private final VentaPdf ventaPdf;
     private final VentaRepository ventaRepository;
-    private final PresentacionRepository presentacionRepository;
     private final ClienteRepository clienteRepository;
     private final SerieCorrelativoRepository serieRepository;
     private final CajaSesionRepository cajaRepository;
@@ -85,10 +82,11 @@ public class VentaService {
      * precio de un encargo o de una cotizacion) en vez del precio de lista. Solo lo usan los services de encargos y
      * cotizaciones; el endpoint de ventas siempre usa el precio de lista.
      *
-     * @param preciosAcordados presentacionId -> precio unitario con IGV
+     * @param preciosAcordados presentacion o completo -> precio unitario con IGV
      */
     @Transactional
-    public VentaResponse registrarConPrecios(VentaRequest request, Map<Long, BigDecimal> preciosAcordados) {
+    public VentaResponse registrarConPrecios(VentaRequest request,
+                                             Map<LineasDocumento.Clave, BigDecimal> preciosAcordados) {
         CajaSesion caja = cobros.cajaAbiertaDelUsuario();
         Ubicacion tienda = caja.getUbicacion();
         if (!tienda.isActivo()) {
@@ -115,8 +113,10 @@ public class VentaService {
         // Orden de bloqueos: caja (compartido) -> serie de la tienda -> filas de stock (por id de producto)
         asignarNumero(venta);
         ventaRepository.save(venta);
+        // Un completo descuenta cada una de sus piezas
         List<LineaMovimiento> lineas = venta.getDetalles().stream()
-                .map(d -> LineaMovimiento.de(d.getProducto(), d.getCantidadBase()))
+                .flatMap(d -> LineasDocumento.movimientos(d.getProducto(), d.getCompleto(), d.getCantidad(),
+                        d.getCantidadBase()).stream())
                 .toList();
         movimientoStock.aplicar(tienda, TipoMovimiento.VENTA, lineas,
                 OrigenMovimiento.venta(venta, usuario, null));
@@ -186,8 +186,10 @@ public class VentaService {
         venta.setSaldoPendiente(BigDecimal.ZERO);
         venta.setMotivoAnulacion(request.motivo().trim());
 
-        List<LineaMovimiento> lineas = venta.getDetalles().stream()
-                .map(d -> LineaMovimiento.de(d.getProducto(), d.getCantidadBase()))
+        // Devuelve exactamente lo que salio segun el kardex de la venta (incluye las piezas de los completos)
+        List<LineaMovimiento> lineas = movimientoRepository.findByVentaIdAndTipo(venta.getId(), TipoMovimiento.VENTA)
+                .stream()
+                .map(m -> LineaMovimiento.de(m.getProducto(), m.getCantidad().abs()))
                 .toList();
         movimientoStock.aplicar(venta.getUbicacion(), TipoMovimiento.ANULACION_VENTA, lineas,
                 OrigenMovimiento.venta(venta, buscador.usuarioActual(), venta.getMotivoAnulacion()));
@@ -229,42 +231,32 @@ public class VentaService {
     }
 
     private void agregarDetalles(Venta venta, List<VentaDetalleRequest> detalles,
-                                 Map<Long, BigDecimal> preciosAcordados) {
-        Map<Long, Presentacion> presentaciones = presentacionRepository.findByIdIn(
-                        detalles.stream().map(VentaDetalleRequest::presentacionId).toList())
-                .stream().collect(Collectors.toMap(Presentacion::getId, Function.identity()));
-        for (VentaDetalleRequest d : detalles) {
-            Presentacion presentacion = presentaciones.get(d.presentacionId());
-            if (presentacion == null) {
-                throw new RecursoNoEncontradoException("Presentacion", d.presentacionId());
-            }
-            if (!presentacion.isActivo() || !presentacion.getProducto().isActivo()) {
-                throw new ReglaNegocioException(presentacion.getProducto().getNombre() + " ("
-                        + presentacion.getNombre() + ") no esta disponible para la venta");
-            }
-            ReglaDecimales.validar(d.cantidad(), presentacion, presentacion.getProducto());
-            BigDecimal cantidad = Montos.cantidad(d.cantidad());
-            BigDecimal precio = preciosAcordados.getOrDefault(presentacion.getId(), presentacion.getPrecioVenta());
-            BigDecimal importe = Montos.dinero(cantidad.multiply(precio));
+                                 Map<LineasDocumento.Clave, BigDecimal> preciosAcordados) {
+        List<LineasDocumento.Linea> lineas = lineasDocumento.resolver(detalles.stream()
+                .map(d -> new LineasDocumento.Pedido(d.presentacionId(), d.completoId(), d.cantidad())).toList());
+        for (int i = 0; i < lineas.size(); i++) {
+            LineasDocumento.Linea linea = lineas.get(i);
+            VentaDetalleRequest d = detalles.get(i);
+            BigDecimal precio = preciosAcordados.getOrDefault(linea.clave(), linea.precioLista());
+            BigDecimal importe = Montos.dinero(linea.cantidad().multiply(precio));
             BigDecimal descuento = Montos.dinero(d.descuento() == null ? BigDecimal.ZERO : d.descuento());
             if (descuento.compareTo(importe) > 0) {
-                throw new ReglaNegocioException("El descuento de " + presentacion.getProducto().getNombre()
+                throw new ReglaNegocioException("El descuento de " + linea.producto().getNombre()
                         + " supera el importe de la linea (" + importe.toPlainString() + ")");
             }
             VentaDetalle detalle = new VentaDetalle();
-            detalle.setProducto(presentacion.getProducto());
-            detalle.setPresentacion(presentacion);
-            detalle.setDescripcion(descripcion(presentacion));
-            detalle.setCantidad(cantidad);
-            detalle.setFactor(presentacion.getFactor());
+            detalle.setProducto(linea.producto());
+            detalle.setPresentacion(linea.presentacion());
+            detalle.setCompleto(linea.completo());
+            detalle.setComposicion(linea.composicion());
+            detalle.setDescripcion(linea.descripcion());
+            detalle.setCantidad(linea.cantidad());
+            detalle.setFactor(linea.factor());
             // Igual que el CHECK ck_venta_det_base: ROUND(cantidad * factor, 3)
-            detalle.setCantidadBase(Montos.cantidad(cantidad.multiply(presentacion.getFactor())));
+            detalle.setCantidadBase(linea.cantidadBase());
             detalle.setPrecioUnitario(precio);
             detalle.setDescuento(descuento);
             detalle.setSubtotal(importe.subtract(descuento));
-            if (detalle.getCantidadBase().signum() <= 0) {
-                throw new ReglaNegocioException("La cantidad de " + detalle.getDescripcion() + " es demasiado pequena");
-            }
             venta.agregarDetalle(detalle);
         }
     }
@@ -352,11 +344,6 @@ public class VentaService {
     /** NV + id de la tienda con 2 digitos (NV01, NV02...); maximo 4 caracteres como exige la columna. */
     private static String serieInicial(Long tiendaId) {
         return tiendaId < 100 ? String.format("NV%02d", tiendaId) : String.format("N%03d", tiendaId % 1000);
-    }
-
-    private static String descripcion(Presentacion presentacion) {
-        String texto = presentacion.getProducto().getNombre() + " - " + presentacion.getNombre();
-        return texto.length() <= MAX_DESCRIPCION ? texto : texto.substring(0, MAX_DESCRIPCION);
     }
 
     private static Specification<Venta> conSaldo(boolean conSaldo) {

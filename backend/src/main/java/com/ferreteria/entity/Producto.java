@@ -99,6 +99,12 @@ public class Producto {
     @BatchSize(size = 100)
     private List<Presentacion> presentaciones = new ArrayList<>();
 
+    // Completos: el producto junto con otras piezas (Ej: perno + tuerca + arandela), con precio propio
+    @OneToMany(mappedBy = "producto")
+    @OrderBy("id")
+    @BatchSize(size = 100)
+    private List<Completo> completos = new ArrayList<>();
+
     public void agregarPresentacion(Presentacion presentacion) {
         presentacion.setProducto(this);
         presentaciones.add(presentacion);

@@ -19,6 +19,8 @@ import com.ferreteria.entity.enums.UnidadBase;
 import com.ferreteria.exception.ReglaNegocioException;
 import com.ferreteria.repository.CajaSesionRepository;
 import com.ferreteria.repository.ClienteRepository;
+import com.ferreteria.repository.CompletoRepository;
+import com.ferreteria.repository.MovimientoInventarioRepository;
 import com.ferreteria.repository.PresentacionRepository;
 import com.ferreteria.repository.SerieCorrelativoRepository;
 import com.ferreteria.repository.VentaRepository;
@@ -32,6 +34,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.mockito.quality.Strictness;
 
 import java.math.BigDecimal;
@@ -65,6 +68,8 @@ class VentaServiceTest {
     @Mock private Cobros cobros;
     @Mock private Calendario calendario;
     @Mock private AuditoriaService auditoria;
+    @Mock private CompletoRepository completoRepository;
+    @Mock private MovimientoInventarioRepository movimientoRepository;
     @InjectMocks private VentaService ventaService;
 
     private final Usuario vendedor = Fabrica.usuario(2L, Rol.VENDEDOR);
@@ -74,6 +79,9 @@ class VentaServiceTest {
 
     @BeforeEach
     void configurar() {
+        // Las lineas se resuelven con el componente real (usa los repositorios simulados)
+        ReflectionTestUtils.setField(ventaService, "lineasDocumento",
+                new LineasDocumento(presentacionRepository, completoRepository));
         when(cobros.cajaAbiertaDelUsuario()).thenReturn(caja);
         when(buscador.usuarioActual()).thenReturn(vendedor);
         when(presentacionRepository.findByIdIn(anyList())).thenReturn(List.of(ciento));

@@ -146,6 +146,19 @@ public class MembretePdf {
         return celda;
     }
 
+    /** Descripcion de una linea; en un completo, debajo y en letra pequena, sus piezas. */
+    public PdfPCell celdaDescripcion(String descripcion, String composicion) {
+        if (composicion == null) {
+            return celda(descripcion, Element.ALIGN_LEFT);
+        }
+        Phrase texto = new Phrase(descripcion, normal);
+        texto.add(new Phrase("\nIncluye: " + composicion, pequena));
+        PdfPCell celda = new PdfPCell(texto);
+        celda.setBorderColor(new Color(212, 212, 212));
+        celda.setPadding(4);
+        return celda;
+    }
+
     /** Pie: cuentas bancarias (si la empresa las tiene) y una nota. */
     public void pie(Document documento, Empresa empresa, String nota) throws DocumentException {
         if (empresa.getDatosBancarios() != null) {

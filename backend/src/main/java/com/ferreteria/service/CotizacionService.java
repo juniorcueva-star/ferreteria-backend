@@ -14,7 +14,6 @@ import com.ferreteria.dto.ventas.VentaResponse;
 import com.ferreteria.entity.Cliente;
 import com.ferreteria.entity.Cotizacion;
 import com.ferreteria.entity.CotizacionDetalle;
-import com.ferreteria.entity.Presentacion;
 import com.ferreteria.entity.Ubicacion;
 import com.ferreteria.entity.enums.EstadoCaja;
 import com.ferreteria.entity.enums.EstadoCotizacion;
@@ -25,7 +24,6 @@ import com.ferreteria.repository.CajaSesionRepository;
 import com.ferreteria.repository.ClienteRepository;
 import com.ferreteria.repository.CotizacionRepository;
 import com.ferreteria.repository.Especificaciones;
-import com.ferreteria.repository.PresentacionRepository;
 import com.ferreteria.repository.VentaRepository;
 import com.ferreteria.security.AccesoUbicacionService;
 import com.ferreteria.service.documentos.CotizacionPdf;
@@ -50,8 +48,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * Cotizaciones (punto 2): se crean en BORRADOR (editables), pasan a EMITIDA al emitirlas o enviarlas al cliente y se
@@ -63,12 +59,11 @@ public class CotizacionService {
 
     private static final int DIAS_VALIDEZ_POR_DEFECTO = 7;
     private static final int MAX_OBSERVACION = 300;
-    private static final int MAX_DESCRIPCION = 200;
     private static final SecureRandom ALEATORIO = new SecureRandom();
     private static final DateTimeFormatter FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
+    private final LineasDocumento lineasDocumento;
     private final CotizacionRepository cotizacionRepository;
-    private final PresentacionRepository presentacionRepository;
     private final ClienteRepository clienteRepository;
     private final VentaRepository ventaRepository;
     private final CajaSesionRepository cajaRepository;
@@ -178,10 +173,12 @@ public class CotizacionService {
                 });
         Long clienteId = request.clienteId() != null ? request.clienteId()
                 : cotizacion.getCliente() == null ? null : cotizacion.getCliente().getId();
-        Map<Long, BigDecimal> precios = new LinkedHashMap<>();
+        Map<LineasDocumento.Clave, BigDecimal> precios = new LinkedHashMap<>();
         List<VentaDetalleRequest> detalles = cotizacion.getDetalles().stream().map(d -> {
-            precios.put(d.getPresentacion().getId(), d.getPrecioUnitario());
-            return new VentaDetalleRequest(d.getPresentacion().getId(), d.getCantidad(), d.getDescuento());
+            Long presentacionId = d.getPresentacion() == null ? null : d.getPresentacion().getId();
+            Long completoId = d.getCompleto() == null ? null : d.getCompleto().getId();
+            precios.put(new LineasDocumento.Clave(presentacionId, completoId), d.getPrecioUnitario());
+            return new VentaDetalleRequest(presentacionId, d.getCantidad(), d.getDescuento(), completoId);
         }).toList();
         VentaResponse venta = ventaService.registrarConPrecios(
                 new VentaRequest(request.condicion(), clienteId, request.fechaVencimiento(), detalles, request.pagos()),
@@ -262,46 +259,34 @@ public class CotizacionService {
     }
 
     private void agregarDetalles(Cotizacion cotizacion, List<CotizacionDetalleRequest> detalles) {
-        Map<Long, Presentacion> presentaciones = presentacionRepository.findByIdIn(
-                        detalles.stream().map(CotizacionDetalleRequest::presentacionId).toList())
-                .stream().collect(Collectors.toMap(Presentacion::getId, Function.identity()));
-        Set<Long> usadas = new HashSet<>();
-        for (CotizacionDetalleRequest d : detalles) {
-            if (!usadas.add(d.presentacionId())) {
-                throw new ReglaNegocioException("La presentacion " + d.presentacionId()
-                        + " esta repetida: sume la cantidad en una sola linea");
+        List<LineasDocumento.Linea> lineas = lineasDocumento.resolver(detalles.stream()
+                .map(d -> new LineasDocumento.Pedido(d.presentacionId(), d.completoId(), d.cantidad())).toList());
+        Set<LineasDocumento.Clave> usadas = new HashSet<>();
+        for (int i = 0; i < lineas.size(); i++) {
+            LineasDocumento.Linea linea = lineas.get(i);
+            CotizacionDetalleRequest d = detalles.get(i);
+            if (!usadas.add(linea.clave())) {
+                throw new ReglaNegocioException(linea.descripcion() + " esta repetido: sume la cantidad en una sola linea");
             }
-            Presentacion presentacion = presentaciones.get(d.presentacionId());
-            if (presentacion == null) {
-                throw new RecursoNoEncontradoException("Presentacion", d.presentacionId());
-            }
-            if (!presentacion.isActivo() || !presentacion.getProducto().isActivo()) {
-                throw new ReglaNegocioException(presentacion.getProducto().getNombre() + " ("
-                        + presentacion.getNombre() + ") no esta disponible");
-            }
-            ReglaDecimales.validar(d.cantidad(), presentacion, presentacion.getProducto());
-            BigDecimal cantidad = Montos.cantidad(d.cantidad());
-            BigDecimal precio = Montos.dinero(d.precioUnitario() == null ? presentacion.getPrecioVenta() : d.precioUnitario());
-            BigDecimal importe = Montos.dinero(cantidad.multiply(precio));
+            BigDecimal precio = Montos.dinero(d.precioUnitario() == null ? linea.precioLista() : d.precioUnitario());
+            BigDecimal importe = Montos.dinero(linea.cantidad().multiply(precio));
             BigDecimal descuento = Montos.dinero(d.descuento() == null ? BigDecimal.ZERO : d.descuento());
             if (descuento.compareTo(importe) > 0) {
-                throw new ReglaNegocioException("El descuento de " + presentacion.getProducto().getNombre()
+                throw new ReglaNegocioException("El descuento de " + linea.producto().getNombre()
                         + " supera el importe de la linea (" + importe.toPlainString() + ")");
             }
             CotizacionDetalle detalle = new CotizacionDetalle();
-            detalle.setProducto(presentacion.getProducto());
-            detalle.setPresentacion(presentacion);
-            String descripcion = presentacion.getProducto().getNombre() + " - " + presentacion.getNombre();
-            detalle.setDescripcion(descripcion.length() <= MAX_DESCRIPCION ? descripcion : descripcion.substring(0, MAX_DESCRIPCION));
-            detalle.setCantidad(cantidad);
-            detalle.setFactor(presentacion.getFactor());
-            detalle.setCantidadBase(Montos.cantidad(cantidad.multiply(presentacion.getFactor())));
+            detalle.setProducto(linea.producto());
+            detalle.setPresentacion(linea.presentacion());
+            detalle.setCompleto(linea.completo());
+            detalle.setComposicion(linea.composicion());
+            detalle.setDescripcion(linea.descripcion());
+            detalle.setCantidad(linea.cantidad());
+            detalle.setFactor(linea.factor());
+            detalle.setCantidadBase(linea.cantidadBase());
             detalle.setPrecioUnitario(precio);
             detalle.setDescuento(descuento);
             detalle.setSubtotal(importe.subtract(descuento));
-            if (detalle.getCantidadBase().signum() <= 0) {
-                throw new ReglaNegocioException("La cantidad de " + descripcion + " es demasiado pequena");
-            }
             cotizacion.agregarDetalle(detalle);
         }
     }
