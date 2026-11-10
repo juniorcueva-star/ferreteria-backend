@@ -12,7 +12,7 @@ Haz los pasos en orden. Si un paso falla, no sigas: copia el error y pídele ayu
 | Git | cualquiera reciente | 2.55 ✅ |
 | Java | 21 | 21 (Temurin) ✅ |
 | Docker Desktop | cualquiera reciente | 29.4 ✅ |
-| Node.js (trae npm) | 20 o superior | 24 ✅ |
+| Node.js (trae npm) | 22.12 o superior | 24 ✅ |
 
 Maven no hace falta: el backend trae su propio `mvnw`.
 
