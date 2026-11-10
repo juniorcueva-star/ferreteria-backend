@@ -5,8 +5,8 @@ import com.ferreteria.dto.catalogo.AccionLoteResponse;
 import com.ferreteria.dto.catalogo.CompletoRequest;
 import com.ferreteria.dto.catalogo.CompletoResponse;
 import com.ferreteria.dto.catalogo.EscalasPrecioRequest;
-import com.ferreteria.dto.catalogo.OfertaRequest;
 import com.ferreteria.dto.catalogo.HistorialPrecioResponse;
+import com.ferreteria.dto.catalogo.OfertaRequest;
 import com.ferreteria.dto.catalogo.PrecioSugeridoResponse;
 import com.ferreteria.dto.catalogo.PresentacionRequest;
 import com.ferreteria.dto.catalogo.ProductoActualizarRequest;
@@ -14,6 +14,7 @@ import com.ferreteria.dto.catalogo.ProductoCrearRequest;
 import com.ferreteria.dto.catalogo.ProductoResponse;
 import com.ferreteria.dto.comun.PaginaResponse;
 import com.ferreteria.entity.enums.UnidadBase;
+import com.ferreteria.service.CatalogoDocumentosService;
 import com.ferreteria.service.CompletoService;
 import com.ferreteria.service.ProductoService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -26,6 +27,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -50,6 +52,7 @@ public class ProductoController {
 
     private final CompletoService completoService;
     private final ProductoService productoService;
+    private final CatalogoDocumentosService catalogoDocumentos;
 
     @Operation(summary = "Listar productos", description = "Filtros: texto (palabras del codigo, nombre, marca, tipo o medida; acepta abreviaturas como per o hex), categoriaId, "
             + "unidadBase, activo y enOferta (con una oferta vigente hoy). Incluye las presentaciones con sus precios")
@@ -61,6 +64,28 @@ public class ProductoController {
                                                    @RequestParam(required = false) Boolean enOferta,
                                                    @ParameterObject @PageableDefault(size = 20, sort = "nombre") Pageable pageable) {
         return productoService.listar(texto, categoriaId, unidadBase, activo, enOferta, pageable);
+    }
+
+    @Operation(summary = "Lista de precios en PDF", description = "Productos activos (de una categoria o de todos) "
+            + "agrupados por categoria, con foto, codigo y el precio de cada presentacion; marca ofertas vigentes y "
+            + "precio por mayor. El membrete es el de la tienda indicada, la del usuario o la primera tienda")
+    @GetMapping(value = "/lista-precios", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<byte[]> listaPrecios(@RequestParam(required = false) Long categoriaId,
+                                               @RequestParam(required = false) Long ubicacionId,
+                                               @RequestParam(defaultValue = "true") boolean fotos,
+                                               @RequestParam(defaultValue = "false") boolean descargar) {
+        return RespuestaPdf.de(catalogoDocumentos.listaPrecios(categoriaId, ubicacionId, fotos),
+                "lista-precios-" + catalogoDocumentos.hoy() + ".pdf", descargar);
+    }
+
+    @Operation(summary = "Etiquetas con codigo de barras", description = "Hoja A4 de 3 x 8 etiquetas con producto, "
+            + "precio y codigo de barras Code 128 (el de la presentacion o, si no tiene, el codigo del producto). Una "
+            + "por la presentacion principal de cada producto (todas=true: cada presentacion activa), por copias")
+    @GetMapping(value = "/etiquetas", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<byte[]> etiquetas(@RequestParam List<Long> productoIds,
+                                            @RequestParam(defaultValue = "1") int copias,
+                                            @RequestParam(defaultValue = "false") boolean todas) {
+        return RespuestaPdf.de(catalogoDocumentos.etiquetas(productoIds, copias, todas), "etiquetas.pdf", false);
     }
 
     @Operation(summary = "Productos frecuentes", description = "Los que se venden en mas ventas de los ultimos 30 dias "

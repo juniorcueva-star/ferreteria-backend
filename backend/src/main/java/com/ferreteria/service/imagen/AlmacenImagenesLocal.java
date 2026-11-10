@@ -11,6 +11,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -42,6 +43,25 @@ public class AlmacenImagenesLocal implements AlmacenImagenes {
         }
         String url = ServletUriComponentsBuilder.fromCurrentContextPath().path("/imagenes/" + archivo).toUriString();
         return new ImagenGuardada(url, PREFIJO + archivo);
+    }
+
+    @Override
+    public Optional<byte[]> leerParaDocumento(String publicId, String url) {
+        if (publicId == null || !publicId.startsWith(PREFIJO)) {
+            return Optional.empty();
+        }
+        Path archivo = directorio.resolve(publicId.substring(PREFIJO.length())).normalize();
+        if (!archivo.startsWith(directorio) || !Files.isRegularFile(archivo)) {
+            return Optional.empty();
+        }
+        try {
+            byte[] contenido = Files.readAllBytes(archivo);
+            // El PDF admite JPEG y PNG; una foto WEBP sale como icono
+            return TipoImagen.detectar(contenido).filter(t -> t != TipoImagen.WEBP).map(t -> contenido);
+        } catch (IOException e) {
+            log.warn("No se pudo leer la imagen {}", archivo);
+            return Optional.empty();
+        }
     }
 
     @Override

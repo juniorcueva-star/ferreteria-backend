@@ -441,3 +441,12 @@ Registro de las decisiones de diseno tomadas durante el desarrollo (que se decid
   lista los que tienen una oferta vigente. En la caja: boton "Ofertas" junto a las categorias, etiqueta amarilla en
   los cuadritos y en las presentaciones, precio de lista tachado en el carrito; la cotizacion arranca con el precio de
   oferta. La nota, el ticket y la cotizacion imprimen "OFERTA" bajo la linea.
+- **D112. Lista de precios y etiquetas.** `GET /api/productos/lista-precios` (cualquier usuario; `categoriaId`,
+  `ubicacionId`, `fotos`): PDF A4 con el membrete de la tienda (la indicada, la del usuario o la primera), productos
+  activos agrupados por categoria con foto, codigo y precio de cada presentacion; las ofertas vigentes con el precio
+  de lista tachado y el precio por mayor. Las fotos salen en JPEG o PNG (`AlmacenImagenes.leerParaDocumento`: la
+  carpeta local omite WEBP; Cloudinary entrega una miniatura JPEG). El vendedor la descarga y la manda por WhatsApp.
+  `GET /api/productos/etiquetas?productoIds&copias&todas`: hoja A4 de 3 x 8 (aprox. 70 x 37 mm) con nombre,
+  presentacion, precio (el de oferta si esta vigente) y codigo de barras Code 128 (el de la presentacion o, si no
+  tiene, el codigo del producto), de 1 a 50 copias y maximo 480 etiquetas. En el frontend la imprimen el ADMIN y el
+  ALMACENERO eligiendo productos en la lista.
