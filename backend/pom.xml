@@ -63,6 +63,12 @@
 			<artifactId>openpdf</artifactId>
 			<version>${openpdf.version}</version>
 		</dependency>
+		<!-- Asistente de IA (Claude): SDK oficial de Anthropic. Licencia MIT -->
+		<dependency>
+			<groupId>com.anthropic</groupId>
+			<artifactId>anthropic-java</artifactId>
+			<version>3.3.0</version>
+		</dependency>
 		<!-- Exportar reportes a Excel (.xlsx). Licencia Apache 2.0 -->
 		<dependency>
 			<groupId>org.apache.poi</groupId>

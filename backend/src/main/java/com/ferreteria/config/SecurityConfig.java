@@ -129,6 +129,9 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/reportes/pedido-sugerido", "/api/reportes/valor-inventario",
                         "/api/reportes/excel/pedido-sugerido", "/api/reportes/excel/valor-inventario")
                 .hasAnyRole(ADMIN, ALMACENERO)
+                // Asistente de IA: cualquier usuario; las consultas usan los permisos de su rol
+                .requestMatchers(HttpMethod.GET, "/api/asistente/estado").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/asistente/preguntar").authenticated()
                 // Cualquier otra ruta o metodo no listado arriba queda cerrado
                 .anyRequest().denyAll();
     }

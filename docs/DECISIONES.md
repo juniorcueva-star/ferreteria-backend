@@ -450,3 +450,14 @@ Registro de las decisiones de diseno tomadas durante el desarrollo (que se decid
   presentacion, precio (el de oferta si esta vigente) y codigo de barras Code 128 (el de la presentacion o, si no
   tiene, el codigo del producto), de 1 a 50 copias y maximo 480 etiquetas. En el frontend la imprimen el ADMIN y el
   ALMACENERO eligiendo productos en la lista.
+- **D113. Asistente de IA basico por rol.** Pedido del dueno: un asistente de apoyo para cada rol que SOLO consulta y
+  responde (no registra ni cambia nada). Usa Claude Haiku 5.5 (`IA_MODELO`, el mas economico) con el SDK oficial de
+  Java (`com.anthropic:anthropic-java`) y esfuerzo bajo. La clave va en `ANTHROPIC_API_KEY` del backend (nunca en el
+  frontend); sin clave, `GET /api/asistente/estado` dice `configurado: false` y el resto del sistema funciona igual.
+  `POST /api/asistente/preguntar` recibe la pregunta y hasta 20 mensajes anteriores (el servidor no guarda chats) y
+  hace un bucle de hasta 5 consultas con herramientas de solo lectura que llaman a los servicios de siempre con los
+  permisos del usuario: VENDEDOR `buscar_productos` (precios, oferta, por mayor, stock en todas las ubicaciones) y
+  `calcular_precio`; ALMACENERO ademas `productos_bajo_minimo` y `pedidos_reposicion_pendientes`; ADMIN ademas
+  `ventas_por_tienda`, `productos_mas_vendidos` y `deudores`. Una herramienta de otro rol no se ejecuta aunque el
+  modelo la pida. Tope de `IA_PREGUNTAS_POR_DIA` (50) por usuario; el contador esta en memoria (se reinicia al cambiar
+  el dia o al reiniciar). `ModeloIa` separa el SDK para probar con un modelo simulado. Guia: `docs/GUIA_CLAVE_IA.md`.

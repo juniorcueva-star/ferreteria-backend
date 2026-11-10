@@ -87,6 +87,13 @@ app:
     usuario: ${MAIL_USERNAME:}
     password: ${MAIL_PASSWORD:}
     remitente: ${MAIL_FROM:}
+  ia:
+    # Asistente de IA (Claude). Opcional: sin ANTHROPIC_API_KEY el asistente avisa que no esta configurado y el
+    # resto del sistema funciona igual. La clave se crea en https://platform.claude.com/settings/keys
+    api-key: ${ANTHROPIC_API_KEY:}
+    modelo: ${IA_MODELO:claude-haiku-5-5}
+    # Preguntas por usuario y por dia (tope de gasto; el contador se reinicia a medianoche de Lima)
+    preguntas-por-dia: ${IA_PREGUNTAS_POR_DIA:50}
   demo:
     # Contrasena de los usuarios de demostracion (solo perfil dev)
     password: ${DEMO_PASSWORD:}
