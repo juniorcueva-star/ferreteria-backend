@@ -1,190 +1,432 @@
 erDiagram
-    EMPRESA |o--o{ UBICACION : "tiene tiendas (almacen sin RUC)"
-    EMPRESA ||--o{ COMPRA : "compra con su RUC"
-    EMPRESA ||--o{ VENTA : "vende con su RUC"
-    UBICACION |o--o{ USUARIO : "trabaja en (admin sin ubicacion)"
-    UBICACION ||--o{ STOCK : "guarda"
-    UBICACION ||--o{ CAJA_SESION : "tiene cajas"
-    UBICACION ||--o{ SERIE_CORRELATIVO : "numera"
-    UBICACION ||--o{ TRASLADO : "origen y destino"
-    UBICACION ||--o{ COMPRA : "recibe mercaderia"
-    UBICACION ||--o{ VENTA : "tienda que vende"
-    CATEGORIA ||--o{ PRODUCTO : "agrupa"
-    PRODUCTO ||--|{ PRESENTACION : "se vende como"
-    PRODUCTO ||--o{ STOCK : "tiene"
-    PRODUCTO ||--o{ MOVIMIENTO_INVENTARIO : "kardex"
-    TRASLADO ||--|{ TRASLADO_DETALLE : "contiene"
-    PRESENTACION |o--o{ TRASLADO_DETALLE : "enviada en"
-    PROVEEDOR ||--o{ COMPRA : "vende"
-    COMPRA ||--|{ COMPRA_DETALLE : "contiene"
-    PRESENTACION |o--o{ COMPRA_DETALLE : "comprada en"
-    CLIENTE |o--o{ VENTA : "fiado"
-    USUARIO ||--o{ CAJA_SESION : "abre"
-    USUARIO ||--o{ VENTA : "registra"
-    USUARIO ||--o{ TRASLADO : "envia y recibe"
-    CAJA_SESION ||--o{ VENTA : "incluye"
-    VENTA ||--|{ VENTA_DETALLE : "contiene"
-    PRESENTACION ||--o{ VENTA_DETALLE : "vendida en"
-    VENTA ||--o{ PAGO : "se paga con"
-    METODO_PAGO ||--o{ PAGO : "usa"
-    CAJA_SESION ||--o{ PAGO : "recibe"
-    COMPRA |o--o{ MOVIMIENTO_INVENTARIO : "genera"
-    VENTA |o--o{ MOVIMIENTO_INVENTARIO : "genera"
-    TRASLADO |o--o{ MOVIMIENTO_INVENTARIO : "genera"
-
-    EMPRESA {
-        bigint id PK
-        varchar ruc UK
-        varchar razon_social
-    }
-    UBICACION {
-        bigint id PK
-        bigint empresa_id FK "null si es almacen"
-        varchar nombre UK
-        varchar tipo "ALMACEN o TIENDA"
-    }
-    USUARIO {
-        bigint id PK
-        varchar username UK
-        varchar password_hash "BCrypt"
-        varchar rol "ADMIN VENDEDOR ALMACENERO"
-        bigint ubicacion_id FK
-    }
-    CATEGORIA {
-        bigint id PK
-        varchar nombre UK
-    }
-    PRODUCTO {
-        bigint id PK
-        varchar codigo UK
-        varchar nombre
-        bigint categoria_id FK
-        varchar unidad_base "UNIDAD KILO METRO"
-        varchar imagen_url "Cloudinary"
-    }
-    PRESENTACION {
-        bigint id PK
-        bigint producto_id FK
-        varchar nombre "Unidad Millar Medio kilo"
-        numeric factor
-        numeric precio_venta "con IGV"
-        varchar codigo_barras UK
-    }
-    STOCK {
-        bigint id PK
-        bigint producto_id FK
-        bigint ubicacion_id FK
-        numeric cantidad "nunca negativo"
-        numeric stock_minimo "alerta por ubicacion"
-    }
-    TRASLADO {
-        bigint id PK
-        varchar codigo UK
-        bigint origen_id FK
-        bigint destino_id FK
-        varchar estado "ENVIADO RECIBIDO ANULADO"
-        bigint usuario_envia_id FK
-        bigint usuario_recibe_id FK
-    }
-    TRASLADO_DETALLE {
-        bigint id PK
-        bigint traslado_id FK
-        bigint producto_id FK
-        bigint presentacion_id FK
-        numeric cantidad
-        numeric cantidad_base
-    }
-    PROVEEDOR {
-        bigint id PK
-        varchar ruc UK
-        varchar razon_social
-    }
-    COMPRA {
-        bigint id PK
-        bigint empresa_id FK
-        bigint proveedor_id FK
-        bigint ubicacion_id FK
-        varchar tipo_comprobante
-        numeric total "subtotal + igv"
-    }
-    COMPRA_DETALLE {
-        bigint id PK
-        bigint compra_id FK
-        bigint producto_id FK
-        bigint presentacion_id FK
-        numeric cantidad_base
-        numeric costo_unitario
-    }
-    CLIENTE {
-        bigint id PK
-        varchar nombre
-        varchar tipo_documento "NINGUNO DNI RUC CE"
-        varchar numero_documento
-        varchar telefono
-    }
-    CAJA_SESION {
-        bigint id PK
-        bigint ubicacion_id FK
-        bigint usuario_id FK
-        numeric monto_apertura
-        numeric efectivo_esperado
-        numeric efectivo_contado
-        varchar estado "ABIERTA CERRADA"
-    }
-    SERIE_CORRELATIVO {
-        bigint id PK
-        bigint ubicacion_id FK
-        varchar tipo_documento
-        varchar serie
-        int ultimo_numero
-    }
-    VENTA {
-        bigint id PK
-        bigint ubicacion_id FK
-        bigint empresa_id FK
-        bigint caja_sesion_id FK
-        bigint cliente_id FK "null = cliente varios"
-        varchar tipo_documento "NOTA_VENTA por ahora"
-        varchar serie
-        int numero
-        varchar condicion "CONTADO CREDITO"
-        numeric total "subtotal + igv"
-        numeric saldo_pendiente
-        varchar estado "EMITIDA ANULADA"
-    }
-    VENTA_DETALLE {
-        bigint id PK
-        bigint venta_id FK
-        bigint producto_id FK
-        bigint presentacion_id FK
-        numeric cantidad
-        numeric factor
-        numeric cantidad_base "cantidad x factor"
-        numeric precio_unitario
-    }
-    METODO_PAGO {
-        bigint id PK
-        varchar codigo UK "EFECTIVO YAPE PLIN etc"
-        boolean requiere_referencia
-        boolean es_efectivo
-    }
-    PAGO {
-        bigint id PK
-        bigint venta_id FK
-        bigint caja_sesion_id FK
-        bigint metodo_pago_id FK
-        varchar tipo "VENTA o ABONO"
-        numeric monto
-        varchar numero_operacion
-    }
-    MOVIMIENTO_INVENTARIO {
-        bigint id PK
-        bigint producto_id FK
-        bigint ubicacion_id FK
-        varchar tipo
-        numeric cantidad "+ entra, - sale"
-        numeric saldo_resultante
-        bigint compra_id FK
-        bigint venta_id FK
-        bigint traslado_id FK
-    }
+  AUDITORIA {
+    bigint id PK
+    timestamptz fecha
+    bigint usuario_id FK
+    varchar entidad
+    bigint entidad_id
+    varchar accion
+    varchar descripcion
+  }
+  CAJA_SESION {
+    bigint id PK
+    bigint ubicacion_id FK
+    bigint usuario_id FK
+    timestamptz fecha_apertura
+    numeric monto_apertura
+    timestamptz fecha_cierre
+    numeric efectivo_esperado
+    numeric efectivo_contado
+    numeric diferencia
+    varchar estado
+  }
+  CATEGORIA {
+    bigint id PK
+    varchar nombre UK
+    boolean activo
+  }
+  CLIENTE {
+    bigint id PK
+    varchar nombre
+    varchar tipo_documento
+    varchar numero_documento
+    varchar telefono
+    varchar direccion
+    boolean activo
+    timestamptz created_at
+  }
+  COMPLETO {
+    bigint id PK
+    bigint producto_id FK
+    varchar nombre
+    numeric precio_venta
+    boolean activo
+    timestamptz created_at
+  }
+  COMPLETO_COMPONENTE {
+    bigint id PK
+    bigint completo_id FK
+    bigint producto_id FK
+    bigint presentacion_id FK
+    numeric cantidad
+  }
+  COMPRA {
+    bigint id PK
+    bigint empresa_id FK
+    bigint proveedor_id FK
+    bigint ubicacion_id FK
+    bigint usuario_id FK
+    varchar tipo_comprobante
+    varchar serie_numero
+    date fecha_emision
+    numeric subtotal
+    numeric igv
+    numeric total
+    varchar estado
+    varchar observacion
+    timestamptz created_at
+  }
+  COMPRA_DETALLE {
+    bigint id PK
+    bigint compra_id FK
+    bigint producto_id FK
+    bigint presentacion_id FK
+    numeric cantidad
+    numeric cantidad_base
+    numeric costo_unitario
+    numeric subtotal
+  }
+  COTIZACION {
+    bigint id PK
+    varchar codigo UK
+    bigint ubicacion_id FK
+    bigint cliente_id FK
+    bigint usuario_id FK
+    varchar estado
+    date fecha_validez
+    varchar observacion
+    numeric subtotal
+    numeric igv
+    numeric descuento
+    numeric total
+    bigint venta_id FK,UK
+    varchar token_publico UK
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  COTIZACION_DETALLE {
+    bigint id PK
+    bigint cotizacion_id FK
+    bigint producto_id FK
+    bigint presentacion_id FK
+    varchar descripcion
+    numeric cantidad
+    numeric factor
+    numeric cantidad_base
+    numeric precio_unitario
+    numeric descuento
+    numeric subtotal
+    bigint completo_id FK
+    varchar composicion
+    varchar tipo_precio
+  }
+  EMPRESA {
+    bigint id PK
+    varchar ruc UK
+    varchar razon_social
+    varchar nombre_comercial
+    varchar direccion
+    boolean activo
+    timestamptz created_at
+    varchar telefono
+    varchar lema
+    varchar datos_bancarios
+  }
+  ENCARGO {
+    bigint id PK
+    varchar codigo UK
+    bigint ubicacion_id FK
+    bigint cliente_id FK
+    bigint producto_id FK
+    bigint presentacion_id FK
+    numeric cantidad
+    numeric precio_unitario
+    numeric costo_referencia
+    varchar observacion
+    varchar estado
+    bigint venta_id FK
+    bigint usuario_id FK
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  ESCALA_PRECIO {
+    bigint id PK
+    bigint presentacion_id FK
+    numeric cantidad_minima
+    numeric precio
+  }
+  HISTORIAL_PRECIO_PRESENTACION {
+    bigint id PK
+    bigint producto_id FK
+    bigint presentacion_id FK
+    numeric precio_anterior
+    numeric precio_nuevo
+    bigint usuario_id FK
+    timestamptz fecha
+  }
+  METODO_PAGO {
+    bigint id PK
+    varchar codigo UK
+    varchar nombre
+    boolean requiere_referencia
+    boolean es_efectivo
+    boolean activo
+  }
+  MOVIMIENTO_INVENTARIO {
+    bigint id PK
+    bigint producto_id FK
+    bigint ubicacion_id FK
+    varchar tipo
+    numeric cantidad
+    numeric saldo_resultante
+    numeric costo_unitario
+    bigint compra_id FK
+    bigint venta_id FK
+    bigint traslado_id FK
+    bigint usuario_id FK
+    varchar motivo
+    timestamptz fecha
+  }
+  PAGO {
+    bigint id PK
+    bigint venta_id FK
+    bigint caja_sesion_id FK
+    bigint metodo_pago_id FK
+    bigint usuario_id FK
+    varchar tipo
+    numeric monto
+    varchar numero_operacion
+    timestamptz fecha
+    varchar estado
+  }
+  PRESENTACION {
+    bigint id PK
+    bigint producto_id FK
+    varchar nombre
+    numeric factor
+    numeric precio_venta
+    varchar codigo_barras UK
+    boolean es_principal
+    boolean activo
+    int decimales
+    numeric costo_referencia
+    numeric porcentaje_ganancia
+    numeric monto_adicional
+    numeric precio_sugerido
+    numeric precio_oferta
+    date oferta_desde
+    date oferta_hasta
+  }
+  PRODUCTO {
+    bigint id PK
+    varchar codigo UK
+    varchar nombre
+    varchar descripcion
+    varchar marca
+    bigint categoria_id FK
+    varchar unidad_base
+    varchar imagen_url
+    varchar imagen_public_id
+    boolean activo
+    timestamptz created_at
+    timestamptz updated_at
+    varchar tipo
+    varchar acabado
+    varchar medida
+    varchar termino_busqueda
+  }
+  PROVEEDOR {
+    bigint id PK
+    varchar ruc UK
+    varchar razon_social
+    varchar contacto
+    varchar telefono
+    varchar email
+    varchar direccion
+    boolean activo
+    timestamptz created_at
+  }
+  SERIE_CORRELATIVO {
+    bigint id PK
+    bigint ubicacion_id FK
+    varchar tipo_documento
+    varchar serie
+    int ultimo_numero
+  }
+  SINONIMO_BUSQUEDA {
+    bigint id PK
+    varchar abreviatura UK
+    varchar termino
+  }
+  SOLICITUD_REPOSICION {
+    bigint id PK
+    varchar codigo UK
+    bigint ubicacion_id FK
+    varchar estado
+    varchar observacion
+    bigint usuario_id FK
+    timestamptz created_at
+    bigint atendida_por FK
+    timestamptz atendida_at
+    varchar motivo
+    bigint traslado_id FK,UK
+  }
+  SOLICITUD_REPOSICION_DETALLE {
+    bigint id PK
+    bigint solicitud_id FK
+    bigint producto_id FK
+    numeric cantidad
+  }
+  STOCK {
+    bigint id PK
+    bigint producto_id FK
+    bigint ubicacion_id FK
+    numeric cantidad
+    numeric stock_minimo
+    timestamptz updated_at
+    varchar ubicacion_fisica
+  }
+  TRASLADO {
+    bigint id PK
+    varchar codigo UK
+    bigint origen_id FK
+    bigint destino_id FK
+    varchar estado
+    bigint usuario_envia_id FK
+    bigint usuario_recibe_id FK
+    timestamptz fecha_envio
+    timestamptz fecha_recepcion
+    varchar observacion
+  }
+  TRASLADO_DETALLE {
+    bigint id PK
+    bigint traslado_id FK
+    bigint producto_id FK
+    bigint presentacion_id FK
+    numeric cantidad
+    numeric cantidad_base
+  }
+  UBICACION {
+    bigint id PK
+    bigint empresa_id FK
+    varchar nombre UK
+    varchar tipo
+    varchar direccion
+    boolean activo
+    timestamptz created_at
+  }
+  UNIDAD_MEDIDA {
+    bigint id PK
+    varchar codigo UK
+    varchar nombre
+    boolean activo
+    int decimales
+    numeric factor_sugerido
+  }
+  USUARIO {
+    bigint id PK
+    varchar nombres
+    varchar username UK
+    varchar password_hash
+    varchar rol
+    bigint ubicacion_id FK
+    boolean activo
+    timestamptz created_at
+  }
+  VENTA {
+    bigint id PK
+    bigint ubicacion_id FK
+    bigint empresa_id FK
+    bigint usuario_id FK
+    bigint caja_sesion_id FK
+    bigint cliente_id FK
+    varchar tipo_documento
+    varchar serie
+    int numero
+    timestamptz fecha
+    varchar condicion
+    date fecha_vencimiento
+    numeric subtotal
+    numeric igv
+    numeric descuento
+    numeric total
+    numeric saldo_pendiente
+    varchar estado
+    varchar estado_sunat
+    varchar motivo_anulacion
+    varchar token_publico UK
+  }
+  VENTA_DETALLE {
+    bigint id PK
+    bigint venta_id FK
+    bigint producto_id FK
+    bigint presentacion_id FK
+    varchar descripcion
+    numeric cantidad
+    numeric factor
+    numeric cantidad_base
+    numeric precio_unitario
+    numeric descuento
+    numeric subtotal
+    bigint completo_id FK
+    varchar composicion
+    varchar tipo_precio
+  }
+  USUARIO |o--o{ AUDITORIA : "usuario_id"
+  UBICACION ||--o{ CAJA_SESION : "ubicacion_id"
+  USUARIO ||--o{ CAJA_SESION : "usuario_id"
+  PRODUCTO ||--o{ COMPLETO : "producto_id"
+  COMPLETO ||--o{ COMPLETO_COMPONENTE : "completo_id"
+  PRESENTACION ||--o{ COMPLETO_COMPONENTE : "presentacion_id, producto_id"
+  EMPRESA ||--o{ COMPRA : "empresa_id"
+  PROVEEDOR ||--o{ COMPRA : "proveedor_id"
+  UBICACION ||--o{ COMPRA : "ubicacion_id"
+  USUARIO ||--o{ COMPRA : "usuario_id"
+  COMPRA ||--o{ COMPRA_DETALLE : "compra_id"
+  PRESENTACION |o--o{ COMPRA_DETALLE : "presentacion_id, producto_id"
+  PRODUCTO ||--o{ COMPRA_DETALLE : "producto_id"
+  CLIENTE |o--o{ COTIZACION : "cliente_id"
+  UBICACION ||--o{ COTIZACION : "ubicacion_id"
+  USUARIO ||--o{ COTIZACION : "usuario_id"
+  VENTA |o--o| COTIZACION : "venta_id"
+  COMPLETO |o--o{ COTIZACION_DETALLE : "completo_id"
+  COTIZACION ||--o{ COTIZACION_DETALLE : "cotizacion_id"
+  PRESENTACION |o--o{ COTIZACION_DETALLE : "presentacion_id, producto_id"
+  PRODUCTO ||--o{ COTIZACION_DETALLE : "producto_id"
+  CLIENTE |o--o{ ENCARGO : "cliente_id"
+  PRESENTACION ||--o{ ENCARGO : "presentacion_id, producto_id"
+  PRODUCTO ||--o{ ENCARGO : "producto_id"
+  UBICACION ||--o{ ENCARGO : "ubicacion_id"
+  USUARIO ||--o{ ENCARGO : "usuario_id"
+  VENTA |o--o{ ENCARGO : "venta_id"
+  PRESENTACION ||--o{ ESCALA_PRECIO : "presentacion_id"
+  PRESENTACION ||--o{ HISTORIAL_PRECIO_PRESENTACION : "presentacion_id, producto_id"
+  USUARIO |o--o{ HISTORIAL_PRECIO_PRESENTACION : "usuario_id"
+  COMPRA |o--o{ MOVIMIENTO_INVENTARIO : "compra_id"
+  PRODUCTO ||--o{ MOVIMIENTO_INVENTARIO : "producto_id"
+  TRASLADO |o--o{ MOVIMIENTO_INVENTARIO : "traslado_id"
+  UBICACION ||--o{ MOVIMIENTO_INVENTARIO : "ubicacion_id"
+  USUARIO ||--o{ MOVIMIENTO_INVENTARIO : "usuario_id"
+  VENTA |o--o{ MOVIMIENTO_INVENTARIO : "venta_id"
+  CAJA_SESION ||--o{ PAGO : "caja_sesion_id"
+  METODO_PAGO ||--o{ PAGO : "metodo_pago_id"
+  USUARIO ||--o{ PAGO : "usuario_id"
+  VENTA ||--o{ PAGO : "venta_id"
+  PRODUCTO ||--o{ PRESENTACION : "producto_id"
+  CATEGORIA ||--o{ PRODUCTO : "categoria_id"
+  UBICACION ||--o{ SERIE_CORRELATIVO : "ubicacion_id"
+  USUARIO |o--o{ SOLICITUD_REPOSICION : "atendida_por"
+  TRASLADO |o--o| SOLICITUD_REPOSICION : "traslado_id"
+  UBICACION ||--o{ SOLICITUD_REPOSICION : "ubicacion_id"
+  USUARIO ||--o{ SOLICITUD_REPOSICION : "usuario_id"
+  PRODUCTO ||--o{ SOLICITUD_REPOSICION_DETALLE : "producto_id"
+  SOLICITUD_REPOSICION ||--o{ SOLICITUD_REPOSICION_DETALLE : "solicitud_id"
+  PRODUCTO ||--o{ STOCK : "producto_id"
+  UBICACION ||--o{ STOCK : "ubicacion_id"
+  UBICACION ||--o{ TRASLADO : "destino_id"
+  UBICACION ||--o{ TRASLADO : "origen_id"
+  USUARIO ||--o{ TRASLADO : "usuario_envia_id"
+  USUARIO |o--o{ TRASLADO : "usuario_recibe_id"
+  PRESENTACION |o--o{ TRASLADO_DETALLE : "presentacion_id, producto_id"
+  PRODUCTO ||--o{ TRASLADO_DETALLE : "producto_id"
+  TRASLADO ||--o{ TRASLADO_DETALLE : "traslado_id"
+  EMPRESA |o--o{ UBICACION : "empresa_id"
+  UBICACION |o--o{ USUARIO : "ubicacion_id"
+  CAJA_SESION ||--o{ VENTA : "caja_sesion_id, ubicacion_id"
+  CLIENTE |o--o{ VENTA : "cliente_id"
+  UBICACION ||--o{ VENTA : "empresa_id, ubicacion_id"
+  USUARIO ||--o{ VENTA : "usuario_id"
+  COMPLETO |o--o{ VENTA_DETALLE : "completo_id"
+  PRESENTACION |o--o{ VENTA_DETALLE : "presentacion_id, producto_id"
+  PRODUCTO ||--o{ VENTA_DETALLE : "producto_id"
+  VENTA ||--o{ VENTA_DETALLE : "venta_id"
